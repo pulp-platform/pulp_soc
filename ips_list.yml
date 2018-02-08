@@ -1,0 +1,76 @@
+#
+# List of IPs and relative branch/commit-hash/tag.
+# Uses the YAML syntax.
+#
+# Examples:
+#
+#   or10n:
+#     commit: tags/PULP3_final
+#     domain: [cluster]
+#   udma:
+#     commit: 62b10440
+#     domain: [soc]
+#   axi_slice:
+#     commit: tags/pulpissimo-v1.0
+#     domain: [soc,cluster]
+# If a *tag* or *commit* is referenced, the IP will be in a
+#  state of DETACHED HEAD. Before committing any additional
+#  work, make sure to checkout a branch.
+#
+
+L2_tcdm_hybrid_interco:
+  commit: tags/pulpissimo-v1.0
+adv_dbg_if:
+  commit: tags/pulpissimo-v1.0
+apb/apb2per:
+  commit: tags/pulpissimo-v1.0
+apb/apb_adv_timer:
+  commit: tags/pulpissimo-v1.0
+apb/apb_fll_if:
+  commit: tags/pulpissimo-v1.0
+apb/apb_gpio:
+  commit: tags/pulpissimo-v1.0
+apb/apb_node:
+  commit: tags/pulpissimo-v1.0
+apb_interrupt_cntrl:
+  commit: tags/pulpissimo-v1.0
+axi/axi_node:
+  commit: tags/pulpissimo-v1.0
+axi/axi_slice:
+  commit: tags/pulpissimo-v1.0
+axi/axi_slice_dc:
+  commit: tags/pulpissimo-v1.0
+timer_unit:
+  commit: tags/pulpissimo-v1.0
+common_cells:
+  commit: tags/pulpissimo-v1.0
+fpu:
+  commit: tags/pulpissimo-v1.0
+jtag_pulp:
+  commit: tags/pulpissimo-v1.0
+riscv:
+  commit: tags/pulpissimo-v1.0
+zero-riscy:
+  commit: tags/pulpissimo-v1.0
+scm:
+  commit: tags/pulpissimo-v1.0
+generic_FLL:
+  commit: tags/pulpissimo-v1.0
+tech_cells_generic:
+  commit: tags/pulpissimo-v1.0
+udma/udma_core:
+  commit: tags/pulpissimo-v1.0
+udma/udma_uart:
+  commit: tags/pulpissimo-v1.0
+udma/udma_i2c:
+  commit: tags/pulpissimo-v1.0
+udma/udma_i2s:
+  commit: tags/pulpissimo-v1.0
+udma/udma_qspi:
+  commit: tags/pulpissimo-v1.0
+udma/udma_sdio:
+  commit: tags/pulpissimo-v1.0
+udma/udma_camera:
+  commit: tags/pulpissimo-v1.0
+hwpe-mac-engine:
+  commit: tags/pulpissimo-v1.0
