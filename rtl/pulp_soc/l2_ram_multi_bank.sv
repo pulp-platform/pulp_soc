@@ -162,6 +162,7 @@ module l2_ram_multi_bank #(
             */
                   model_sram_28672x32_scm_512x32 bank_i (
                      .CLK   ( clk_i                                ),
+		     .RSTN  ( rst_ni                               ),
                      .D     ( mem_slave[i].wdata                   ),
                      .A     ( mem_slave[i].add[MEM_ADDR_WIDTH-1:0] ),
                      .CEN   ( mem_slave[i].csn                     ),
