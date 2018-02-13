@@ -546,6 +546,9 @@ module udma_subsystem
         .periph_clk_i        ( s_clk_periphs_per[PER_ID_UART]  ),
         .rstn_i              ( HRESETn                  ),
 
+	.err_o               (              ),
+        .eot_o               (              ),
+	
         .sdclk_o             ( sdclk_o      ),           
         .sdcmd_o             ( sdcmd_o      ),
         .sdcmd_i             ( sdcmd_i      ),
