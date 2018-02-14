@@ -294,21 +294,21 @@ module pulp_soc #(
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
-
+    
+    AXI_BUS_ASYNC #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) s_data_master ();
+    
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_slave ();
-
-    AXI_BUS_ASYNC #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_data_master ();
-
+    
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
@@ -317,10 +317,10 @@ module pulp_soc #(
     ) s_data_in_bus ();
 
     AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_INT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_INT_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_out_bus ();
 
     FLL_BUS #(
