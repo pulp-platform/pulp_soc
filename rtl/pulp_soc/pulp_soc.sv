@@ -724,7 +724,7 @@ module pulp_soc #(
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
         .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
-
+	
         .axi_from_cluster ( s_data_in_bus       ),
         .axi_to_cluster   ( s_data_out_bus      ),
 

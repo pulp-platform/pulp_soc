@@ -48,7 +48,7 @@ module fc_hwpe
     logic [ID_WIDTH-1:0] periph_r_id;
     logic                tcdm_wen;
 
-    logic [7:0][1:0] s_evt;
+    logic [3:0]          s_evt;
 
     assign tcdm_wen = ~periph_type;
 
