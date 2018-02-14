@@ -298,7 +298,7 @@ module pulp_soc #(
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_master ();
     
@@ -712,8 +712,8 @@ module pulp_soc #(
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH        ),
         .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
         .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
-        .AXI_USER_WIDTH     ( AXI_ID_IN_WIDTH       ),
-        .AXI_ID_WIDTH       ( AXI_USER_WIDTH        )
+        .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
+        .AXI_ID_WIDTH       ( AXI_ID_IN_WIDTH       )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rstn_i           ( s_soc_rstn          ),
