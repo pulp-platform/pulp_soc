@@ -19,9 +19,9 @@ module pulp_soc #(
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
-    parameter AXI_ID_IN_WIDTH    = 4,
+    parameter AXI_ID_IN_WIDTH    = 6,
     parameter AXI_ID_INT_WIDTH   = 8,
-    parameter AXI_ID_OUT_WIDTH   = 8,
+    parameter AXI_ID_OUT_WIDTH   = 4,
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
@@ -319,7 +319,7 @@ module pulp_soc #(
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_INT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
 
@@ -706,14 +706,14 @@ module pulp_soc #(
 
         .ROM_ADDR_WIDTH     ( ROM_ADDR_WIDTH        ),
 
-        .AXI_32_ID_WIDTH    ( AXI_ID_IN_WIDTH      ),
+        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH      ),
         .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH        ),
 
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH        ),
         .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
         .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
-        .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_ID_OUT_WIDTH      )
+        .AXI_USER_WIDTH     ( AXI_ID_IN_WIDTH       ),
+        .AXI_ID_WIDTH       ( AXI_USER_WIDTH        )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rstn_i           ( s_soc_rstn          ),
