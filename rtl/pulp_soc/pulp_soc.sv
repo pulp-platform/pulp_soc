@@ -20,8 +20,7 @@ module pulp_soc #(
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
     parameter AXI_ID_IN_WIDTH    = 6,
-    parameter AXI_ID_INT_WIDTH   = 8,
-    parameter AXI_ID_OUT_WIDTH   = 4,
+    parameter AXI_ID_OUT_WIDTH   = 6,
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
@@ -315,11 +314,11 @@ module pulp_soc #(
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
-
+    
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_INT_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_out_bus ();
 
@@ -375,7 +374,8 @@ module pulp_soc #(
     assign cluster_rtc_o     = ref_clk_i;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
-    assign s_cluster_isolate_dc = cluster_byp_o;
+   assign s_cluster_isolate_dc = 1'b0;
+//cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
     // cluster to soc
