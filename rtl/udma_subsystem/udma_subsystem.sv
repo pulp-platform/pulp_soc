@@ -105,7 +105,7 @@ module udma_subsystem
     output logic                       i2c1_sda_o,
     output logic                       i2c1_sda_oe,
 
-    output logic                       sdclk_o,           
+    output logic                       sdclk_o,
     output logic                       sdcmd_o,
     input  logic                       sdcmd_i,
     output logic                       sdcmd_oen_o,
@@ -349,7 +349,7 @@ module udma_subsystem
 
         .periph_per_clk_o(s_clk_periphs_per),
         .periph_sys_clk_o(s_clk_periphs_core),
-    
+
         .event_valid_i(event_valid_i),
         .event_data_i (event_data_i),
         .event_ready_o(event_ready_o),
@@ -548,8 +548,8 @@ module udma_subsystem
 
 	.err_o               (              ),
         .eot_o               (              ),
-	
-        .sdclk_o             ( sdclk_o      ),           
+
+        .sdclk_o             ( sdclk_o      ),
         .sdcmd_o             ( sdcmd_o      ),
         .sdcmd_i             ( sdcmd_i      ),
         .sdcmd_oen_o         ( sdcmd_oen_o  ),
@@ -721,6 +721,7 @@ module udma_subsystem
     );
     assign rx_ch_data[CH_ID_I2C1][31:8]= 'h0;
 
+`ifndef PULP_FPGA_EMUL
     udma_i2s_2ch #(
         .L2_AWIDTH_NOAL ( L2_AWIDTH_NOAL ),
         .TRANS_SIZE     ( TRANS_SIZE     )
@@ -824,6 +825,43 @@ module udma_subsystem
         .cam_vsync_i         ( cam_vsync_i             )
     );
     assign rx_ch_data[CH_ID_CAM][31:16]='h0;
+`else
+    assign i2s_sck0_o                     = '0;
+    assign i2s_ws0_o                      = '0;
+    assign i2s_mode0_o                    = '0;
+    assign i2s_sck1_o                     = '0;
+    assign i2s_ws1_o                      = '0;
+    assign i2s_mode1_o                    = '0;
+    assign s_periph_data_from_i2s         = '0;
+    assign s_periph_ready_from_i2s        = '0;
+    assign rx_cfg_startaddr[CH_ID_I2S]    = '0;
+    assign rx_cfg_size[CH_ID_I2S]         = '0;
+    assign rx_cfg_continuous[CH_ID_I2S]   = '0;
+    assign rx_cfg_en[CH_ID_I2S]           = '0;
+    assign rx_cfg_clr[CH_ID_I2S]          = '0;
+    assign rx_cfg_startaddr[CH_ID_I2S+1]  = '0;
+    assign rx_cfg_size[CH_ID_I2S+1]       = '0;
+    assign rx_cfg_continuous[CH_ID_I2S+1] = '0;
+    assign rx_cfg_en[CH_ID_I2S+1]         = '0;
+    assign rx_cfg_clr[CH_ID_I2S+1]        = '0;
+    assign rx_ch_datasize[CH_ID_I2S]      = '0;
+    assign rx_ch_data[CH_ID_I2S]          = '0;
+    assign rx_ch_valid[CH_ID_I2S]         = '0;
+    assign rx_ch_datasize[CH_ID_I2S+1]    = '0;
+    assign rx_ch_data[CH_ID_I2S+1]        = '0;
+    assign rx_ch_valid[CH_ID_I2S+1]       = '0;
+    assign s_periph_data_from_cam         = '0;
+    assign s_periph_ready_from_cam        = '0;
+    assign rx_cfg_startaddr[CH_ID_CAM]    = '0;
+    assign rx_cfg_size[CH_ID_CAM]         = '0;
+    assign rx_cfg_continuous[CH_ID_CAM]   = '0;
+    assign rx_cfg_en[CH_ID_CAM]           = '0;
+    assign rx_cfg_filter[CH_ID_CAM]       = '0;
+    assign rx_cfg_clr[CH_ID_CAM]          = '0;
+    assign rx_ch_datasize[CH_ID_CAM]      = '0;
+    assign rx_ch_data[CH_ID_CAM][15:0]    = '0;
+    assign rx_ch_valid[CH_ID_CAM]         = '0;
+`endif
 
 
 endmodule

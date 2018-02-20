@@ -14,6 +14,7 @@
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
+    parameter USE_HWPE            = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
@@ -319,17 +320,34 @@ module fc_subsystem #(
         .per_master_r_rdata_i ( debug_rdata             )
     );
 
-    fc_hwpe #(
-        .N_MASTER_PORT ( NB_HWPE_PORTS ),
-        .ID_WIDTH      ( 2             )
-    ) i_fc_hwpe (
-        .clk_i             ( clk_i          ),
-        .rst_ni            ( rst_ni         ),
-        .test_mode_i       ( test_en_i      ),
-        .hwacc_xbar_master ( l2_hwpe_master ),
-        .hwacc_cfg_slave   ( apb_slave_hwpe ),
-        .evt_o             ( hwpe_events_o  ),
-        .busy_o            (                )
-    );
+    generate
+    if(USE_HWPE) begin : fc_hwpe_gen
+        fc_hwpe #(
+            .N_MASTER_PORT ( NB_HWPE_PORTS ),
+            .ID_WIDTH      ( 2             )
+        ) i_fc_hwpe (
+            .clk_i             ( clk_i          ),
+            .rst_ni            ( rst_ni         ),
+            .test_mode_i       ( test_en_i      ),
+            .hwacc_xbar_master ( l2_hwpe_master ),
+            .hwacc_cfg_slave   ( apb_slave_hwpe ),
+            .evt_o             ( hwpe_events_o  ),
+            .busy_o            (                )
+        );
+    end
+    else begin : no_fc_hwpe_gen
+        assign hwpe_events_o = '0;
+        assign apb_slave_hwpe.prdata  = '0;
+        assign apb_slave_hwpe.pready  = '0;
+        assign apb_slave_hwpe.pslverr = '0;
+        for(genvar ii=0; ii<NB_HWPE_PORTS; ii++) begin
+            assign l2_hwpe_master[ii].req   = '0;
+            assign l2_hwpe_master[ii].wen   = '0;
+            assign l2_hwpe_master[ii].wdata = '0;
+            assign l2_hwpe_master[ii].be    = '0;
+            assign l2_hwpe_master[ii].add   = '0;
+        end
+    end
+    endgenerate
 
 endmodule
