@@ -30,7 +30,7 @@ module fc_hwpe
     logic [N_MASTER_PORT-1:0]          tcdm_req;
     logic [N_MASTER_PORT-1:0]          tcdm_gnt;
     logic [N_MASTER_PORT-1:0] [32-1:0] tcdm_add;
-    logic [N_MASTER_PORT-1:0]          tcdm_type;
+    logic [N_MASTER_PORT-1:0]          tcdm_wen;
     logic [N_MASTER_PORT-1:0] [4 -1:0] tcdm_be;
     logic [N_MASTER_PORT-1:0] [32-1:0] tcdm_wdata;
     logic [N_MASTER_PORT-1:0] [32-1:0] tcdm_r_rdata;
@@ -39,18 +39,15 @@ module fc_hwpe
     logic                periph_req;
     logic                periph_gnt;
     logic [32-1:0]       periph_add;
-    logic                periph_type;
+    logic                periph_we;
     logic [4 -1:0]       periph_be;
     logic [32-1:0]       periph_wdata;
     logic [ID_WIDTH-1:0] periph_id;
     logic [32-1:0]       periph_r_rdata;
     logic                periph_r_valid;
     logic [ID_WIDTH-1:0] periph_r_id;
-    logic                tcdm_wen;
 
     logic [3:0]          s_evt;
-
-    assign tcdm_wen = ~periph_type;
 
     apb2per #(
         .PER_ADDR_WIDTH ( 32             ),
@@ -68,7 +65,7 @@ module fc_hwpe
         .PSLVERR              ( hwacc_cfg_slave.pslverr ),
         .per_master_req_o     ( periph_req              ),
         .per_master_add_o     ( periph_add              ),
-        .per_master_we_o      ( periph_type             ),
+        .per_master_we_o      ( periph_we               ),
         .per_master_wdata_o   ( periph_wdata            ),
         .per_master_be_o      ( periph_be               ),
         .per_master_gnt_i     ( periph_gnt              ),
@@ -86,7 +83,7 @@ module fc_hwpe
         .tcdm_req         ( tcdm_req       ),
         .tcdm_gnt         ( tcdm_gnt       ),
         .tcdm_add         ( tcdm_add       ),
-        .tcdm_wen         ( tcdm_type      ),
+        .tcdm_wen         ( tcdm_wen       ),
         .tcdm_be          ( tcdm_be        ),
         .tcdm_data        ( tcdm_wdata     ),
         .tcdm_r_data      ( tcdm_r_rdata   ),
@@ -94,10 +91,10 @@ module fc_hwpe
         .periph_req       ( periph_req     ),
         .periph_gnt       ( periph_gnt     ),
         .periph_add       ( periph_add     ),
-        .periph_wen       ( periph_type    ),
+        .periph_wen       ( ~periph_we     ),
         .periph_be        ( periph_be      ),
         .periph_data      ( periph_wdata   ),
-        .periph_id        ( periph_id      ),
+        .periph_id        ( '0             ),
         .periph_r_data    ( periph_r_rdata ),
         .periph_r_valid   ( periph_r_valid ),
         .periph_r_id      ( periph_r_id    ),
@@ -111,7 +108,7 @@ module fc_hwpe
         for (i=0;i<4;i++) begin : hwacc_binding
             assign hwacc_xbar_master[i].req   = tcdm_req   [i];
             assign hwacc_xbar_master[i].add   = tcdm_add   [i];
-            assign hwacc_xbar_master[i].wen   = tcdm_type  [i];
+            assign hwacc_xbar_master[i].wen   = tcdm_wen   [i];
             assign hwacc_xbar_master[i].wdata = tcdm_wdata [i];
             assign hwacc_xbar_master[i].be    = tcdm_be    [i];
             // response channel
