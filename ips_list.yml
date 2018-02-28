@@ -45,7 +45,7 @@ timer_unit:
 common_cells:
   commit: tags/pulpissimo-v1.0
 fpu:
-  commit: tags/pulpissimo-v1.0
+  commit: fpga
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
@@ -53,11 +53,11 @@ riscv:
 zero-riscy:
   commit: tags/pulpissimo-v1.0
 scm:
-  commit: tags/pulpissimo-v1.0
+  commit: fpga
 generic_FLL:
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
-  commit: tags/pulpissimo-v1.0
+  commit: fpga
 udma/udma_core:
   commit: tags/pulpissimo-v1.0
 udma/udma_uart:
