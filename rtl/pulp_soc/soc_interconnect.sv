@@ -195,8 +195,8 @@ module soc_interconnect #(
     input  logic                                                AXI_Master_aw_ready_i,
     // ---------------------------------------------------------
     //AXI write data bus -------------- // USED// --------------
-    output logic [AXI_DATA_WIDTH-1:0]                           AXI_Master_w_data_o,
-    output logic [AXI_STRB_WIDTH-1:0]                           AXI_Master_w_strb_o,
+    output logic [DATA_WIDTH-1:0]                               AXI_Master_w_data_o,
+    output logic [BE_WIDTH-1:0]                                 AXI_Master_w_strb_o,
     output logic                                                AXI_Master_w_last_o,
     output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_w_user_o,
     output logic                                                AXI_Master_w_valid_o,
@@ -226,7 +226,7 @@ module soc_interconnect #(
     // ---------------------------------------------------------
     //AXI read data bus ----------------------------------------
     input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master_r_id_i,
-    input  logic [AXI_DATA_WIDTH-1:0]                           AXI_Master_r_data_i,
+    input  logic [DATA_WIDTH-1:0]                               AXI_Master_r_data_i,
     input  logic [1:0]                                          AXI_Master_r_resp_i,
     input  logic                                                AXI_Master_r_last_i,
     input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_r_user_i,
@@ -726,7 +726,7 @@ module soc_interconnect #(
 
     lint_2_axi #(
         .ADDR_WIDTH       ( ADDR_WIDTH        ),
-        .DATA_WIDTH       ( AXI_DATA_WIDTH    ),
+        .DATA_WIDTH       ( DATA_WIDTH        ),
         .BE_WIDTH         ( BE_WIDTH          ),
         .ID_WIDTH         ( PER_ID_WIDTH      ),
         .USER_WIDTH       ( AXI_32_USER_WIDTH ),

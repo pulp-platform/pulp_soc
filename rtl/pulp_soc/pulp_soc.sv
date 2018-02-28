@@ -20,9 +20,8 @@ module pulp_soc #(
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
-    parameter AXI_ID_IN_WIDTH    = 4,
-    parameter AXI_ID_INT_WIDTH   = 8,
-    parameter AXI_ID_OUT_WIDTH   = 8,
+    parameter AXI_ID_IN_WIDTH    = 6,
+    parameter AXI_ID_OUT_WIDTH   = 6,
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
@@ -295,28 +294,28 @@ module pulp_soc #(
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
-
+    
     AXI_BUS_ASYNC #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_data_slave ();
-
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) s_data_master ();
+    
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_data_master ();
-
+    ) s_data_slave ();
+    
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
-
+    
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
@@ -376,7 +375,8 @@ module pulp_soc #(
     assign cluster_rtc_o     = ref_clk_i;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
-    assign s_cluster_isolate_dc = cluster_byp_o;
+   assign s_cluster_isolate_dc = 1'b0;
+//cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
     // cluster to soc
@@ -707,14 +707,14 @@ module pulp_soc #(
 
         .ROM_ADDR_WIDTH     ( ROM_ADDR_WIDTH        ),
 
-        .AXI_32_ID_WIDTH    ( AXI_ID_IN_WIDTH      ),
+        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH      ),
         .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH        ),
 
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH        ),
         .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
         .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
         .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_ID_OUT_WIDTH      )
+        .AXI_ID_WIDTH       ( AXI_ID_IN_WIDTH       )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rstn_i           ( s_soc_rstn          ),
@@ -725,7 +725,7 @@ module pulp_soc #(
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
         .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
-
+	
         .axi_from_cluster ( s_data_in_bus       ),
         .axi_to_cluster   ( s_data_out_bus      ),
 

@@ -330,7 +330,8 @@ module udma_subsystem
         .N_RX_CHANNELS(N_RX_CHANNELS),
         .N_TX_CHANNELS(N_TX_CHANNELS),
         .TRANS_SIZE(TRANS_SIZE),
-        .N_PERIPHS(N_PERIPHS)
+        .N_PERIPHS(N_PERIPHS),
+	.APB_ADDR_WIDTH(APB_ADDR_WIDTH)
     ) u_udmacore (
         .sys_clk_i(sys_clk_i),
         .per_clk_i(periph_clk_i),

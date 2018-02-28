@@ -21,7 +21,7 @@
 L2_tcdm_hybrid_interco:
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
-  commit: tags/pulpissimo-v1.0
+  commit: 66e20f8ef3aae0198f36137ba28c26ff12b47eaa
 apb/apb2per:
   commit: tags/pulpissimo-v1.0
 apb/apb_adv_timer:
@@ -51,7 +51,7 @@ jtag_pulp:
 riscv:
   commit: tags/pulpissimo-v1.0
 zero-riscy:
-  commit: tags/pulpissimo-v1.0
+  commit: d4d46971ebd5e0a637d2d182af675e7c43078885
 scm:
   commit: fpga
 generic_FLL:
@@ -73,5 +73,5 @@ udma/udma_sdio:
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
-  commit: 4b4758c1
+  commit: f3dd56d
 
