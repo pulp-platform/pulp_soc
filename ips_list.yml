@@ -72,6 +72,8 @@ udma/udma_sdio:
   commit: tags/pulpissimo-v1.0
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
+udma/udma_trace_debugger_if
+  commit: master
 hwpe-mac-engine:
   commit: f3dd56d
 
