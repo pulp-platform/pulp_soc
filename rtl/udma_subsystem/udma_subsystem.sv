@@ -122,13 +122,15 @@ module udma_subsystem
     localparam N_RF   = 0;
     localparam N_SDIO = 1;
     localparam N_HYPER = 0;
+    localparam N_TRACE = 1;
 
-    localparam N_RX_CHANNELS = N_SPI + N_HYPER + N_UART + N_I2C + N_SDIO + N_CAM + 2*N_I2S;
+    // TODO: N_I2C but 2*N_I2S, weird
+    localparam N_RX_CHANNELS = N_SPI + N_HYPER + N_UART + N_I2C + N_SDIO + N_CAM + 2*N_I2S + N_TRACE;
     localparam N_TX_CHANNELS = N_SPI + N_HYPER + N_UART + N_I2C + N_SDIO;
 
     localparam L2_AWIDTH_NOAL = L2_ADDR_WIDTH+2; //address width not aligned to 64bit
 
-    localparam N_PERIPHS = N_RF + N_SPI + N_HYPER + N_UART + N_I2C + N_SDIO + N_CAM + N_I2S;
+    localparam N_PERIPHS = N_RF + N_SPI + N_HYPER + N_UART + N_I2C + N_SDIO + N_CAM + N_I2S + N_TRACE;
 
     localparam CH_ID_UART  = 0;
     localparam CH_ID_SPIM0 = 1;
@@ -137,6 +139,7 @@ module udma_subsystem
     localparam CH_ID_I2C1  = 4;
     localparam CH_ID_I2S   = 5;
     localparam CH_ID_CAM   = 7;
+    localparam CH_ID_TRACE = 8;
 
     localparam PER_ID_UART  = 0;
     localparam PER_ID_SPIM0 = 1;
@@ -145,6 +148,7 @@ module udma_subsystem
     localparam PER_ID_I2C1  = 4;
     localparam PER_ID_I2S   = 5;
     localparam PER_ID_CAM   = 6;
+    localparam PER_ID_TRACE = 7;
 
     logic [N_TX_CHANNELS-1:0] [L2_AWIDTH_NOAL-1 : 0] tx_cfg_startaddr;
     logic [N_TX_CHANNELS-1:0]     [TRANS_SIZE-1 : 0] tx_cfg_size;
@@ -230,6 +234,10 @@ module udma_subsystem
     logic               s_periph_valid_cam;
     logic               s_periph_ready_from_cam;
 
+    logic        [31:0] s_periph_data_from_tracer;
+    logic               s_periph_valid_tracer;
+    logic               s_periph_ready_from_tracer;
+
     logic         [3:0] s_trigger_events;
 
     logic s_cam_evt;
@@ -254,7 +262,8 @@ module udma_subsystem
     assign rx_cfg_filter[CH_ID_I2C1]  = 1'b0;
     assign rx_cfg_filter[CH_ID_I2S]   = 1'b0;
     assign rx_cfg_filter[CH_ID_I2S+1] = 1'b0;
-
+    // TODO: no cam here?
+    // TODO: figure this out
     assign s_events = {
                     `ifdef HYPER_RAM
                         3'h0,
@@ -286,8 +295,9 @@ module udma_subsystem
                       };
 
     integer i;
-
+    // TODO: add tracer here
     assign s_periph_data_from = {
+			s_periph_data_from_tracer,
                         s_periph_data_from_cam,
                         s_periph_data_from_i2s,
                         s_periph_data_from_i2c1,
@@ -297,7 +307,9 @@ module udma_subsystem
                         s_periph_data_from_uart
     };
 
+    // TODO: add tracer here
     assign s_periph_ready = {
+			s_periph_ready_from_tracer,
                         s_periph_ready_from_cam,
                         s_periph_ready_from_i2s,
                         s_periph_ready_from_i2c1,
@@ -314,6 +326,7 @@ module udma_subsystem
     assign s_periph_valid_i2c1  = s_periph_valid[PER_ID_I2C1];
     assign s_periph_valid_i2s   = s_periph_valid[PER_ID_I2S];
     assign s_periph_valid_cam   = s_periph_valid[PER_ID_CAM];
+    assign s_periph_valid_trace = s_periph_valid[PER_ID_TRACE];
 
     assign events_o = s_events;
 
@@ -826,5 +839,36 @@ module udma_subsystem
     );
     assign rx_ch_data[CH_ID_CAM][31:16]='h0;
 
+     tracer_adapter_if#(
+        .L2_AWIDTH_NOAL ( L2_AWIDTH_NOAL ),
+        .TRANS_SIZE     ( TRANS_SIZE     )
+    ) u_tracer_adapter_if(
+        // TODO: proper clock
+        .clk_i(s_clk_periphs_core[PER_ID_TRACE]),
+        .rst_ni              ( HRESETn                    ),
+
+        .cfg_data_i          ( s_periph_data_to           ),
+        .cfg_addr_i          ( s_periph_addr              ),
+        .cfg_valid_i         ( s_periph_valid_trace       ),
+        .cfg_rw_ni           ( s_periph_rwn               ),
+        .cfg_data_o          ( s_periph_data_from_tracer  ),
+        .cfg_ready_o         ( s_periph_ready_from_tracer ),
+
+        .cfg_rx_startaddr_o  ( rx_cfg_startaddr[CH_ID_TRACE]     ),
+        .cfg_rx_size_o       ( rx_cfg_size[CH_ID_TRACE]          ),
+        .cfg_rx_continuous_o ( rx_cfg_continuous[CH_ID_TRACE]    ),
+        .cfg_rx_en_o         ( rx_cfg_en[CH_ID_TRACE]            ),
+        .cfg_rx_filter_o     ( rx_cfg_filter[CH_ID_TRACE]        ),
+        .cfg_rx_clr_o        ( rx_cfg_clr[CH_ID_TRACE]           ),
+        .cfg_rx_en_i         ( rx_ch_en[CH_ID_TRACE]             ),
+        .cfg_rx_pending_i    ( rx_ch_pending[CH_ID_TRACE]        ),
+        .cfg_rx_curr_addr_i  ( rx_ch_curr_addr[CH_ID_TRACE]      ),
+        .cfg_rx_bytes_left_i ( rx_ch_bytes_left[CH_ID_TRACE]     ),
+
+        .data_rx_datasize_o  ( rx_ch_datasize[CH_ID_TRACE]       ),
+        .data_rx_data_o      ( rx_ch_data[CH_ID_TRACE]           ),
+        .data_rx_valid_o     ( rx_ch_valid[CH_ID_TRACE]          ),
+        .data_rx_ready_i     ( rx_ch_ready[CH_ID_TRACE]          )
+    );
 
 endmodule
