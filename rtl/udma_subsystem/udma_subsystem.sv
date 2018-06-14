@@ -839,10 +839,10 @@ module udma_subsystem
     );
     assign rx_ch_data[CH_ID_CAM][31:16]='h0;
 
-     tracer_adapter_if#(
+     tracer_if#(
         .L2_AWIDTH_NOAL ( L2_AWIDTH_NOAL ),
         .TRANS_SIZE     ( TRANS_SIZE     )
-    ) u_tracer_adapter_if(
+    ) u_tracer_if(
         // TODO: proper clock
         .clk_i(s_clk_periphs_core[PER_ID_TRACE]),
         .rst_ni              ( HRESETn                    ),
