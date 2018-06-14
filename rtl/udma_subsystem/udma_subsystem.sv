@@ -843,7 +843,7 @@ module udma_subsystem
         .L2_AWIDTH_NOAL ( L2_AWIDTH_NOAL ),
         .TRANS_SIZE     ( TRANS_SIZE     )
     ) u_tracer_if(
-        // TODO: proper clock
+        // clock gated SoC clock
         .clk_i(s_clk_periphs_core[PER_ID_TRACE]),
         .rst_ni              ( HRESETn                    ),
 
