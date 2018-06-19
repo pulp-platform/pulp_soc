@@ -263,7 +263,7 @@ module udma_subsystem
     assign rx_cfg_filter[CH_ID_I2S]   = 1'b0;
     assign rx_cfg_filter[CH_ID_I2S+1] = 1'b0;
     // TODO: no cam here?
-    // TODO: figure this out
+    // TODO: figure this out. Isn't that ifdef broken?
     assign s_events = {
                     `ifdef HYPER_RAM
                         3'h0,

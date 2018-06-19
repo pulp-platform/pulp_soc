@@ -170,7 +170,7 @@ module soc_peripherals #(
 
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
-
+    // TODO: comments are not correct (camera IF, camera EVENT, i2s0, TGEN, ...)
     assign s_events[0]  = s_udma_events[5];      //spim0 rx      UDMA EVENT5
     assign s_events[1]  = s_udma_events[4];      //spim0 tx      UDMA EVENT4
     assign s_events[2]  = s_udma_events[8];      //spim1 rx      UDMA EVENT8
