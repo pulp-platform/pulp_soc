@@ -139,7 +139,7 @@ module soc_peripherals #(
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
 
-    localparam UDMA_EVENTS = 29;
+    localparam UDMA_EVENTS = 30;
     localparam SOC_EVENTS  = 3 ;
 
     logic [31:0] s_gpio_sync;
@@ -201,7 +201,7 @@ module soc_peripherals #(
     assign s_events[27] = s_udma_events[21];     //i2c1 event            UDMA EVENT21
     assign s_events[28] = s_udma_events[26];     //i2s event             UDMA EVENT26
     assign s_events[29] = s_udma_events[28];     //camera event          UDMA EVENT28
-    assign s_events[30] = 1'b0;
+    assign s_events[30] = s_udma_events[29];     //trace debugger rx     UDMA EVENT29
     assign s_events[31] = 1'b0;
     assign s_events[32] = 1'b0;
     assign s_events[33] = 1'b0;

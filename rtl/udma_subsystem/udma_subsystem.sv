@@ -264,12 +264,14 @@ module udma_subsystem
     assign rx_cfg_filter[CH_ID_I2S+1] = 1'b0;
     // TODO: no cam here?
     // TODO: figure this out. Isn't that ifdef broken?
+    // TODO: EVENT26-28 is referenced in soc_peripherals.sv but they are zero
     assign s_events = {
                     `ifdef HYPER_RAM
-                        3'h0,
                     `else
-                        6'h0,
+                        2'h0,
                     `endif
+		        rx_ch_events[CH_ID_TRACE],     //trace debugger          EVENT29
+                        3'h0,                          //                        EVENT26-28
                         s_cam_evt,                     //camera event            EVENT25
                         rx_ch_events[CH_ID_CAM],       //camera IF               EVENT24
                         s_i2s_evt,                     //i2s event               EVENT23
