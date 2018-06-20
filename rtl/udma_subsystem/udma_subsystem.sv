@@ -321,14 +321,14 @@ module udma_subsystem
                         s_periph_ready_from_uart
     };
 
-    assign s_periph_valid_uart  = s_periph_valid[PER_ID_UART];
-    assign s_periph_valid_spim0 = s_periph_valid[PER_ID_SPIM0];
-    assign s_periph_valid_sdio  = s_periph_valid[PER_ID_SDIO];
-    assign s_periph_valid_i2c0  = s_periph_valid[PER_ID_I2C0];
-    assign s_periph_valid_i2c1  = s_periph_valid[PER_ID_I2C1];
-    assign s_periph_valid_i2s   = s_periph_valid[PER_ID_I2S];
-    assign s_periph_valid_cam   = s_periph_valid[PER_ID_CAM];
-    assign s_periph_valid_trace = s_periph_valid[PER_ID_TRACE];
+    assign s_periph_valid_uart   = s_periph_valid[PER_ID_UART];
+    assign s_periph_valid_spim0  = s_periph_valid[PER_ID_SPIM0];
+    assign s_periph_valid_sdio   = s_periph_valid[PER_ID_SDIO];
+    assign s_periph_valid_i2c0   = s_periph_valid[PER_ID_I2C0];
+    assign s_periph_valid_i2c1   = s_periph_valid[PER_ID_I2C1];
+    assign s_periph_valid_i2s    = s_periph_valid[PER_ID_I2S];
+    assign s_periph_valid_cam    = s_periph_valid[PER_ID_CAM];
+    assign s_periph_valid_tracer = s_periph_valid[PER_ID_TRACE];
 
     assign events_o = s_events;
 
@@ -851,7 +851,7 @@ module udma_subsystem
 
         .cfg_data_i          ( s_periph_data_to           ),
         .cfg_addr_i          ( s_periph_addr              ),
-        .cfg_valid_i         ( s_periph_valid_trace       ),
+        .cfg_valid_i         ( s_periph_valid_tracer      ),
         .cfg_rw_ni           ( s_periph_rwn               ),
         .cfg_data_o          ( s_periph_data_from_tracer  ),
         .cfg_ready_o         ( s_periph_ready_from_tracer ),
