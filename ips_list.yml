@@ -49,9 +49,9 @@ fpu:
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 zero-riscy:
-  commit: d4d46971ebd5e0a637d2d182af675e7c43078885
+  commit: tags/pulpissimo-v1.0.1
 scm:
   commit: tags/pulpissimo-v1.0
 generic_FLL:
