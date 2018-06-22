@@ -184,8 +184,8 @@ module soc_peripherals #(
     assign s_events[11] = s_udma_events[19];     //0             UDMA EVENT19
     assign s_events[12] = s_udma_events[24];     //camera rx     UDMA EVENT24
     assign s_events[13] = s_udma_events[25];     //cam event=0   UDMA EVENT25
-    assign s_events[14] = s_udma_events[27];     //0             UDMA EVENT27
-    assign s_events[15] = 1'b0;
+    assign s_events[14] = s_udma_events[29];     //trace dbg rx  UDMA EVENT29
+    assign s_events[15] = 1'b0;                  //trace dbg tx
     assign s_events[16] = s_udma_events[1];      //TGEN events=0
     assign s_events[17] = s_udma_events[0];      //TGEN events=0
     assign s_events[18] = s_udma_events[3];      //TGEN events=0
@@ -200,7 +200,7 @@ module soc_peripherals #(
     assign s_events[27] = s_udma_events[21];     //i2s0 rx               UDMA EVENT21
     assign s_events[28] = s_udma_events[26];     //0                     UDMA EVENT26
     assign s_events[29] = s_udma_events[28];     //0                     UDMA EVENT28
-    assign s_events[30] = s_udma_events[29];     //trace debugger rx     UDMA EVENT29
+    assign s_events[30] = 1'b0;
     assign s_events[31] = 1'b0;
     assign s_events[32] = 1'b0;
     assign s_events[33] = 1'b0;
