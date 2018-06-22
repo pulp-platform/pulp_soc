@@ -170,37 +170,36 @@ module soc_peripherals #(
 
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
-    // TODO: comments are not correct (camera IF, camera EVENT, i2s0, TGEN, ...)
-    assign s_events[0]  = s_udma_events[5];      //spim0 rx      UDMA EVENT5
-    assign s_events[1]  = s_udma_events[4];      //spim0 tx      UDMA EVENT4
-    assign s_events[2]  = s_udma_events[8];      //spim1 rx      UDMA EVENT8
-    assign s_events[3]  = s_udma_events[7];      //spim1 tx      UDMA EVENT7
-    assign s_events[4]  = s_udma_events[11];     //hyper rx      UDMA EVENT11
-    assign s_events[5]  = s_udma_events[10];     //hyper tx      UDMA EVENT10
-    assign s_events[6]  = s_udma_events[14];     //uart rx       UDMA EVENT14
-    assign s_events[7]  = s_udma_events[13];     //uart tx       UDMA EVENT13
-    assign s_events[8]  = s_udma_events[17];     //i2c0 rx       UDMA EVENT17
-    assign s_events[9]  = s_udma_events[16];     //i2c0 tx       UDMA EVENT16
-    assign s_events[10] = s_udma_events[20];     //i2c1 rx       UDMA EVENT20
-    assign s_events[11] = s_udma_events[19];     //i2c1 tx       UDMA EVENT19
-    assign s_events[12] = s_udma_events[24];     //i2s0 channels UDMA EVENT24
-    assign s_events[13] = s_udma_events[25];     //i2s0 channels UDMA EVENT25
-    assign s_events[14] = s_udma_events[27];     //camera IF     UDMA EVENT27
+    assign s_events[0]  = s_udma_events[5];      //uart rx       UDMA EVENT5
+    assign s_events[1]  = s_udma_events[4];      //uart tx       UDMA EVENT4
+    assign s_events[2]  = s_udma_events[8];      //spim0 rx      UDMA EVENT8
+    assign s_events[3]  = s_udma_events[7];      //spim0 tx      UDMA EVENT7
+    assign s_events[4]  = s_udma_events[11];     //sdio rx       UDMA EVENT11
+    assign s_events[5]  = s_udma_events[10];     //sdio tx       UDMA EVENT10
+    assign s_events[6]  = s_udma_events[14];     //i2c0 rx       UDMA EVENT14
+    assign s_events[7]  = s_udma_events[13];     //i2c0 tx       UDMA EVENT13
+    assign s_events[8]  = s_udma_events[17];     //i2c1 rx       UDMA EVENT17
+    assign s_events[9]  = s_udma_events[16];     //i2c1 tx       UDMA EVENT16
+    assign s_events[10] = s_udma_events[20];     //0             UDMA EVENT20
+    assign s_events[11] = s_udma_events[19];     //0             UDMA EVENT19
+    assign s_events[12] = s_udma_events[24];     //camera rx     UDMA EVENT24
+    assign s_events[13] = s_udma_events[25];     //cam event=0   UDMA EVENT25
+    assign s_events[14] = s_udma_events[27];     //0             UDMA EVENT27
     assign s_events[15] = 1'b0;
-    assign s_events[16] = s_udma_events[1];      //TGEN events
-    assign s_events[17] = s_udma_events[0];      //TGEN events
-    assign s_events[18] = s_udma_events[3];      //TGEN events
-    assign s_events[19] = s_udma_events[2];      //TGEN events
-    assign s_events[20] = s_udma_events[23];     //TGEN events
-    assign s_events[21] = s_udma_events[22];     //TGEN events
-    assign s_events[22] = s_udma_events[6];      //spim0 end of transfer UDMA EVENT6
-    assign s_events[23] = s_udma_events[9];      //spim1 end of transfer UDMA EVENT9
-    assign s_events[24] = s_udma_events[12];     //spim2 end of transfer UDMA EVENT12
-    assign s_events[25] = s_udma_events[15];     //uart event            UDMA EVENT15
-    assign s_events[26] = s_udma_events[18];     //i2c0 event            UDMA EVENT18
-    assign s_events[27] = s_udma_events[21];     //i2c1 event            UDMA EVENT21
-    assign s_events[28] = s_udma_events[26];     //i2s event             UDMA EVENT26
-    assign s_events[29] = s_udma_events[28];     //camera event          UDMA EVENT28
+    assign s_events[16] = s_udma_events[1];      //TGEN events=0
+    assign s_events[17] = s_udma_events[0];      //TGEN events=0
+    assign s_events[18] = s_udma_events[3];      //TGEN events=0
+    assign s_events[19] = s_udma_events[2];      //TGEN events=0
+    assign s_events[20] = s_udma_events[23];     //i2s event
+    assign s_events[21] = s_udma_events[22];     //i2s1 rx
+    assign s_events[22] = s_udma_events[6];      //uart event            UDMA EVENT6
+    assign s_events[23] = s_udma_events[9];      //spim0 eot             UDMA EVENT9
+    assign s_events[24] = s_udma_events[12];     //0                     UDMA EVENT12
+    assign s_events[25] = s_udma_events[15];     //i2c0 event            UDMA EVENT15
+    assign s_events[26] = s_udma_events[18];     //i2c1 event            UDMA EVENT18
+    assign s_events[27] = s_udma_events[21];     //i2s0 rx               UDMA EVENT21
+    assign s_events[28] = s_udma_events[26];     //0                     UDMA EVENT26
+    assign s_events[29] = s_udma_events[28];     //0                     UDMA EVENT28
     assign s_events[30] = s_udma_events[29];     //trace debugger rx     UDMA EVENT29
     assign s_events[31] = 1'b0;
     assign s_events[32] = 1'b0;
