@@ -88,6 +88,16 @@ module fc_subsystem #(
     logic        debug_rvalid;
     logic [31:0] debug_rdata ;
 
+    //Trace debugger
+    logic        ivalid;
+    logic        iexception;
+    logic        interrupt;
+    logic [ 4:0] cause;
+    logic [31:0] tval;
+    logic [ 2:0] priv;
+    logic [31:0] iaddr;
+    logic [31:0] instr;
+
     assign core_id_int       = 4'b0;
     assign cluster_id_int    = 6'b01_1111;
     assign perf_counters_int = 1'b0;
@@ -211,6 +221,16 @@ module fc_subsystem #(
         .debug_halted_o        (                   ),
         .debug_halt_i          ( 1'b0              ),
         .debug_resume_i        ( 1'b0              ),
+        // Trace Debugger Interface
+        .ivalid_o              ( ivalid            ),
+        .iexception_o          ( iexception        ),
+        .interrupt_o           ( interrupt         ),
+        .cause_o               ( cause             ),
+        .tval_o                ( tval              ),
+        .priv_o                ( priv              ),
+        .iaddr_o               ( iaddr             ),
+        .instr_o               ( instr             ),
+
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
         .ext_perf_counters_i   ( perf_counters_int ),
