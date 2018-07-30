@@ -352,4 +352,34 @@ module fc_subsystem #(
         .busy_o            (                )
     );
 
+    // use clock gated cpu clock?
+    trace_debugger trace_debugger_i (
+        .clk_i        ( clk_i      ),
+        .rst_ni       ( rst_ni     ),
+        .ivalid_i     ( ivalid     ),
+        .iexception_i ( iexception ),
+        .interrupt_i  ( interrupt  ),
+        .cause_i      ( cause      ),
+        .tval_i       ( tval       ),
+        .priv_i       ( priv       ),
+        .iaddr_i      ( iaddr      ),
+        .instr_i      ( instr      )
+    );
+
+`ifndef SYNTHESIS
+    // we only need this to generate/capture stimuli
+    trace_debugger_stimuli_gen trace_debugger_stimuli_gen_i (
+        .clk_i        ( clk_i      ),
+        .rst_ni       ( rst_ni     ),
+        .ivalid_i     ( ivalid     ),
+        .iexception_i ( iexception ),
+        .interrupt_i  ( interrupt  ),
+        .cause_i      ( cause      ),
+        .tval_i       ( tval       ),
+        .priv_i       ( priv       ),
+        .iaddr_i      ( iaddr      ),
+        .instr_i      ( instr      )
+    );
+`endif
+
 endmodule
