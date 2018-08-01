@@ -16,7 +16,11 @@ module soc_peripherals #(
     parameter APB_DATA_WIDTH = 32,
     parameter NB_CORES       = 4,
     parameter NB_CLUSTERS    = 0,
-    parameter EVNT_WIDTH     = 8
+    parameter EVNT_WIDTH     = 8,
+    parameter N_SPI          = 1,
+    parameter N_UART         = 1,
+    parameter N_I2C          = 1,
+    parameter HAVE_HYPER     = 0
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
@@ -63,55 +67,64 @@ module soc_peripherals #(
     output logic [3:0]                 timer_ch1_o,
     output logic [3:0]                 timer_ch2_o,
     output logic [3:0]                 timer_ch3_o,
+
+    output logic     [N_SPI-1:0]       spi_clk,
+    output logic     [N_SPI-1:0] [3:0] spi_csn,
+    output logic     [N_SPI-1:0] [3:0] spi_oen,
+    output logic     [N_SPI-1:0] [3:0] spi_sdo,
+    input  logic     [N_SPI-1:0] [3:0] spi_sdi,
+
+    input  logic           [N_I2C-1:0] i2c_scl_i,
+    output logic           [N_I2C-1:0] i2c_scl_o,
+    output logic           [N_I2C-1:0] i2c_scl_oe,
+    input  logic           [N_I2C-1:0] i2c_sda_i,
+    output logic           [N_I2C-1:0] i2c_sda_o,
+    output logic           [N_I2C-1:0] i2c_sda_oe,
+
     input  logic                       cam_clk_i,
-    input  logic [7:0]                 cam_data_i,
+    input  logic  [CAM_DATA_WIDTH-1:0] cam_data_i,
     input  logic                       cam_hsync_i,
     input  logic                       cam_vsync_i,
-    output logic                       uart_tx,
-    input  logic                       uart_rx,
-    input  logic                       i2c0_scl_i,
-    output logic                       i2c0_scl_o,
-    output logic                       i2c0_scl_oe_o,
-    input  logic                       i2c0_sda_i,
-    output logic                       i2c0_sda_o,
-    output logic                       i2c0_sda_oe_o,
-    input  logic                       i2c1_scl_i,
-    output logic                       i2c1_scl_o,
-    output logic                       i2c1_scl_oe_o,
-    input  logic                       i2c1_sda_i,
-    output logic                       i2c1_sda_o,
-    output logic                       i2c1_sda_oe_o,
-    input  logic                       i2s_sck_i,
-    input  logic                       i2s_ws_i,
-    input  logic                       i2s_sd0_i,
-    input  logic                       i2s_sd1_i,
-    output logic                       i2s_sck0_o,
-    output logic                       i2s_ws0_o,
-    output logic [1:0]                 i2s_mode0_o,
-    output logic                       i2s_sck1_o,
-    output logic                       i2s_ws1_o,
-    output logic [1:0]                 i2s_mode1_o,
-    output logic                       spi_master0_clk,
-    output logic                       spi_master0_csn0,
-    output logic                       spi_master0_csn1,
-    output logic                       spi_master0_csn2,
-    output logic                       spi_master0_csn3,
-    output logic [1:0]                 spi_master0_mode,
-    output logic                       spi_master0_sdo0,
-    output logic                       spi_master0_sdo1,
-    output logic                       spi_master0_sdo2,
-    output logic                       spi_master0_sdo3,
-    input  logic                       spi_master0_sdi0,
-    input  logic                       spi_master0_sdi1,
-    input  logic                       spi_master0_sdi2,
-    input  logic                       spi_master0_sdi3,
-    output logic                       sdclk_o,           
-    output logic                       sdcmd_o,
-    input  logic                       sdcmd_i,
-    output logic                       sdcmd_oen_o,
-    output logic                 [3:0] sddata_o,
-    input  logic                 [3:0] sddata_i,
-    output logic                 [3:0] sddata_oen_o,
+
+    input  logic          [N_UART-1:0] uart_rx_i,
+    output logic          [N_UART-1:0] uart_tx_o,
+
+    output logic                       sdio_clk_o,           
+    output logic                       sdio_cmd_o,
+    input  logic                       sdio_cmd_i,
+    output logic                       sdio_cmd_oen_o,
+    output logic                 [3:0] sdio_data_o,
+    input  logic                 [3:0] sdio_data_i,
+    output logic                 [3:0] sdio_data_oen_o,
+
+    input  logic                       i2s_slave_sd0_i,
+    input  logic                       i2s_slave_sd1_i,
+    input  logic                       i2s_slave_ws_i,
+    output logic                       i2s_slave_ws_o,
+    output logic                       i2s_slave_ws_oe,
+    input  logic                       i2s_slave_sck_i,
+    output logic                       i2s_slave_sck_o,
+    output logic                       i2s_slave_sck_oe,
+
+    output logic                       i2s_master_sd0_o,
+    output logic                       i2s_master_sd1_o,
+    input  logic                       i2s_master_ws_i,
+    output logic                       i2s_master_ws_o,
+    output logic                       i2s_master_ws_oe,
+    input  logic                       i2s_master_sck_i,
+    output logic                       i2s_master_sck_o,
+    output logic                       i2s_master_sck_oe,
+
+    output logic                       hyper_clk_o,
+    output logic                       hyper_clkn_o,
+    output logic                       hyper_csn0_o,
+    output logic                       hyper_csn1_o,
+    output logic                       hyper_rwds_o,
+    output logic                       hyper_rwds_oen_o,
+    input  logic                       hyper_rwds_i,
+    output logic                       hyper_dq_oen_o,
+    output logic [7:0]                 hyper_dq_o,
+    input  logic [7:0]                 hyper_dq_i
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -164,12 +177,22 @@ module soc_peripherals #(
     logic [7:0] s_pr_event_data ;
     logic       s_pr_event_ready;
 
-    logic [UDMA_EVENTS-1:0] s_udma_events;
+    logic        [8*16-1:0] s_udma_events;
     logic [ SOC_EVENTS-1:0] s_soc_events;
     logic [           47:0] s_events;
 
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
+
+    localparam PER_ID_SPIM    = 0;
+    localparam PER_ID_UART    = N_SPI;
+    localparam PER_ID_I2C     = N_SPI+N_UART;
+    localparam PER_ID_HYPER   = N_SPI+N_UART+N_I2C;
+    localparam PER_ID_JTAG    = PER_ID_HYPER+1;
+    localparam PER_ID_SDIO    = PER_ID_JTAG+1;
+    localparam PER_ID_I2S     = PER_ID_SDIO+1;
+    localparam PER_ID_CAM     = PER_ID_I2S+1;
+    localparam PER_ID_FILTER  = PER_ID_CAM+1;
 
     assign s_events[0]  = s_udma_events[5];      //spim0 rx      UDMA EVENT5
     assign s_events[1]  = s_udma_events[4];      //spim0 tx      UDMA EVENT4
@@ -382,11 +405,14 @@ module soc_peripherals #(
     //  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
     udma_subsystem #(
-        .UDMA_EVENTS    ( UDMA_EVENTS    ),
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .L2_ADDR_WIDTH  ( MEM_ADDR_WIDTH )
+        .L2_ADDR_WIDTH  ( MEM_ADDR_WIDTH ),
+        .N_SPI          ( N_SPI          ),
+        .N_UART         ( N_UART         ),
+        .N_I2C          ( N_I2C          ),
+        .HAVE_HYPER     ( 0 )
     ) i_udma (
-        .L2_ro_req_o      ( l2_tx_master.req     ),
+
         .L2_ro_gnt_i      ( l2_tx_master.gnt     ),
         .L2_ro_wen_o      ( l2_tx_master.wen     ),
         .L2_ro_addr_o     ( l2_tx_master.add     ),
@@ -409,16 +435,16 @@ module soc_peripherals #(
 
         .sys_clk_i        ( clk_i                ),
         .periph_clk_i     ( periph_clk_i         ),
-        .HRESETn          ( rst_ni               ),
+        .sys_resetn_i     ( rst_ni               ),
 
-        .PADDR            ( s_udma_bus.paddr     ),
-        .PWDATA           ( s_udma_bus.pwdata    ),
-        .PWRITE           ( s_udma_bus.pwrite    ),
-        .PSEL             ( s_udma_bus.psel      ),
-        .PENABLE          ( s_udma_bus.penable   ),
-        .PRDATA           ( s_udma_bus.prdata    ),
-        .PREADY           ( s_udma_bus.pready    ),
-        .PSLVERR          ( s_udma_bus.pslverr   ),
+        .udma_apb_paddr   ( s_udma_bus.paddr     ),
+        .udma_apb_pwdata  ( s_udma_bus.pwdata    ),
+        .udma_apb_pwrite  ( s_udma_bus.pwrite    ),
+        .udma_apb_psel    ( s_udma_bus.psel      ),
+        .udma_apb_penable ( s_udma_bus.penable   ),
+        .udma_apb_prdata  ( s_udma_bus.prdata    ),
+        .udma_apb_pready  ( s_udma_bus.pready    ),
+        .udma_apb_pslverr ( s_udma_bus.pslverr   ),
 
         .events_o         ( s_udma_events        ),
 
@@ -426,61 +452,64 @@ module soc_peripherals #(
         .event_data_i     ( s_pr_event_data      ),
         .event_ready_o    ( s_pr_event_ready     ),
 
-        .spi0_clk         ( spi_master0_clk      ),
-        .spi0_csn0        ( spi_master0_csn0     ),
-        .spi0_csn1        ( spi_master0_csn1     ),
-        .spi0_csn2        ( spi_master0_csn2     ),
-        .spi0_csn3        ( spi_master0_csn3     ),
-        .spi0_mode        ( spi_master0_mode     ),
-        .spi0_sdo0        ( spi_master0_sdo0     ),
-        .spi0_sdo1        ( spi_master0_sdo1     ),
-        .spi0_sdo2        ( spi_master0_sdo2     ),
-        .spi0_sdo3        ( spi_master0_sdo3     ),
-        .spi0_sdi0        ( spi_master0_sdi0     ),
-        .spi0_sdi1        ( spi_master0_sdi1     ),
-        .spi0_sdi2        ( spi_master0_sdi2     ),
-        .spi0_sdi3        ( spi_master0_sdi3     ),
+        .spi_clk          ( spi_clk           ),
+        .spi_csn          ( spi_csn           ),
+        .spi_oen          ( spi_oen           ),
+        .spi_sdo          ( spi_sdo           ),
+        .spi_sdi          ( spi_sdi           ),
 
-        .sdclk_o          ( sdclk_o              ),           
-        .sdcmd_o          ( sdcmd_o              ),
-        .sdcmd_i          ( sdcmd_i              ),
-        .sdcmd_oen_o      ( sdcmd_oen_o          ),
-        .sddata_o         ( sddata_o             ),
-        .sddata_i         ( sddata_i             ),
-        .sddata_oen_o     ( sddata_oen_o         ),
+        .i2c_scl_i        ( i2c_scl_i         ),
+        .i2c_scl_o        ( i2c_scl_o         ),
+        .i2c_scl_oe       ( i2c_scl_oe        ),
+        .i2c_sda_i        ( i2c_sda_i         ),
+        .i2c_sda_o        ( i2c_sda_o         ),
+        .i2c_sda_oe       ( i2c_sda_oe        ),
 
-        .cam_clk_i        ( cam_clk_i            ),
-        .cam_data_i       ( cam_data_i           ),
-        .cam_hsync_i      ( cam_hsync_i          ),
-        .cam_vsync_i      ( cam_vsync_i          ),
+        .cam_clk_i        ( cam_clk_i         ),
+        .cam_data_i       ( cam_data_i        ),
+        .cam_hsync_i      ( cam_hsync_i       ),
+        .cam_vsync_i      ( cam_vsync_i       ),
 
-        .i2s_sd0_i        ( i2s_sd0_i            ),
-        .i2s_sd1_i        ( i2s_sd1_i            ),
-        .i2s_ws_i         ( i2s_ws_i             ),
-        .i2s_sck_i        ( i2s_sck_i            ),
-        .i2s_ws0_o        ( i2s_ws0_o            ),
-        .i2s_sck0_o       ( i2s_sck0_o           ),
-        .i2s_mode0_o      ( i2s_mode0_o          ),
-        .i2s_ws1_o        ( i2s_ws1_o            ),
-        .i2s_sck1_o       ( i2s_sck1_o           ),
-        .i2s_mode1_o      ( i2s_mode1_o          ),
+        .uart_rx_i        ( uart_rx_i         ),
+        .uart_tx_o        ( uart_tx_o         ),
 
-        .uart_rx          ( uart_rx              ),
-        .uart_tx          ( uart_tx              ),
+        .sdio_clk_o       ( sdio_clk_o        ),           
+        .sdio_cmd_o       ( sdio_cmd_o        ),
+        .sdio_cmd_i       ( sdio_cmd_i        ),
+        .sdio_cmd_oen_o   ( sdio_cmd_oen_o    ),
+        .sdio_data_o      ( sdio_data_o       ),
+        .sdio_data_i      ( sdio_data_i       ),
+        .sdio_data_oen_o  ( sdio_data_oen_o   ),
 
-        .i2c0_scl_i       ( i2c0_scl_i           ),
-        .i2c0_scl_o       ( i2c0_scl_o           ),
-        .i2c0_scl_oe      ( i2c0_scl_oe_o        ),
-        .i2c0_sda_i       ( i2c0_sda_i           ),
-        .i2c0_sda_o       ( i2c0_sda_o           ),
-        .i2c0_sda_oe      ( i2c0_sda_oe_o        ),
+        .i2s_slave_sd0_i  ( i2s_slave_sd0_i   ),
+        .i2s_slave_sd1_i  ( i2s_slave_sd1_i   ),
+        .i2s_slave_ws_i   ( i2s_slave_ws_i    ),
+        .i2s_slave_ws_o   ( i2s_slave_ws_o    ),
+        .i2s_slave_ws_oe  ( i2s_slave_ws_oe   ),
+        .i2s_slave_sck_i  ( i2s_slave_sck_i   ),
+        .i2s_slave_sck_o  ( i2s_slave_sck_o   ),
+        .i2s_slave_sck_oe ( i2s_slave_sck_oe  ),
 
-        .i2c1_scl_i       ( i2c1_scl_i           ),
-        .i2c1_scl_o       ( i2c1_scl_o           ),
-        .i2c1_scl_oe      ( i2c1_scl_oe_o        ),
-        .i2c1_sda_i       ( i2c1_sda_i           ),
-        .i2c1_sda_o       ( i2c1_sda_o           ),
-        .i2c1_sda_oe      ( i2c1_sda_oe_o        )
+        .i2s_master_sd0_o ( i2s_master_sd0_o  ),
+        .i2s_master_sd1_o ( i2s_master_sd1_o  ),
+        .i2s_master_ws_i  ( i2s_master_ws_i   ),
+        .i2s_master_ws_o  ( i2s_master_ws_o   ),
+        .i2s_master_ws_oe ( i2s_master_ws_oe  ),
+        .i2s_master_sck_i ( i2s_master_sck_i  ),
+        .i2s_master_sck_o ( i2s_master_sck_o  ),
+        .i2s_master_sck_oe( i2s_master_sck_oe ),
+
+        .hyper_clk_o      ( hyper_clk_o       ),
+        .hyper_clkn_o     ( hyper_clkn_o      ),
+        .hyper_csn0_o     ( hyper_csn0_o      ),
+        .hyper_csn1_o     ( hyper_csn1_o      ),
+        .hyper_rwds_o     ( hyper_rwds_o      ),
+        .hyper_rwds_oen_o ( hyper_rwds_oen_o  ),
+        .hyper_rwds_i     ( hyper_rwds_i      ),
+        .hyper_dq_oen_o   ( hyper_dq_oen_o    ),
+        .hyper_dq_o       ( hyper_dq_o        ),
+        .hyper_dq_i       ( hyper_dq_i        )
+
     );
 
 

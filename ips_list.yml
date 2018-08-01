@@ -59,19 +59,28 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v1.0.0
+  domain: [soc]
 udma/udma_uart:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v1.0.0
+  domain: [soc]
 udma/udma_i2c:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v1.0.0
+  domain: [soc]
 udma/udma_i2s:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v2.1.0
+  domain: [soc]
+udma/udma_filter:
+  commit: master
+  domain: [soc]
 udma/udma_qspi:
-  commit: tags/pulpissimo-v1.0
-udma/udma_sdio:
-  commit: tags/pulpissimo-v1.0
+  commit: newtxrx_v1.0.1
+  domain: [soc]
 udma/udma_camera:
-  commit: tags/pulpissimo-v1.0
+  commit: 224d333a78383b79b6ad37905eaa201e032e38af
+udma/udma_sdio:
+  commit: d68203e0e48651d9e259a28c00d145e57c2e8936
+  domain: [soc]
 hwpe-mac-engine:
   commit: f3dd56d
 
