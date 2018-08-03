@@ -20,6 +20,7 @@ module fc_subsystem #(
     parameter NB_HWPE_PORTS       = 4,
     parameter TB_RISCV            = 1
 )
+(
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
