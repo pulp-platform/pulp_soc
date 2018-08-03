@@ -18,6 +18,7 @@ module fc_subsystem #(
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
+    parameter PULP_SECURE         = 1,
     parameter TB_RISCV            = 1
 )
 (
@@ -151,7 +152,8 @@ module fc_subsystem #(
             .PULP_CLUSTER        ( 0                   ),
             .FPU                 ( USE_FPU             ),
             .SHARED_FP           ( 0                   ),
-            .SHARED_FP_DIVSQRT   ( 2                   )
+            .SHARED_FP_DIVSQRT   ( 2                   ),
+            .PULP_SECURE         ( PULP_SECURE         )
         ) lFC_CORE (
             .clk_i                 ( clk_i             ),
             .rst_ni                ( rst_ni            ),
@@ -221,7 +223,8 @@ module fc_subsystem #(
             .PULP_CLUSTER        ( 0                   ),
             .FPU                 ( USE_FPU             ),
             .SHARED_FP           ( 0                   ),
-            .SHARED_FP_DIVSQRT   ( 2                   )
+            .SHARED_FP_DIVSQRT   ( 2                   ),
+            .PULP_SECURE         ( PULP_SECURE         )
         ) lFC_CORE (
             .clk_i                 ( clk_i             ),
             .rst_ni                ( rst_ni            ),
