@@ -76,8 +76,7 @@ module fc_subsystem #(
     logic [31:0] core_data_addr, core_data_rdata, core_data_wdata;
     logic        core_data_req, core_data_gnt, core_data_rvalid;
     logic        core_data_we  ;
-    logic [ 3:0] core_data_be  ;
-
+    logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
 
     //DEBUG
@@ -318,7 +317,6 @@ module fc_subsystem #(
         .data_gnt_i            ( core_data_gnt     ),
         .data_wdata_o          ( core_data_wdata   ),
         .data_rvalid_i         ( core_data_rvalid  ),
-
         .irq_i                 ( core_irq_req      ),
         .irq_id_i              ( core_irq_id       ),
         .irq_ack_o             ( core_irq_ack      ),
