@@ -45,7 +45,7 @@ timer_unit:
 common_cells:
   commit: tags/pulpissimo-v1.0
 fpu:
-  commit: tags/pulpissimo-v1.0
+  commit: f42936c55aa8560f8b5ca4d953aca56ede637f2d
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
