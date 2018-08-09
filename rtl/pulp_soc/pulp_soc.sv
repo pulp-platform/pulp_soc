@@ -10,7 +10,7 @@
 
 
 `include "pulp_soc_defines.sv"
-`include "soc_bus_defines.sv"
+//`include "soc_bus_defines.sv"
 
 module pulp_soc #(
     parameter CORE_TYPE          = 0,
