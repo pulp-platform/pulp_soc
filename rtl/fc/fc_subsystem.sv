@@ -97,6 +97,7 @@ module fc_subsystem #(
     logic [ 2:0] priv;
     logic [31:0] iaddr;
     logic [31:0] instr;
+    logic        compressed;
 
     assign core_id_int       = 4'b0;
     assign cluster_id_int    = 6'b01_1111;
@@ -230,6 +231,7 @@ module fc_subsystem #(
         .priv_o                ( priv              ),
         .iaddr_o               ( iaddr             ),
         .instr_o               ( instr             ),
+        .compressed_o          ( compressed        ),
 
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
@@ -363,7 +365,8 @@ module fc_subsystem #(
         .tval_i       ( tval       ),
         .priv_i       ( priv       ),
         .iaddr_i      ( iaddr      ),
-        .instr_i      ( instr      )
+        .instr_i      ( instr      ),
+        .compressed_i ( compressed )
     );
 
 `ifndef SYNTHESIS
@@ -378,7 +381,8 @@ module fc_subsystem #(
         .tval_i       ( tval       ),
         .priv_i       ( priv       ),
         .iaddr_i      ( iaddr      ),
-        .instr_i      ( instr      )
+        .instr_i      ( instr      ),
+        .compressed_i ( compressed )
     );
 `endif
 
