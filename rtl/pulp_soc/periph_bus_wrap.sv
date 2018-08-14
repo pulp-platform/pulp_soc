@@ -48,49 +48,49 @@ module periph_bus_wrap #(
         .APB_DATA_WIDTH ( APB_DATA_WIDTH )
     ) s_slave ();
 
-    `APB_ASSIGN_SLAVE(s_slave, apb_slave);
+    `APB_ASSIGN_SLAVE(s_slave, apb_slave)
 
-    `APB_ASSIGN_MASTER(s_masters[0], fll_master);
+    `APB_ASSIGN_MASTER(s_masters[0], fll_master)
     assign s_start_addr[0] = `FLL_START_ADDR;
     assign s_end_addr[0]   = `FLL_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[1], gpio_master);
+    `APB_ASSIGN_MASTER(s_masters[1], gpio_master)
     assign s_start_addr[1] = `GPIO_START_ADDR;
     assign s_end_addr[1]   = `GPIO_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[2], udma_master);
+    `APB_ASSIGN_MASTER(s_masters[2], udma_master)
     assign s_start_addr[2] = `UDMA_START_ADDR;
     assign s_end_addr[2]   = `UDMA_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[3], soc_ctrl_master);
+    `APB_ASSIGN_MASTER(s_masters[3], soc_ctrl_master)
     assign s_start_addr[3] = `SOC_CTRL_START_ADDR;
     assign s_end_addr[3]   = `SOC_CTRL_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[4], adv_timer_master);
+    `APB_ASSIGN_MASTER(s_masters[4], adv_timer_master)
     assign s_start_addr[4] = `ADV_TIMER_START_ADDR;
     assign s_end_addr[4]   = `ADV_TIMER_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[5], soc_evnt_gen_master);
+    `APB_ASSIGN_MASTER(s_masters[5], soc_evnt_gen_master)
     assign s_start_addr[5] = `SOC_EVENT_GEN_START_ADDR;
     assign s_end_addr[5]   = `SOC_EVENT_GEN_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[6], eu_master);
+    `APB_ASSIGN_MASTER(s_masters[6], eu_master)
     assign s_start_addr[6] = `EU_START_ADDR;
     assign s_end_addr[6]   = `EU_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[7], timer_master);
+    `APB_ASSIGN_MASTER(s_masters[7], timer_master)
     assign s_start_addr[7] = `TIMER_START_ADDR;
     assign s_end_addr[7]   = `TIMER_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[8], hwpe_master);
+    `APB_ASSIGN_MASTER(s_masters[8], hwpe_master)
     assign s_start_addr[8] = `HWPE_START_ADDR;
     assign s_end_addr[8]   = `HWPE_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[9], stdout_master);
+    `APB_ASSIGN_MASTER(s_masters[9], stdout_master)
     assign s_start_addr[9] = `STDOUT_START_ADDR;
     assign s_end_addr[9]   = `STDOUT_END_ADDR;
 
-    `APB_ASSIGN_MASTER(s_masters[10], mmap_debug_master);
+    `APB_ASSIGN_MASTER(s_masters[10], mmap_debug_master)
     assign s_start_addr[10] = `DEBUG_START_ADDR;
     assign s_end_addr[10]   = `DEBUG_END_ADDR;
 
