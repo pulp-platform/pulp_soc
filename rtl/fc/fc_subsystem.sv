@@ -31,6 +31,7 @@ module fc_subsystem #(
     APB_BUS.Slave                     apb_slave_eu,
     APB_BUS.Slave                     apb_slave_debug,
     APB_BUS.Slave                     apb_slave_hwpe,
+    APB_BUS.Slave                     apb_slave_trdb,
 
     input  logic                      fetch_en_i,
     input  logic [31:0]               boot_addr_i,
@@ -40,6 +41,9 @@ module fc_subsystem #(
     input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i,
     input  logic [31:0]               events_i,
     output logic [1:0]                hwpe_events_o,
+
+    output logic [31:0]               trdb_packet_o,
+    output logic                      trdb_word_valid_o,
 
     output logic                      supervisor_mode_o
 );
@@ -89,15 +93,17 @@ module fc_subsystem #(
     logic [31:0] debug_rdata ;
 
     //Trace debugger
-    logic        ivalid;
-    logic        iexception;
-    logic        interrupt;
-    logic [ 4:0] cause;
-    logic [31:0] tval;
-    logic [ 2:0] priv;
-    logic [31:0] iaddr;
-    logic [31:0] instr;
-    logic        compressed;
+    logic        trdb_ivalid;
+    logic        trdb_iexception;
+    logic        trdb_interrupt;
+    logic [ 4:0] trdb_cause;
+    logic [31:0] trdb_tval;
+    logic [ 2:0] trdb_priv;
+    logic [31:0] trdb_iaddr;
+    logic [31:0] trdb_instr;
+    logic        trdb_compressed;
+    logic        trdb_packet_word;
+    logic        trdb_word_valid;
 
     assign core_id_int       = 4'b0;
     assign cluster_id_int    = 6'b01_1111;
@@ -223,15 +229,15 @@ module fc_subsystem #(
         .debug_halt_i          ( 1'b0              ),
         .debug_resume_i        ( 1'b0              ),
         // Trace Debugger Interface
-        .ivalid_o              ( ivalid            ),
-        .iexception_o          ( iexception        ),
-        .interrupt_o           ( interrupt         ),
-        .cause_o               ( cause             ),
-        .tval_o                ( tval              ),
-        .priv_o                ( priv              ),
-        .iaddr_o               ( iaddr             ),
-        .instr_o               ( instr             ),
-        .compressed_o          ( compressed        ),
+        .ivalid_o              ( trdb_ivalid       ),
+        .iexception_o          ( trdb_iexception   ),
+        .interrupt_o           ( trdb_interrupt    ),
+        .cause_o               ( trdb_cause        ),
+        .tval_o                ( trdb_tval         ),
+        .priv_o                ( trdb_priv         ),
+        .iaddr_o               ( trdb_iaddr        ),
+        .instr_o               ( trdb_instr        ),
+        .compressed_o          ( trdb_compressed   ),
 
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
@@ -356,33 +362,36 @@ module fc_subsystem #(
 
     // use clock gated cpu clock?
     trace_debugger trace_debugger_i (
-        .clk_i        ( clk_i      ),
-        .rst_ni       ( rst_ni     ),
-        .ivalid_i     ( ivalid     ),
-        .iexception_i ( iexception ),
-        .interrupt_i  ( interrupt  ),
-        .cause_i      ( cause      ),
-        .tval_i       ( tval       ),
-        .priv_i       ( priv       ),
-        .iaddr_i      ( iaddr      ),
-        .instr_i      ( instr      ),
-        .compressed_i ( compressed )
+        .clk_i               ( clk_i               ),
+        .rst_ni              ( rst_ni              ),
+        .ivalid_i            ( trdb_ivalid         ),
+        .iexception_i        ( trdb_iexception     ),
+        .interrupt_i         ( trdb_interrupt      ),
+        .cause_i             ( trdb_cause          ),
+        .tval_i              ( trdb_tval           ),
+        .priv_i              ( trdb_priv           ),
+        .iaddr_i             ( trdb_iaddr          ),
+        .instr_i             ( trdb_instr          ),
+        .compressed_i        ( trdb_compressed     ),
+        .apb_slave           ( apb_slave_trdb      ),
+        .packet_word_o       ( trdb_packet_o       ),
+        .packet_word_valid_o ( trdb_word_valid_o   )
     );
 
 `ifndef SYNTHESIS
     // we only need this to generate/capture stimuli
     trace_debugger_stimuli_gen trace_debugger_stimuli_gen_i (
-        .clk_i        ( clk_i      ),
-        .rst_ni       ( rst_ni     ),
-        .ivalid_i     ( ivalid     ),
-        .iexception_i ( iexception ),
-        .interrupt_i  ( interrupt  ),
-        .cause_i      ( cause      ),
-        .tval_i       ( tval       ),
-        .priv_i       ( priv       ),
-        .iaddr_i      ( iaddr      ),
-        .instr_i      ( instr      ),
-        .compressed_i ( compressed )
+        .clk_i        ( clk_i           ),
+        .rst_ni       ( rst_ni          ),
+        .ivalid_i     ( trdb_ivalid     ),
+        .iexception_i ( trdb_iexception ),
+        .interrupt_i  ( trdb_interrupt  ),
+        .cause_i      ( trdb_cause      ),
+        .tval_i       ( trdb_tval       ),
+        .priv_i       ( trdb_priv       ),
+        .iaddr_i      ( trdb_iaddr      ),
+        .instr_i      ( trdb_instr      ),
+        .compressed_i ( trdb_compressed )
     );
 `endif
 

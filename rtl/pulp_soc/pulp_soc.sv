@@ -287,11 +287,15 @@ module pulp_soc #(
 
     logic                  s_fc_fetchen;
 
+    logic [31:0]           trdb_packet;
+    logic                  trdb_word_valid;
+
     genvar                 i,j;
 
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
+    APB_BUS                s_apb_trdb_bus ();
     
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -477,6 +481,7 @@ module pulp_soc #(
         .apb_eu_master          ( s_apb_eu_bus           ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
+        .apb_trdb_master        ( s_apb_trdb_bus         ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
@@ -558,6 +563,9 @@ module pulp_soc #(
         .sddata_o               ( sdio_data_o            ),
         .sddata_i               ( sdio_data_i            ),
         .sddata_oen_o           ( sdio_data_oen_o        ),
+
+        .trdb_packet_i          ( trdb_packet            ),
+        .trdb_word_valid_i      ( trdb_word_valid        ),
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
@@ -644,12 +652,16 @@ module pulp_soc #(
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_debug     ( s_apb_debug_bus     ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
+        .apb_slave_trdb      ( s_apb_trdb_bus      ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
         .event_fifo_data_i   ( s_fc_event_data     ),
         .events_i            ( s_fc_events         ),
         .hwpe_events_o       ( s_fc_hwpe_events    ),
+
+        .trdb_packet_o       ( trdb_packet         ),
+        .trdb_word_valid_o   ( trdb_word_valid     ),
 
         .supervisor_mode_o   ( s_supervisor_mode   )
     );

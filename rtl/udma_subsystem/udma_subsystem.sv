@@ -111,8 +111,10 @@ module udma_subsystem
     output logic                       sdcmd_oen_o,
     output logic                 [3:0] sddata_o,
     input  logic                 [3:0] sddata_i,
-    output logic                 [3:0] sddata_oen_o
+    output logic                 [3:0] sddata_oen_o,
 
+    input logic [31:0]                 trdb_packet_i,
+    input logic                        trdb_word_valid_i
 );
     localparam N_I2S  = 1;
     localparam N_UART = 1;
@@ -137,7 +139,7 @@ module udma_subsystem
     localparam CH_ID_SDIO  = 2;
     localparam CH_ID_I2C0  = 3;
     localparam CH_ID_I2C1  = 4;
-    localparam CH_ID_I2S   = 5;
+    localparam CH_ID_I2S   = 5; //2*N_I2S
     localparam CH_ID_CAM   = 7;
     localparam CH_ID_TRACE = 8;
 
@@ -297,7 +299,7 @@ module udma_subsystem
                       };
 
     integer i;
-    // TODO: add tracer here
+
     assign s_periph_data_from = {
 			s_periph_data_from_tracer,
                         s_periph_data_from_cam,
@@ -309,7 +311,6 @@ module udma_subsystem
                         s_periph_data_from_uart
     };
 
-    // TODO: add tracer here
     assign s_periph_ready = {
 			s_periph_ready_from_tracer,
                         s_periph_ready_from_cam,
@@ -870,7 +871,10 @@ module udma_subsystem
         .data_rx_datasize_o  ( rx_ch_datasize[CH_ID_TRACE]       ),
         .data_rx_data_o      ( rx_ch_data[CH_ID_TRACE]           ),
         .data_rx_valid_o     ( rx_ch_valid[CH_ID_TRACE]          ),
-        .data_rx_ready_i     ( rx_ch_ready[CH_ID_TRACE]          )
+        .data_rx_ready_i     ( rx_ch_ready[CH_ID_TRACE]          ),
+
+        .trdb_packet_i       ( trdb_packet_i                     ),
+        .trdb_word_valid_i   ( trdb_word_valid_i                 )
     );
 
 endmodule

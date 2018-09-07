@@ -38,6 +38,7 @@ module soc_peripherals #(
     APB_BUS.Master                     apb_eu_master,
     APB_BUS.Master                     apb_debug_master,
     APB_BUS.Master                     apb_hwpe_master,
+    APB_BUS.Master                     apb_trdb_master,
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,
@@ -112,6 +113,9 @@ module soc_peripherals #(
     output logic                 [3:0] sddata_o,
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
+
+    input  logic [31:0]                trdb_packet_i,
+    input  logic                       trdb_word_valid_i,
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -283,6 +287,7 @@ module soc_peripherals #(
         .eu_master           ( apb_eu_master      ),
         .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
+        .trdb_master         ( apb_trdb_master    ),
         .timer_master        ( s_apb_timer_bus    ),
         .stdout_master       ( s_stdout_bus       )
     );
@@ -479,7 +484,10 @@ module soc_peripherals #(
         .i2c1_scl_oe      ( i2c1_scl_oe_o        ),
         .i2c1_sda_i       ( i2c1_sda_i           ),
         .i2c1_sda_o       ( i2c1_sda_o           ),
-        .i2c1_sda_oe      ( i2c1_sda_oe_o        )
+        .i2c1_sda_oe      ( i2c1_sda_oe_o        ),
+
+        .trdb_packet_i    ( trdb_packet_i        ),
+        .trdb_word_valid_i( trdb_word_valid_i    )
     );
 
 
