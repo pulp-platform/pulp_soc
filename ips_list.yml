@@ -43,13 +43,13 @@ axi/axi_slice_dc:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: tags/pulpissimo-v1.0
+  commit: 327c7f056d4bf1a635e770c044a3c9e99881c859
 fpu:
   commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
-  commit: tags/pulpissimo-v1.0.1
+  commit: trace_debugger_dev
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
