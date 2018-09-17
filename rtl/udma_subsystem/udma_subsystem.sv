@@ -113,8 +113,9 @@ module udma_subsystem
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
 
-    input logic [31:0]                 trdb_packet_i,
-    input logic                        trdb_word_valid_i
+    input  logic [31:0]                trdb_packet_i,
+    input  logic                       trdb_word_valid_i,
+    output logic                       trdb_stall_o
 );
     localparam N_I2S  = 1;
     localparam N_UART = 1;
@@ -874,7 +875,8 @@ module udma_subsystem
         .data_rx_ready_i     ( rx_ch_ready[CH_ID_TRACE]          ),
 
         .trdb_packet_i       ( trdb_packet_i                     ),
-        .trdb_word_valid_i   ( trdb_word_valid_i                 )
+        .trdb_word_valid_i   ( trdb_word_valid_i                 ),
+        .trdb_stall_o        ( trdb_stall_o                      )
     );
 
 endmodule

@@ -44,6 +44,7 @@ module fc_subsystem #(
 
     output logic [31:0]               trdb_packet_o,
     output logic                      trdb_word_valid_o,
+    input  logic                      trdb_stall_i,
 
     output logic                      supervisor_mode_o
 );
@@ -374,7 +375,8 @@ module fc_subsystem #(
         .compressed_i        ( trdb_compressed     ),
         .apb_slave           ( apb_slave_trdb      ),
         .packet_word_o       ( trdb_packet_o       ),
-        .packet_word_valid_o ( trdb_word_valid_o   )
+        .packet_word_valid_o ( trdb_word_valid_o   ),
+        .stall_i             ( trdb_stall_i        )
     );
 
 `ifndef SYNTHESIS

@@ -289,6 +289,7 @@ module pulp_soc #(
 
     logic [31:0]           trdb_packet;
     logic                  trdb_word_valid;
+    logic                  trdb_stall;
 
     genvar                 i,j;
 
@@ -566,6 +567,7 @@ module pulp_soc #(
 
         .trdb_packet_i          ( trdb_packet            ),
         .trdb_word_valid_i      ( trdb_word_valid        ),
+        .trdb_stall_o           ( trdb_stall             ),
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
@@ -662,6 +664,7 @@ module pulp_soc #(
 
         .trdb_packet_o       ( trdb_packet         ),
         .trdb_word_valid_o   ( trdb_word_valid     ),
+        .trdb_stall_i        ( trdb_stall          ),
 
         .supervisor_mode_o   ( s_supervisor_mode   )
     );

@@ -116,6 +116,7 @@ module soc_peripherals #(
 
     input  logic [31:0]                trdb_packet_i,
     input  logic                       trdb_word_valid_i,
+    output logic                       trdb_stall_o,
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -487,7 +488,8 @@ module soc_peripherals #(
         .i2c1_sda_oe      ( i2c1_sda_oe_o        ),
 
         .trdb_packet_i    ( trdb_packet_i        ),
-        .trdb_word_valid_i( trdb_word_valid_i    )
+        .trdb_word_valid_i( trdb_word_valid_i    ),
+        .trdb_stall_o     ( trdb_stall_o         )
     );
 
 
