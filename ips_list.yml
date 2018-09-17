@@ -59,7 +59,7 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_uart:
   commit: tags/pulpissimo-v1.0
 udma/udma_i2c:
