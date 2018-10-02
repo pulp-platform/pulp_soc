@@ -69,6 +69,10 @@ module soc_peripherals #(
     input  logic                       cam_vsync_i,
     output logic                       uart_tx,
     input  logic                       uart_rx,
+
+    output logic                       link_tx,
+    input  logic                       link_rx,
+
     input  logic                       i2c0_scl_i,
     output logic                       i2c0_scl_o,
     output logic                       i2c0_scl_oe_o,
@@ -139,7 +143,7 @@ module soc_peripherals #(
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
 
-    localparam UDMA_EVENTS = 29;
+    localparam UDMA_EVENTS = 32;
     localparam SOC_EVENTS  = 3 ;
 
     logic [31:0] s_gpio_sync;
@@ -151,6 +155,8 @@ module soc_peripherals #(
     logic       s_i2c_event       ;
     logic       s_i2s_event       ;
     logic       s_i2s_cam_event   ;
+
+    logic       s_link_event      ;
 
     logic [3:0] s_adv_timer_events;
     logic [1:0] s_fc_hp_events;
@@ -185,10 +191,10 @@ module soc_peripherals #(
     assign s_events[11] = s_udma_events[19];     //i2c1 tx       UDMA EVENT19
     assign s_events[12] = s_udma_events[24];     //i2s0 channels UDMA EVENT24
     assign s_events[13] = s_udma_events[25];     //i2s0 channels UDMA EVENT25
-    assign s_events[14] = s_udma_events[27];     //camera IF     UDMA EVENT27
+    assign s_events[14] = s_udma_events[1];     //camera IF     UDMA EVENT27
     assign s_events[15] = 1'b0;
-    assign s_events[16] = s_udma_events[1];      //TGEN events
-    assign s_events[17] = s_udma_events[0];      //TGEN events
+    assign s_events[16] = s_udma_events[27];      //TGEN events
+    assign s_events[17] = s_udma_events[26];      //TGEN events
     assign s_events[18] = s_udma_events[3];      //TGEN events
     assign s_events[19] = s_udma_events[2];      //TGEN events
     assign s_events[20] = s_udma_events[23];     //TGEN events
@@ -199,11 +205,11 @@ module soc_peripherals #(
     assign s_events[25] = s_udma_events[15];     //uart event            UDMA EVENT15
     assign s_events[26] = s_udma_events[18];     //i2c0 event            UDMA EVENT18
     assign s_events[27] = s_udma_events[21];     //i2c1 event            UDMA EVENT21
-    assign s_events[28] = s_udma_events[26];     //i2s event             UDMA EVENT26
+    assign s_events[28] = s_udma_events[0];     //i2s event             UDMA EVENT26
     assign s_events[29] = s_udma_events[28];     //camera event          UDMA EVENT28
-    assign s_events[30] = 1'b0;
-    assign s_events[31] = 1'b0;
-    assign s_events[32] = 1'b0;
+    assign s_events[30] = 1'b0;     //link tx event
+    assign s_events[31] = 1'b0;    //link rx event
+    assign s_events[32] = 1'b0;    //link event     
     assign s_events[33] = 1'b0;
     assign s_events[34] = 1'b0;
     assign s_events[35] = 1'b0;
@@ -467,6 +473,10 @@ module soc_peripherals #(
 
         .uart_rx          ( uart_rx              ),
         .uart_tx          ( uart_tx              ),
+
+        .link_rx          ( link_rx              ),
+        .link_tx          ( link_tx              ),
+
 
         .i2c0_scl_i       ( i2c0_scl_i           ),
         .i2c0_scl_o       ( i2c0_scl_o           ),

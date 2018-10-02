@@ -344,23 +344,19 @@ module soc_interconnect #(
     assign rom_csn_o                     = ~PER_data_req_TO_BRIDGE[2];
     assign rom_add_o                     = PER_data_add_TO_BRIDGE[2];
     assign PER_data_r_rdata_TO_BRIDGE[2] = rom_rdata_i;
-    
-    assign PER_data_gnt_TO_BRIDGE[2]     = 1'b1;
-    assign PER_data_r_opc_TO_BRIDGE[2]   = 1'b0;
+
+    assign PER_data_gnt_TO_BRIDGE[2] = 1'b1;
     always_ff @(posedge clk or negedge rst_n)
     begin : proc_
-       if(~rst_n)
-       begin
-           PER_data_r_valid_TO_BRIDGE[2] <= '0;
-           PER_data_r_ID_TO_BRIDGE[2]    <= '0;
-           PER_data_r_aux_TO_BRIDGE[2]   <= '0;
-       end
-       else
-       begin
-           PER_data_r_ID_TO_BRIDGE[2]    <= PER_data_ID_TO_BRIDGE[2];
-           PER_data_r_valid_TO_BRIDGE[2] <= PER_data_req_TO_BRIDGE[2];
-           PER_data_r_aux_TO_BRIDGE[2]   <= PER_data_aux_TO_BRIDGE[2];
-       end
+        if(~rst_n) begin
+            PER_data_r_valid_TO_BRIDGE[2] <= '0;
+        end
+        else begin
+            PER_data_r_ID_TO_BRIDGE[2]    <= PER_data_ID_TO_BRIDGE[2];
+            PER_data_r_valid_TO_BRIDGE[2] <= PER_data_req_TO_BRIDGE[2];
+            PER_data_r_aux_TO_BRIDGE[2]   <= PER_data_aux_TO_BRIDGE[2];
+            PER_data_r_opc_TO_BRIDGE[2]   <= 1'b0;
+        end
     end
 
     genvar k;

@@ -39,19 +39,19 @@ axi/axi_node:
 axi/axi_slice:
   commit: tags/pulpissimo-v1.0
 axi/axi_slice_dc:
-  commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
+  commit: tags/pulpissimo-v1.0
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
   commit: tags/pulpissimo-v1.0
 fpu:
-  commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
+  commit: tags/pulpissimo-v1.0
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
-  commit: tags/pulpissimo-v1.0.1
+  commit: tags/pulpissimo-v1.0
 zero-riscy:
-  commit: tags/pulpissimo-v1.0.1
+  commit: d4d46971ebd5e0a637d2d182af675e7c43078885
 scm:
   commit: tags/pulpissimo-v1.0
 generic_FLL:
@@ -59,7 +59,7 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0.1
+  commit: tags/pulpissimo-v1.0
 udma/udma_uart:
   commit: tags/pulpissimo-v1.0
 udma/udma_i2c:
@@ -73,5 +73,5 @@ udma/udma_sdio:
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
-  commit: f1d0b72
+  commit: f3dd56d
 

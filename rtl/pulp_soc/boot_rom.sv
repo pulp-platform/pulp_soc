@@ -34,8 +34,6 @@ module boot_rom #(
             .Q              (  mem_slave.rdata      )
         );
 
-        assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
-   
     `else
 
         logic rsta;

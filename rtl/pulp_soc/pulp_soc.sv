@@ -164,6 +164,10 @@ module pulp_soc #(
     output logic [191:0]                  gpio_cfg_o,
     output logic                          uart_tx_o,
     input  logic                          uart_rx_i,
+    
+    output logic                          link_tx_o,
+    input  logic                          link_rx_i,
+
     input  logic                          cam_clk_i,
     input  logic [7:0]                    cam_data_i,
     input  logic                          cam_hsync_i,
@@ -220,6 +224,7 @@ module pulp_soc #(
     ///////////////////////////////////////////////////
     input  logic                          jtag_tck_i,                  //shifted in the PULP_CHIP
     input  logic                          jtag_trst_ni,                //shifted in the PULP_CHIP
+    input  logic                          jtag_tms_i,                  //shifted in the PULP_CHIP
     input  logic                          jtag_axireg_tdi_i,           //shifted in the PULP_CHIP
     output logic                          jtag_axireg_tdo_o,           //shifted in the PULP_CHIP
     input  logic                          jtag_axireg_sel_i,           //shifted in the PULP_CHIP
@@ -505,6 +510,9 @@ module pulp_soc #(
 
         .uart_tx                ( uart_tx_o              ),
         .uart_rx                ( uart_rx_i              ),
+
+        .link_tx                ( link_tx_o              ),
+        .link_rx                ( link_rx_i              ),
 
         .cam_clk_i              ( cam_clk_i              ),
         .cam_data_i             ( cam_data_i             ),
