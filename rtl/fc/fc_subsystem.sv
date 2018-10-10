@@ -364,6 +364,7 @@ module fc_subsystem #(
     trace_debugger trace_debugger_i (
         .clk_i               ( clk_i               ),
         .rst_ni              ( rst_ni              ),
+        .test_mode_i         ( test_en_i           ),
         .ivalid_i            ( trdb_ivalid         ),
         .iexception_i        ( trdb_iexception     ),
         .interrupt_i         ( trdb_interrupt      ),
