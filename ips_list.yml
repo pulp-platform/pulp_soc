@@ -46,8 +46,6 @@ common_cells:
   commit: tags/pulpissimo-v1.0
 fpu:
   commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
-fpnew:
-  commit: vega_1.0.2
 fpu_div_sqrt_mvp:
   commit: master_1.0.0
 jtag_pulp:
