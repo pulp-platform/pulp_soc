@@ -49,7 +49,7 @@ fpu:
 fpu_div_sqrt_mvp:
   commit: master_1.0.0
 fpnew:
-  commit: master
+  commit: tags/vega_1.0.2
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
