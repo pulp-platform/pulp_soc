@@ -59,7 +59,7 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0.1
+  commit: tags/pulpissimo-v1.0.2
 udma/udma_uart:
   commit: tags/pulpissimo-v1.0
 udma/udma_i2c:
@@ -69,7 +69,7 @@ udma/udma_i2s:
 udma/udma_qspi:
   commit: tags/pulpissimo-v1.0
 udma/udma_sdio:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
