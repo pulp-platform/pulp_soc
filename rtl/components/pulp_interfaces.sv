@@ -1342,51 +1342,53 @@ endinterface // CORE_PREF_BUS
 /// apu_template.sv for an example as how to create a module that implements the
 /// interface.
 interface marx_apu_if #(
-												parameter WOP      = 1,
-												parameter NARGS    = 2,
-												parameter NUSFLAGS = 1,
-												parameter NDSFLAGS = 1,
-                        parameter WAPUTAG  = 2,
-                        parameter WRESULT  = 32,
-                        parameter WARG     = 32
+	parameter WOP      = 1,
+        parameter NARGS    = 2,
+	parameter NUSFLAGS = 1,
+	parameter NDSFLAGS = 1,
+        parameter WAPUTAG  = 2,
+        parameter WRESULT  = 32,
+        parameter WARG     = 32
 												);
+	// Downstream
+	logic valid_ds_s;
+	logic ready_ds_s;
 
-	 // Downstream
-	 logic valid_ds_s;
-	 logic ready_ds_s;
+	logic [NARGS-1:0][WARG-1:0] operands_ds_d;
+	logic [WOP-1:0]             op_ds_d;
+	logic [NDSFLAGS-1:0]        flags_ds_d;
+	logic [WAPUTAG-1:0]         tag_ds_d;
 
-	 logic [WARG-1:0]            operands_ds_d [NARGS-1:0];
-	 logic [WOP-1:0]             op_ds_d;
-	 logic [NDSFLAGS-1:0]        flags_ds_d;
-	 logic [WAPUTAG-1:0]         tag_ds_d;
+	// Upstream
+	logic                       req_us_s;
+	logic                       ack_us_s;
 
-	 // Upstream
-	 logic                       req_us_s;
-	 logic                       ack_us_s;
+	logic [WRESULT-1:0]         result_us_d;
+	logic [NUSFLAGS-1:0]        flags_us_d;
+	logic [WAPUTAG-1:0]         tag_us_d;
 
-	 logic [WRESULT-1:0]         result_us_d;
-	 logic [NUSFLAGS-1:0]        flags_us_d;
-	 logic [WAPUTAG-1:0]         tag_us_d;
-
-	 // The interface from the APU's perspective.
-	 modport apu (
-		            input  valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
-		            output ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
+	// The interface from the APU's perspective.
+	modport apu (
+	            input  valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
+	            output ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
 	              );
 
-	 // The interface from interconnect's perspective.
-	 modport marx (
-		             output valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
-		             input  ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
+	// The interface from interconnect's perspective.
+	modport marx (
+	             output valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
+	             input  ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
 	               );
 
 endinterface // marx_apu_if
 
+
+
 // Interface between arbiter and fp-interconnect
 interface marx_arbiter_if #(
-		                        parameter NIN = -1, // number of request inputs
-		                        parameter NOUT = -1, // number of allocatable resources
-		                        parameter NIN2 = $clog2(NIN)
+			    
+	 parameter NIN = -1, // number of request inputs
+	 parameter NOUT = -1, // number of allocatable resources
+	 parameter NIN2 = $clog2(NIN)
 	                          );
 
 	 // Allocation request handshake.
@@ -1416,13 +1418,13 @@ endinterface // marx_arbiter_if
 /// The interface between the Marx interconnect and the cores. The interconnect
 /// shall instantiate the "marx" modport.
 interface cpu_marx_if #(
-												parameter WOP_CPU      = 0,
-												parameter WAPUTYPE     = 0,
-												parameter NUSFLAGS_CPU = 1,
-												parameter NDSFLAGS_CPU = 1,
-                        parameter WRESULT      = 32,
-                        parameter WARG         = 32,
-                        parameter NARGS_CPU    = 3
+	parameter WOP_CPU      = 0,
+	parameter WAPUTYPE     = 0,
+	parameter NUSFLAGS_CPU = 1,
+	parameter NDSFLAGS_CPU = 1,
+        parameter WRESULT      = 32,
+        parameter WARG         = 32,
+        parameter NARGS_CPU    = 3
 												);
 
 	 // Downstream
@@ -1431,7 +1433,7 @@ interface cpu_marx_if #(
 
 	 logic [WAPUTYPE-1:0]             type_ds_d;
 
-	 logic [WARG-1:0]                 operands_ds_d [NARGS_CPU-1:0];
+         logic [NARGS_CPU-1:0][WARG-1:0]  operands_ds_d;
 	 logic [WOP_CPU-1:0]              op_ds_d;
 	 logic [NDSFLAGS_CPU-1:0]         flags_ds_d;
 

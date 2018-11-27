@@ -51,7 +51,7 @@ fpu_div_sqrt_mvp:
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
-  commit: tags/vega_v1.0.7
+  commit: tags/pulpissimo-v1.0
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
