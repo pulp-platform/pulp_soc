@@ -1353,7 +1353,6 @@ interface marx_apu_if #(
 	// Downstream
 	logic valid_ds_s;
 	logic ready_ds_s;
-
 	logic [NARGS-1:0][WARG-1:0] operands_ds_d;
 	logic [WOP-1:0]             op_ds_d;
 	logic [NDSFLAGS-1:0]        flags_ds_d;
@@ -1362,7 +1361,6 @@ interface marx_apu_if #(
 	// Upstream
 	logic                       req_us_s;
 	logic                       ack_us_s;
-
 	logic [WRESULT-1:0]         result_us_d;
 	logic [NUSFLAGS-1:0]        flags_us_d;
 	logic [WAPUTAG-1:0]         tag_us_d;
@@ -1427,20 +1425,18 @@ interface cpu_marx_if #(
         parameter NARGS_CPU    = 3
 												);
 
-	 // Downstream
+	 // Downstream (request channel)
 	 logic                            req_ds_s;
 	 logic                            ack_ds_s;
 
 	 logic [WAPUTYPE-1:0]             type_ds_d;
-
          logic [NARGS_CPU-1:0][WARG-1:0]  operands_ds_d;
 	 logic [WOP_CPU-1:0]              op_ds_d;
 	 logic [NDSFLAGS_CPU-1:0]         flags_ds_d;
 
-	 // Upstream
+	 // Upstream (response channel)
 	 logic                            valid_us_s;
 	 logic                            ready_us_s;
-
 	 logic [WRESULT-1:0]              result_us_d;
 	 logic [NUSFLAGS_CPU-1:0]         flags_us_d;
 
