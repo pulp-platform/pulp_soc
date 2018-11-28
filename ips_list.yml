@@ -61,9 +61,9 @@ tech_cells_generic:
 udma/udma_core:
   commit: tags/pulpissimo-v1.0.2
 udma/udma_uart:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_i2c:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_i2s:
   commit: tags/pulpissimo-v1.0
 udma/udma_qspi:
