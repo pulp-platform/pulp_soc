@@ -63,7 +63,7 @@ udma/udma_core:
 udma/udma_uart:
   commit: tags/pulpissimo-v1.0.1
 udma/udma_i2c:
-  commit: tags/pulpissimo-v1.0.1
+  commit: tags/pulpissimo-v1.0.2
 udma/udma_i2s:
   commit: tags/pulpissimo-v1.0
 udma/udma_qspi:
