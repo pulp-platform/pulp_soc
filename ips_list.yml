@@ -45,7 +45,7 @@ timer_unit:
 common_cells:
   commit: tags/pulpissimo-v1.0
 fpu:
-  commit: tags/pulpissimo-v1.0
+  commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
@@ -59,17 +59,17 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.2
 udma/udma_uart:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_i2c:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.2
 udma/udma_i2s:
   commit: tags/pulpissimo-v1.0
 udma/udma_qspi:
   commit: tags/pulpissimo-v1.0
 udma/udma_sdio:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/pulpissimo-v1.0.1
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
