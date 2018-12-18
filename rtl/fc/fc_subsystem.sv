@@ -201,15 +201,7 @@ module fc_subsystem #(
         .sec_lvl_o             (                   ),
 
         .debug_req_i           ( debug_req         ),
-        .debug_gnt_o           ( debug_gnt         ),
-        .debug_rvalid_o        ( debug_rvalid      ),
-        .debug_addr_i          ( debug_addr        ),
-        .debug_we_i            ( debug_we          ),
-        .debug_wdata_i         ( debug_wdata       ),
-        .debug_rdata_o         ( debug_rdata       ),
-        .debug_halted_o        (                   ),
-        .debug_halt_i          ( 1'b0              ),
-        .debug_resume_i        ( 1'b0              ),
+ 
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
         .ext_perf_counters_i   ( perf_counters_int ),
@@ -254,15 +246,7 @@ module fc_subsystem #(
         .irq_id_o              ( core_irq_ack_id   ),
 	
         .debug_req_i           ( debug_req         ),
-        .debug_gnt_o           ( debug_gnt         ),
-        .debug_rvalid_o        ( debug_rvalid      ),
-        .debug_addr_i          ( debug_addr        ),
-        .debug_we_i            ( debug_we          ),
-        .debug_wdata_i         ( debug_wdata       ),
-        .debug_rdata_o         ( debug_rdata       ),
-        .debug_halted_o        (                   ),
-        .debug_halt_i          ( 1'b0              ),
-        .debug_resume_i        ( 1'b0              ),
+
         .fetch_enable_i        ( fetch_en_int      ),
         .ext_perf_counters_i   ( perf_counters_int )
     );
