@@ -17,8 +17,11 @@ module fc_subsystem #(
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
-    parameter NB_HWPE_PORTS       = 4
-) (
+    parameter NB_HWPE_PORTS       = 4,
+    parameter PULP_SECURE         = 1,
+    parameter TB_RISCV            = 1
+)
+(
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
@@ -75,7 +78,6 @@ module fc_subsystem #(
     logic        core_data_req, core_data_gnt, core_data_rvalid;
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
-    
     logic is_scm_instr_req, is_scm_data_req;
 
     //DEBUG
@@ -144,9 +146,9 @@ module fc_subsystem #(
     //********************************************************
     generate
     if ( USE_ZERORISCY == 0) begin: FC_CORE
-
     riscv_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
+        .PULP_SECURE         ( 1                   ),
         .PULP_CLUSTER        ( 0                   ),
         .FPU                 ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
@@ -176,7 +178,6 @@ module fc_subsystem #(
         .data_gnt_i            ( core_data_gnt     ),
         .data_wdata_o          ( core_data_wdata   ),
         .data_rvalid_i         ( core_data_rvalid  ),
-        //.data_err_i            ( '0                ),
 
         // apu-interconnect
         // handshake signals
@@ -201,14 +202,13 @@ module fc_subsystem #(
         .sec_lvl_o             (                   ),
 
         .debug_req_i           ( debug_req         ),
- 
+
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
         .ext_perf_counters_i   ( perf_counters_int ),
         .fregfile_disable_i    ( 1'b0              ) // try me!
     );
     end else begin: FC_CORE
-
     zeroriscy_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
         .RV32E               ( ZERORISCY_RV32E     ),
@@ -238,13 +238,12 @@ module fc_subsystem #(
         .data_gnt_i            ( core_data_gnt     ),
         .data_wdata_o          ( core_data_wdata   ),
         .data_rvalid_i         ( core_data_rvalid  ),
-        //.data_err_i            ( '0                ),
-	
+
         .irq_i                 ( core_irq_req      ),
         .irq_id_i              ( core_irq_id       ),
         .irq_ack_o             ( core_irq_ack      ),
         .irq_id_o              ( core_irq_ack_id   ),
-	
+
         .debug_req_i           ( debug_req         ),
 
         .fetch_enable_i        ( fetch_en_int      ),
