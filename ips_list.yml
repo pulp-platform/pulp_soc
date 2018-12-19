@@ -49,7 +49,7 @@ fpu:
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
-  commit: MPU_branch
+  commit: tags/pulpissimo-v2.0.0
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
