@@ -73,5 +73,5 @@ udma/udma_sdio:
 udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
-  commit: f1d0b72
+  commit: 63a5af0
 
