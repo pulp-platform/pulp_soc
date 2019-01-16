@@ -34,12 +34,8 @@ apb/apb_node:
   commit: tags/pulpissimo-v1.0
 apb_interrupt_cntrl:
   commit: tags/pulpissimo-v1.0
-axi/axi_node:
-  commit: tags/pulpissimo-v1.0
-axi/axi_slice:
-  commit: tags/pulpissimo-v1.0
 axi/axi_slice_dc:
-  commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
+  commit: e5db7e25dd9afefb764e39cd730806a4289d1846
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
