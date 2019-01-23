@@ -47,7 +47,7 @@ timer_unit:
 fpu:
   commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
 fpu_div_sqrt_mvp:
-  commit: master_1.0.0
+  commit: master
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
