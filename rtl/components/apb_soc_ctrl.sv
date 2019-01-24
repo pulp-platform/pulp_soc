@@ -166,7 +166,7 @@ module apb_soc_ctrl
         r_jtag_regi_sync[0]    <= 'h0;
         r_jtag_regi_sync[1]    <= 'h0;
         r_jtag_rego            <= 'h0;
-        r_bootaddr             <= 32'h1A000000;
+        r_bootaddr             <= 32'h1A000080;
         r_fetchen              <= 'h1;
         r_cluster_pow          <= 1'b0;
         r_cluster_byp          <= 1'b1;
