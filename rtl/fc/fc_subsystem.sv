@@ -176,7 +176,7 @@ module fc_subsystem #(
         .data_gnt_i            ( core_data_gnt     ),
         .data_wdata_o          ( core_data_wdata   ),
         .data_rvalid_i         ( core_data_rvalid  ),
-        .data_err_i            ( '0                ),
+        //.data_err_i            ( '0                ),
 
         // apu-interconnect
         // handshake signals
