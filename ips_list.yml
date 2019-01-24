@@ -50,6 +50,8 @@ fpu:
 #  commit: master
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
+fpnew:
+  commit: tags/vega_v1.0.10
 riscv:
   commit: fp_integration
 zero-riscy:
