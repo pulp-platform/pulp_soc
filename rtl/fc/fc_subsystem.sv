@@ -182,14 +182,14 @@ module fc_subsystem #(
         // handshake signals
         .apu_master_req_o      (                   ),
         .apu_master_ready_o    (                   ),
-        .apu_master_gnt_i      ( 1'b1              ),
+        .apu_master_gnt_i      ( 1'b0              ),
         // request channel
         .apu_master_operands_o (                   ),
         .apu_master_op_o       (                   ),
         .apu_master_type_o     (                   ),
         .apu_master_flags_o    (                   ),
         // response channel
-        .apu_master_valid_i    ( '0                ),
+        .apu_master_valid_i    ( 1'b0              ),
         .apu_master_result_i   ( '0                ),
         .apu_master_flags_i    ( '0                ),
 
