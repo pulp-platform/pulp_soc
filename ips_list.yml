@@ -51,7 +51,8 @@ fpu_div_sqrt_mvp:
   commit: master
   domain: [cluster,soc]
 fpnew:
-  commit: tags/vega_v1.0.10
+  commit: fpu_integration2
+ # commit: tags/vega_v1.0.10
 riscv:
   commit: fp_integration
 zero-riscy:
