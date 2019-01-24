@@ -34,11 +34,11 @@ module fc_subsystem #(
     UNICAD_MEM_BUS_32.Master          scm_l2_instr_master,
 `endif
     APB_BUS.Slave                     apb_slave_eu,
-    APB_BUS.Slave                     apb_slave_debug,
     APB_BUS.Slave                     apb_slave_hwpe,
 
     input  logic                      fetch_en_i,
     input  logic [31:0]               boot_addr_i,
+    input  logic                      debug_req_i,
 
     input  logic                      event_fifo_valid_i,
     output logic                      event_fifo_fulln_o,
@@ -81,15 +81,6 @@ module fc_subsystem #(
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
-
-    //DEBUG
-    logic        debug_req   ;
-    logic [14:0] debug_addr  ;
-    logic        debug_we    ;
-    logic [31:0] debug_wdata ;
-    logic        debug_gnt   ;
-    logic        debug_rvalid;
-    logic [31:0] debug_rdata ;
 
     assign core_id_int       = 4'b0;
     assign cluster_id_int    = 6'b01_1111;
@@ -150,8 +141,8 @@ module fc_subsystem #(
     assign l2_data_master.wdata  = core_data_wdata;
     assign l2_data_master.be     = core_data_be;
     assign core_data_gnt         = l2_data_master.gnt;
-    assign core_data_rvalid      = l2_data_master.r_rdata;
-    assign core_data_rdata       = l2_data_master.r_valid;
+    assign core_data_rvalid      = l2_data_master.r_valid;
+    assign core_data_rdata       = l2_data_master.r_rdata;
 
 
     assign l2_instr_master.req   = core_instr_req;
@@ -160,8 +151,8 @@ module fc_subsystem #(
     assign l2_instr_master.wdata = '0;
     assign l2_instr_master.be    = 4'b1111;
     assign core_instr_gnt        = l2_instr_master.gnt;
-    assign core_instr_rvalid     = l2_instr_master.r_rdata;
-    assign core_instr_rdata      = l2_instr_master.r_valid;
+    assign core_instr_rvalid     = l2_instr_master.r_valid;
+    assign core_instr_rdata      = l2_instr_master.r_rdata;
 
 
 `endif
@@ -226,7 +217,7 @@ module fc_subsystem #(
         .irq_sec_i             ( 1'b0              ),
         .sec_lvl_o             (                   ),
 
-        .debug_req_i           ( debug_req         ),
+        .debug_req_i           ( debug_req_i       ),
 
         .fetch_enable_i        ( fetch_en_int      ),
         .core_busy_o           (                   ),
@@ -269,7 +260,7 @@ module fc_subsystem #(
         .irq_ack_o             ( core_irq_ack      ),
         .irq_id_o              ( core_irq_ack_id   ),
 
-        .debug_req_i           ( debug_req         ),
+        .debug_req_i           ( debug_req_i       ),
 
         .fetch_enable_i        ( fetch_en_int      ),
         .ext_perf_counters_i   ( perf_counters_int )
@@ -298,33 +289,6 @@ module fc_subsystem #(
         .apb_slave          ( apb_slave_eu       )
     );
 
-    apb2per #(
-        .PER_ADDR_WIDTH ( 15  ),
-        .APB_ADDR_WIDTH ( 32  )
-    ) apb2per_debug_i (
-        .clk_i                ( clk_i                   ),
-        .rst_ni               ( rst_ni                  ),
-
-        .PADDR                ( apb_slave_debug.paddr   ),
-        .PWDATA               ( apb_slave_debug.pwdata  ),
-        .PWRITE               ( apb_slave_debug.pwrite  ),
-        .PSEL                 ( apb_slave_debug.psel    ),
-        .PENABLE              ( apb_slave_debug.penable ),
-        .PRDATA               ( apb_slave_debug.prdata  ),
-        .PREADY               ( apb_slave_debug.pready  ),
-        .PSLVERR              ( apb_slave_debug.pslverr ),
-
-        .per_master_req_o     ( debug_req               ),
-        .per_master_add_o     ( debug_addr              ),
-        .per_master_we_o      ( debug_we                ),
-        .per_master_wdata_o   ( debug_wdata             ),
-        .per_master_be_o      (                         ),
-        .per_master_gnt_i     ( debug_gnt               ),
-
-        .per_master_r_valid_i ( debug_rvalid            ),
-        .per_master_r_opc_i   ( '0                      ),
-        .per_master_r_rdata_i ( debug_rdata             )
-    );
 
     fc_hwpe #(
         .N_MASTER_PORT ( NB_HWPE_PORTS ),

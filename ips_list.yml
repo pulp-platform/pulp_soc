@@ -76,6 +76,6 @@ udma/udma_camera:
   commit: tags/pulpissimo-v1.0
 hwpe-mac-engine:
   commit: f1d0b72
-pulp_riscv_dbg:
-  commit: master
+riscv-dbg:
+  commit: 8e5cc7ffc6211a9376d9bbf83e4e98f3ae9ca5f3
 

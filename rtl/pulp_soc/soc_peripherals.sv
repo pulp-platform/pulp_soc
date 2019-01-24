@@ -36,7 +36,6 @@ module soc_peripherals #(
     // APB SLAVE PORT
     APB_BUS.Slave                      apb_slave,
     APB_BUS.Master                     apb_eu_master,
-    APB_BUS.Master                     apb_debug_master,
     APB_BUS.Master                     apb_hwpe_master,
 
     // FABRIC CONTROLLER MASTER REFILL PORT
@@ -48,6 +47,16 @@ module soc_peripherals #(
     FLL_BUS.Master                     per_fll_master,
     // MASTER PORT TO CLUSTER FLL
     FLL_BUS.Master                     cluster_fll_master,
+/*
+    input  logic                       jtag_req_valid_i,
+    output logic                       debug_req_ready_o,
+    input  logic                       jtag_resp_ready_i,
+    output logic                       jtag_resp_valid_o,
+    input  dm::dmi_req_t               jtag_dmi_req_i,
+    output dm::dmi_resp_t              debug_resp_o,
+    output logic                       ndmreset_o,
+    output logic                       dm_debug_req_o,
+*/
     input  logic                       dma_pe_evt_i,
     input  logic                       dma_pe_irq_i,
     input  logic                       pf_evt_i,
@@ -105,7 +114,7 @@ module soc_peripherals #(
     input  logic                       spi_master0_sdi1,
     input  logic                       spi_master0_sdi2,
     input  logic                       spi_master0_sdi3,
-    output logic                       sdclk_o,           
+    output logic                       sdclk_o,
     output logic                       sdcmd_o,
     input  logic                       sdcmd_i,
     output logic                       sdcmd_oen_o,
@@ -138,6 +147,7 @@ module soc_peripherals #(
     APB_BUS s_soc_evnt_gen_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
+    APB_BUS s_apb_debug_bus ();
 
     localparam UDMA_EVENTS = 29;
     localparam SOC_EVENTS  = 3 ;
@@ -282,7 +292,7 @@ module soc_peripherals #(
         .adv_timer_master    ( s_adv_timer_bus    ),
         .soc_evnt_gen_master ( s_soc_evnt_gen_bus ),
         .eu_master           ( apb_eu_master      ),
-        .mmap_debug_master   ( apb_debug_master   ),
+        .mmap_debug_master   ( s_apb_debug_bus    ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
         .stdout_master       ( s_stdout_bus       )
@@ -441,7 +451,7 @@ module soc_peripherals #(
         .spi0_sdi2        ( spi_master0_sdi2     ),
         .spi0_sdi3        ( spi_master0_sdi3     ),
 
-        .sdclk_o          ( sdclk_o              ),           
+        .sdclk_o          ( sdclk_o              ),
         .sdcmd_o          ( sdcmd_o              ),
         .sdcmd_i          ( sdcmd_i              ),
         .sdcmd_oen_o      ( sdcmd_oen_o          ),
@@ -621,6 +631,30 @@ module soc_peripherals #(
         .irq_hi_o   ( s_timer_hi_event        ),
         .busy_o     (                         )
     );
+/*
+    //  RISC-V DEBUG MODULE
+    dm_top #(
+        // current implementation only supports 1 hart
+        .NrHarts              ( 1                    )
+    ) i_dm_top (
 
+        .clk_i                ( clk_i                ),
+        .rst_ni               ( rst_ni               ), // PoR
+        .testmode_i           ( 1'b0                 ),
+        .ndmreset_o           ( ndmreset_o           ),
+        .dmactive_o           (                      ), // active debug session
+        .debug_req_o          ( dm_debug_req_o       ),
+        .unavailable_i        ( '0                   ),
+        .apb_s_bus            ( apb_debug_master     ),
+        .apb_m_bus            ( apb_debug_slave      ),
+        .dmi_rst_ni           ( rst_ni               ),
+        .dmi_req_valid_i      ( jtag_req_valid_i     ),
+        .dmi_req_ready_o      ( debug_req_ready_o    ),
+        .dmi_req_i            ( jtag_dmi_req_i       ),
+        .dmi_resp_valid_o     ( jtag_resp_valid_o    ),
+        .dmi_resp_ready_i     ( jtag_resp_ready_i    ),
+        .dmi_resp_o           ( debug_resp_o         )
+    );
+*/
 
 endmodule

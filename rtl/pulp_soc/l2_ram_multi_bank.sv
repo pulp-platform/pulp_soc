@@ -22,7 +22,7 @@ module l2_ram_multi_bank #(
    input logic             test_mode_i,
    UNICAD_MEM_BUS_32.Slave mem_slave[NB_BANKS-1:0],
    UNICAD_MEM_BUS_32.Slave mem_pri_slave[NB_BANKS_PRI-1:0]
-`ifndef QUENTIN_SCM
+`ifdef QUENTIN_SCM
    ,
    UNICAD_MEM_BUS_32.Slave scm_data_slave,
    UNICAD_MEM_BUS_32.Slave scm_instr_slave

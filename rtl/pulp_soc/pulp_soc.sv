@@ -287,10 +287,12 @@ module pulp_soc #(
 
     logic                  s_fc_fetchen;
 
+    logic                  ndmreset;
+    logic                  dm_debug_req = 1'b0;
+
     genvar                 i,j;
 
     APB_BUS                s_apb_eu_bus ();
-    APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
 
     AXI_BUS_ASYNC #(
@@ -342,10 +344,10 @@ module pulp_soc #(
 
     UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
     UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-
+`ifdef QUENTIN_SCM
     UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
     UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
-
+`endif
     XBAR_TCDM_BUS s_lint_debug_bus ();
     XBAR_TCDM_BUS s_lint_jtag_bus ();
     XBAR_TCDM_BUS s_lint_udma_tx_bus ();
@@ -477,7 +479,6 @@ module pulp_soc #(
         .apb_slave              ( s_apb_periph_bus       ),
 
         .apb_eu_master          ( s_apb_eu_bus           ),
-        .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
@@ -496,7 +497,16 @@ module pulp_soc #(
         .soc_fll_master         ( s_soc_fll_master       ),
         .per_fll_master         ( s_per_fll_master       ),
         .cluster_fll_master     ( s_cluster_fll_master   ),
-
+/*
+        .jtag_req_valid_i       ( jtag_req_valid_i       ),
+        .debug_req_ready_o      ( debug_req_ready_o      ),
+        .jtag_resp_ready_i      ( jtag_resp_ready_i      ),
+        .jtag_resp_valid_o      ( jtag_resp_valid_o      ),
+        .jtag_dmi_req_i         ( jtag_dmi_req_i         ),
+        .debug_resp_o           ( debug_resp_o           ),
+        .ndmreset_o             ( ndmreset               ),
+        .dm_debug_req_o         ( dm_debug_req           ),
+*/
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
@@ -644,8 +654,8 @@ module pulp_soc #(
         .scm_l2_instr_master ( s_scm_l2_instr_bus  ),
 `endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
-        .apb_slave_debug     ( s_apb_debug_bus     ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
+        .debug_req_i         ( dm_debug_req        ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
