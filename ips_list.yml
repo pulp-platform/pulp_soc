@@ -47,7 +47,7 @@ common_cells:
 fpu:
   commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
 fpnew:
-  commit: pulpissimo
+  commit: 8641a058a3731b38fdfe4bc1bb02e36d565f2bc0
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
 riscv:
