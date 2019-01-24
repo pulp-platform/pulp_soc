@@ -40,6 +40,8 @@ axi/axi_slice:
   commit: tags/pulpissimo-v1.0
 axi/axi_slice_dc:
   commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
+axi/axi_mem_if:
+  commit: 313d075cac65e960fddc8b93848aceda18eebeac
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
@@ -77,5 +79,5 @@ udma/udma_camera:
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
-  commit: master
+  commit: pulpissimo_integration
 
