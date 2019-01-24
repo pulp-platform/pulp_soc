@@ -77,5 +77,5 @@ udma/udma_camera:
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
-  commit: fc7547770bed31bef80e2c217bc38f65a22af394
+  commit: master
 
