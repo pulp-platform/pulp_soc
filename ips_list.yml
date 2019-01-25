@@ -54,7 +54,7 @@ fpnew:
   commit: fpu_integration2
  # commit: tags/vega_v1.0.10
 riscv:
-  commit: tags/vega_v1.1.0
+  commit: tags/vega_v1.1.3
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
