@@ -26,7 +26,10 @@ module pulp_soc #(
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
     parameter BUFFER_WIDTH       = 8,
     parameter EVNT_WIDTH         = 8,
-    parameter NB_HWPE_PORTS      = 4
+    parameter NB_HWPE_PORTS      = 4,
+
+    parameter FC_FPU            = 0,
+    parameter FC_FP_DIVSQRT     = 0
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -623,8 +626,13 @@ module pulp_soc #(
 
     fc_subsystem #(
         .CORE_TYPE ( CORE_TYPE ),
-        .USE_FPU   ( USE_FPU   )
-    ) fc_subsystem_i (
+        //.USE_FPU   ( USE_FPU   )
+        .FPU(FC_FPU),
+        .FP_DIVSQRT(FC_FP_DIVSQRT)
+
+    )
+   fc_subsystem_i
+    (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
 

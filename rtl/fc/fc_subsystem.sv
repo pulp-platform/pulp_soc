@@ -17,7 +17,10 @@ module fc_subsystem #(
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
-    parameter NB_HWPE_PORTS       = 4
+    parameter NB_HWPE_PORTS       = 4,
+
+    parameter FPU                 = 1,
+    parameter FP_DIVSQRT          = 1
 ) (
     input  logic                      clk_i,
     input  logic                      rst_ni,
@@ -146,11 +149,16 @@ module fc_subsystem #(
     if ( USE_ZERORISCY == 0) begin: FC_CORE
 
     riscv_core #(
-        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .PULP_CLUSTER        ( 0                   ),
-        .FPU                 ( USE_FPU             ),
-        .SHARED_FP           ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   )
+        //.N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
+        //.PULP_CLUSTER        ( 0                   ),
+        //.FPU                 ( USE_FPU             ),
+        //.SHARED_FP_DIVSQRT   ( 2                   )
+       //.INSTR_RDATA_WIDTH   ( INSTR_RDATA_WIDTH      ),
+       .N_EXT_PERF_COUNTERS ( 1                      ),
+       .PULP_SECURE         ( 1                      ),
+       .PULP_CLUSTER        ( 0                      ),
+       .FPU                 ( FPU                    ),
+       .FP_DIVSQRT          ( FP_DIVSQRT             )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
