@@ -48,12 +48,12 @@ common_cells:
   commit: ec0a05d23cac303e79386dce7cc5a10b024d9031
   domain: [soc, cluster]
 fpu_div_sqrt_mvp:
-  commit: master
+  commit: master_1.0.0
   domain: [cluster,soc]
 fpnew:
-  commit: fpu_integration2
+  commit: tags/vega_v1.0.10
 riscv:
-  commit: fp_integration
+  commit: vega_v1.1.3
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
