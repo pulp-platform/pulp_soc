@@ -53,7 +53,7 @@ fpu_div_sqrt_mvp:
 fpnew:
   commit: fpu_integration2
 riscv:
-  commit: fp_integration
+  commit: tags/vega_v1.1.3
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
