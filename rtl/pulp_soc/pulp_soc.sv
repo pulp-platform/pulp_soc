@@ -14,7 +14,7 @@
 
 module pulp_soc #(
     parameter CORE_TYPE          = 0,
-    parameter USE_FPU            = 1,
+    //parameter USE_FPU            = 1,
     parameter USE_CLUSTER_EVENT  = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,

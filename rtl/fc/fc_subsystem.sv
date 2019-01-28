@@ -12,16 +12,17 @@
 `include "soc_bus_defines.sv"
 
 module fc_subsystem #(
+                      
     parameter CORE_TYPE           = 0,
-    parameter USE_FPU             = 1,
+    //parameter USE_FPU             = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
-
     parameter FPU                 = 1,
     parameter FP_DIVSQRT          = 1
-) (
+) 
+  (
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
@@ -154,9 +155,10 @@ module fc_subsystem #(
         //.FPU                 ( USE_FPU             ),
         //.SHARED_FP_DIVSQRT   ( 2                   )
        //.INSTR_RDATA_WIDTH   ( INSTR_RDATA_WIDTH      ),
-       .N_EXT_PERF_COUNTERS ( 1                      ),
+       .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS    ),
        .PULP_SECURE         ( 1                      ),
        .PULP_CLUSTER        ( 0                      ),
+       .SHARED_FP           ( 0                      ),
        .FPU                 ( FPU                    ),
        .FP_DIVSQRT          ( FP_DIVSQRT             )
     ) lFC_CORE (
