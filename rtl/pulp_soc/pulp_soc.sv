@@ -42,6 +42,10 @@ module pulp_soc #(
     output logic [7:0]                    soc_jtag_reg_o,
     input  logic                          boot_l2_i,
 
+    input  logic                          dm_debug_req_i,
+    APB_BUS.Master                        apb_debug_master,
+    XBAR_TCDM_BUS.Slave                   lint_debug_slave,
+
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
     output logic [63:0]                   cluster_boot_addr_o,
@@ -287,8 +291,6 @@ module pulp_soc #(
 
     logic                  s_fc_fetchen;
 
-    logic                  ndmreset;
-    logic                  dm_debug_req = 1'b0;
 
     genvar                 i,j;
 
@@ -480,6 +482,7 @@ module pulp_soc #(
 
         .apb_eu_master          ( s_apb_eu_bus           ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
+        .apb_debug_master       ( apb_debug_master       ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
@@ -655,7 +658,7 @@ module pulp_soc #(
 `endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req        ),
+        .debug_req_i         ( dm_debug_req_i      ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
@@ -733,7 +736,7 @@ module pulp_soc #(
         .lint_fc_instr    ( s_lint_fc_instr_bus ),
         .lint_udma_tx     ( s_lint_udma_tx_bus  ),
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
-        .lint_debug       ( s_lint_debug_bus    ),
+        .lint_debug       ( lint_debug_slave    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
 
         .axi_from_cluster ( s_data_in_bus       ),

@@ -37,6 +37,7 @@ module soc_peripherals #(
     APB_BUS.Slave                      apb_slave,
     APB_BUS.Master                     apb_eu_master,
     APB_BUS.Master                     apb_hwpe_master,
+    APB_BUS.Master                     apb_debug_master,
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,
@@ -147,7 +148,6 @@ module soc_peripherals #(
     APB_BUS s_soc_evnt_gen_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
-    APB_BUS s_apb_debug_bus ();
 
     localparam UDMA_EVENTS = 29;
     localparam SOC_EVENTS  = 3 ;
@@ -292,7 +292,7 @@ module soc_peripherals #(
         .adv_timer_master    ( s_adv_timer_bus    ),
         .soc_evnt_gen_master ( s_soc_evnt_gen_bus ),
         .eu_master           ( apb_eu_master      ),
-        .mmap_debug_master   ( s_apb_debug_bus    ),
+        .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
         .stdout_master       ( s_stdout_bus       )
