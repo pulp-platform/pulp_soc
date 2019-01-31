@@ -51,7 +51,7 @@ fpu:
 fpnew:
   commit: 8641a058a3731b38fdfe4bc1bb02e36d565f2bc0
 jtag_pulp:
-  commit: tags/pulpissimo-v1.0
+  commit: dbg_dev
 riscv:
   commit: dbg_dev
 zero-riscy:
