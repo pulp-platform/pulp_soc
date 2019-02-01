@@ -150,11 +150,6 @@ module fc_subsystem #(
     if ( USE_ZERORISCY == 0) begin: FC_CORE
 
     riscv_core #(
-        //.N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        //.PULP_CLUSTER        ( 0                   ),
-        //.FPU                 ( USE_FPU             ),
-        //.SHARED_FP_DIVSQRT   ( 2                   )
-       //.INSTR_RDATA_WIDTH   ( INSTR_RDATA_WIDTH      ),
        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS    ),
        .PULP_SECURE         ( 1                      ),
        .PULP_CLUSTER        ( 0                      ),

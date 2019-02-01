@@ -44,16 +44,13 @@ timer_unit:
   commit: tags/pulpissimo-v1.0
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
-#common_cells:
-#  commit: ec0a05d23cac303e79386dce7cc5a10b024d9031
-#  domain: [soc, cluster]
-#fpu_div_sqrt_mvp:
-#  commit: master_1.0.0
-#  domain: [cluster,soc]
+common_cells:
+  commit: master
+  domain: [soc, cluster]
 fpnew:
   commit: tags/vega_v1.0.10
 riscv:
-  commit: vega_v1.1.3
+  commit: fp_integration
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
