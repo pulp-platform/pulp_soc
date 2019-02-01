@@ -12,6 +12,9 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
+import dm::*;
+
+
 module pulp_soc #(
     parameter CORE_TYPE          = 0,
     parameter USE_FPU            = 1,
@@ -33,18 +36,10 @@ module pulp_soc #(
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
-    input  logic                          sel_fll_clk_i,
-
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
-    input  logic [7:0]                    soc_jtag_reg_i,
-    output logic [7:0]                    soc_jtag_reg_o,
     input  logic                          boot_l2_i,
-
-    input  logic                          dm_debug_req_i,
-    APB_BUS.Master                        apb_debug_master,
-    XBAR_TCDM_BUS.Slave                   lint_debug_slave,
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -222,14 +217,11 @@ module pulp_soc #(
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
     ///////////////////////////////////////////////////
-    input  logic                          jtag_tck_i,                  //shifted in the PULP_CHIP
-    input  logic                          jtag_trst_ni,                //shifted in the PULP_CHIP
-    input  logic                          jtag_axireg_tdi_i,           //shifted in the PULP_CHIP
-    output logic                          jtag_axireg_tdo_o,           //shifted in the PULP_CHIP
-    input  logic                          jtag_axireg_sel_i,           //shifted in the PULP_CHIP
-    input  logic                          jtag_shift_dr_i,             //shifted in the PULP_CHIP
-    input  logic                          jtag_update_dr_i,            //shifted in the PULP_CHIP
-    input  logic                          jtag_capture_dr_i            //shifted in the PULP_CHIP
+    input  logic                          jtag_tck_i,
+    input  logic                          jtag_trst_ni,
+    input  logic                          jtag_tms_i,
+    input  logic                          jtag_tdi_i,
+    output logic                          jtag_tdo_o
     ///////////////////////////////////////////////////
 );
 
@@ -290,12 +282,18 @@ module pulp_soc #(
     logic                  s_pf_evt;
 
     logic                  s_fc_fetchen;
+    logic                  dm_debug_req;
+
+    logic [7:0]            soc_jtag_reg_tap;
+    logic [7:0]            soc_jtag_reg_soc;
 
 
     genvar                 i,j;
 
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
+    APB_BUS                s_apb_debug_bus();
+    XBAR_TCDM_BUS          s_lint_debug_bus();
 
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -350,8 +348,6 @@ module pulp_soc #(
     UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
     UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
 `endif
-    XBAR_TCDM_BUS s_lint_debug_bus ();
-    XBAR_TCDM_BUS s_lint_jtag_bus ();
     XBAR_TCDM_BUS s_lint_udma_tx_bus ();
     XBAR_TCDM_BUS s_lint_udma_rx_bus ();
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
@@ -468,7 +464,7 @@ module pulp_soc #(
         .clk_i                  ( s_soc_clk              ),
         .periph_clk_i           ( s_periph_clk           ),
         .rst_ni                 ( s_soc_rstn             ),
-        .sel_fll_clk_i          ( sel_fll_clk_i          ),
+        .sel_fll_clk_i          ( sel_fll_clk            ),
         .ref_clk_i              ( ref_clk_i              ),
         .slow_clk_i             ( slow_clk_i             ),
 
@@ -482,13 +478,13 @@ module pulp_soc #(
 
         .apb_eu_master          ( s_apb_eu_bus           ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
-        .apb_debug_master       ( apb_debug_master       ),
+        .apb_debug_master       ( s_apb_debug_bus        ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
 
-        .soc_jtag_reg_i         ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o         ( soc_jtag_reg_o         ),
+        .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
+        .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
 
         .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
         .fc_events_o            ( s_fc_events            ),
@@ -500,16 +496,7 @@ module pulp_soc #(
         .soc_fll_master         ( s_soc_fll_master       ),
         .per_fll_master         ( s_per_fll_master       ),
         .cluster_fll_master     ( s_cluster_fll_master   ),
-/*
-        .jtag_req_valid_i       ( jtag_req_valid_i       ),
-        .debug_req_ready_o      ( debug_req_ready_o      ),
-        .jtag_resp_ready_i      ( jtag_resp_ready_i      ),
-        .jtag_resp_valid_o      ( jtag_resp_valid_o      ),
-        .jtag_dmi_req_i         ( jtag_dmi_req_i         ),
-        .debug_resp_o           ( debug_resp_o           ),
-        .ndmreset_o             ( ndmreset               ),
-        .dm_debug_req_o         ( dm_debug_req           ),
-*/
+
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
@@ -658,7 +645,7 @@ module pulp_soc #(
 `endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req_i      ),
+        .debug_req_i         ( dm_debug_req        ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
@@ -672,7 +659,7 @@ module pulp_soc #(
     soc_clk_rst_gen i_clk_rst_gen (
         .ref_clk_i                  ( ref_clk_i                     ),
         .test_clk_i                 ( test_clk_i                    ),
-        .sel_fll_clk_i              ( sel_fll_clk_i                 ),
+        .sel_fll_clk_i              ( sel_fll_clk                   ),
 
         .rstn_glob_i                ( rstn_glob_i                   ),
         .rstn_soc_sync_o            ( s_soc_rstn                    ),
@@ -736,7 +723,7 @@ module pulp_soc #(
         .lint_fc_instr    ( s_lint_fc_instr_bus ),
         .lint_udma_tx     ( s_lint_udma_tx_bus  ),
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
-        .lint_debug       ( lint_debug_slave    ),
+        .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
 
         .axi_from_cluster ( s_data_in_bus       ),
@@ -748,6 +735,31 @@ module pulp_soc #(
         .mem_rom_bus      ( s_mem_rom_bus       )
     );
 
+
+
+    logic             jtag_req_valid;
+    logic             debug_req_ready;
+    logic             jtag_resp_ready;
+    logic             jtag_resp_valid;
+    dm::dmi_req_t     jtag_dmi_req;
+    dm::dmi_resp_t    debug_resp;
+    logic             slave_grant, slave_valid, slave_req , slave_we;
+    logic             [31:0] slave_addr, slave_wdata, slave_rdata;
+    logic             [3:0]  slave_be;
+    logic             lint_debug_master_we;
+    logic int_td;
+
+    logic         master_req;
+    logic [31:0]  master_add;
+    logic         master_we;
+    logic [31:0]  master_wdata;
+    logic [3:0]   master_be;
+    logic         master_gnt;
+    logic         master_r_valid;
+    logic [31:0]  master_r_rdata;
+
+    /* Debug Subsystem */
+/*
     lint_jtag_wrap i_lint_jtag (
         .tck_i        ( jtag_tck_i        ),
         .tdi_i        ( jtag_axireg_tdi_i ),
@@ -762,6 +774,127 @@ module pulp_soc #(
         .rst_ni       ( s_soc_rstn ),
         .jtag_lint_master(s_lint_debug_bus)
     );
+*/
+
+    dmi_jtag i_dmi_jtag (
+        .clk_i                ( s_soc_clk           ),
+        .rst_ni               ( s_soc_rstn          ),
+        .testmode_i           ( 1'b0                ),
+        .dmi_req_o            ( jtag_dmi_req        ),
+        .dmi_req_valid_o      ( jtag_req_valid      ),
+        .dmi_req_ready_i      ( debug_req_ready     ),
+        .dmi_resp_i           ( debug_resp          ),
+        .dmi_resp_ready_o     ( jtag_resp_ready     ),
+        .dmi_resp_valid_i     ( jtag_resp_valid     ),
+        .dmi_rst_no           (                     ), // not connected
+        .tck_i                ( jtag_tck_i          ),
+        .tms_i                ( jtag_tms_i          ),
+        .trst_ni              ( jtag_trst_ni        ),
+        .td_i                 ( jtag_tdi_i          ),
+        .td_o                 ( int_td              ),
+        .tdo_oe_o             (                     )
+    );
+
+    jtag_tap_top jtag_tap_top_i
+    (
+        .tck_i                   ( jtag_tck_i             ),
+        .trst_ni                 ( jtag_trst_ni           ),
+        .tms_i                   ( jtag_tms_i             ),
+        .td_i                    ( int_td                 ),
+        .td_o                    ( jtag_tdo_o             ),
+
+        .test_clk_i              ( 1'b0                   ),
+        .test_rstn_i             ( s_rstn_sync            ),
+
+        .jtag_shift_dr_o         (                        ),
+        .jtag_update_dr_o        (                        ),
+        .jtag_capture_dr_o       (                        ),
+
+        .axireg_sel_o            (                        ),
+        .dbg_axi_scan_in_o       (                        ),
+        .dbg_axi_scan_out_i      (                        ),
+        .soc_jtag_reg_i          ( soc_jtag_reg_soc       ),
+        .soc_jtag_reg_o          ( soc_jtag_reg_tap       ),
+        .sel_fll_clk_o           ( sel_fll_clk            )
+    );
+
+
+    dm_top #(
+       // current implementation only supports 1 hart
+       .NrHarts           ( 1                         ),
+       .BusWidth          ( 32                        )
+    ) i_dm_top (
+
+       .clk_i             ( s_soc_clk                 ),
+       .rst_ni            ( s_soc_rstn                ),
+       .testmode_i        ( 1'b0                      ),
+       .ndmreset_o        (                           ),
+       .dmactive_o        (                           ), // active debug session
+       .debug_req_o       ( dm_debug_req              ),
+       .unavailable_i     ( '0                        ),
+
+       .slave_req_i       ( slave_req                 ),
+       .slave_we_i        ( slave_we                  ),
+       .slave_addr_i      ( slave_addr                ),
+       .slave_be_i        ( slave_be                  ),
+       .slave_wdata_i     ( slave_wdata               ),
+       .slave_rdata_o     ( slave_rdata               ),
+
+       .master_req_o      ( s_lint_debug_bus.req      ),
+       .master_add_o      ( s_lint_debug_bus.add      ),
+       .master_we_o       ( lint_debug_master_we      ),
+       .master_wdata_o    ( s_lint_debug_bus.wdata    ),
+       .master_be_o       ( s_lint_debug_bus.be       ),
+       .master_gnt_i      ( s_lint_debug_bus.gnt      ),
+       .master_r_valid_i  ( s_lint_debug_bus.r_valid  ),
+       .master_r_rdata_i  ( s_lint_debug_bus.r_rdata  ),
+
+       .dmi_rst_ni        ( s_soc_rstn                ),
+       .dmi_req_valid_i   ( jtag_req_valid            ),
+       .dmi_req_ready_o   ( debug_req_ready           ),
+       .dmi_req_i         ( jtag_dmi_req              ),
+       .dmi_resp_valid_o  ( jtag_resp_valid           ),
+       .dmi_resp_ready_i  ( jtag_resp_ready           ),
+       .dmi_resp_o        ( debug_resp                )
+    );
+    assign s_lint_debug_bus.wen = ~lint_debug_master_we;
+
+
+    apb2per #(
+        .PER_ADDR_WIDTH ( 32  ),
+        .APB_ADDR_WIDTH ( 32  )
+    ) apb2per_newdebug_i (
+        .clk_i                ( ref_clk_i               ),
+        .rst_ni               ( s_soc_rstn              ),
+
+        .PADDR                ( s_apb_debug_bus.paddr   ),
+        .PWDATA               ( s_apb_debug_bus.pwdata  ),
+        .PWRITE               ( s_apb_debug_bus.pwrite  ),
+        .PSEL                 ( s_apb_debug_bus.psel    ),
+        .PENABLE              ( s_apb_debug_bus.penable ),
+        .PRDATA               ( s_apb_debug_bus.prdata  ),
+        .PREADY               ( s_apb_debug_bus.pready  ),
+        .PSLVERR              ( s_apb_debug_bus.pslverr ),
+
+        .per_master_req_o     ( slave_req               ),
+        .per_master_add_o     ( slave_addr              ),
+        .per_master_we_o      ( slave_we                ),
+        .per_master_wdata_o   ( slave_wdata             ),
+        .per_master_be_o      ( slave_be                ),
+        .per_master_gnt_i     ( slave_grant             ),
+        .per_master_r_valid_i ( slave_valid             ),
+        .per_master_r_opc_i   ( '0                      ),
+        .per_master_r_rdata_i ( slave_rdata             )
+     );
+
+     assign slave_grant = slave_req;
+     always_ff @(posedge ref_clk_i or negedge s_soc_rstn) begin : apb2per_valid
+         if(~s_soc_rstn) begin
+             slave_valid <= 0;
+         end else begin
+             slave_valid <= slave_grant;
+         end
+     end
 
     //********************************************************
     //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
