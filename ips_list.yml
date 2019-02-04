@@ -44,8 +44,8 @@ timer_unit:
   commit: tags/pulpissimo-v1.0
 jtag_pulp:
   commit: tags/pulpissimo-v1.0
-common_cells:
-  commit: master
+#common_cells:
+#  commit: master
 fpnew:
   commit: tags/vega_v1.0.10
 riscv:
