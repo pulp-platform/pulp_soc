@@ -206,7 +206,7 @@ module pulp_soc #(
     input  logic                          spi_master0_sdi1_i,
     input  logic                          spi_master0_sdi2_i,
     input  logic                          spi_master0_sdi3_i,
-    output logic                          sdio_clk_o,           
+    output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
     output logic                          sdio_cmd_oen_o,
@@ -292,28 +292,28 @@ module pulp_soc #(
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
-    
+
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_master ();
-    
+
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_slave ();
-    
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
-    
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
@@ -343,10 +343,10 @@ module pulp_soc #(
 
     UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
     UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-
+`ifdef QUENTIN_SCM
     UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
     UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
-
+`endif
     XBAR_TCDM_BUS s_lint_debug_bus ();
     XBAR_TCDM_BUS s_lint_jtag_bus ();
     XBAR_TCDM_BUS s_lint_udma_tx_bus ();
@@ -361,7 +361,7 @@ module pulp_soc #(
     `endif
 
 
-    
+
     logic s_cluster_isolate_dc;
     logic s_rstn_cluster_sync_soc;
 
@@ -427,9 +427,12 @@ module pulp_soc #(
         .init_ni         ( 1'b1               ),
         .test_mode_i     ( dft_test_mode_i    ),
         .mem_slave       ( s_mem_l2_bus       ),
-        .mem_pri_slave   ( s_mem_l2_pri_bus   ),
+        .mem_pri_slave   ( s_mem_l2_pri_bus   )
+`ifdef QUENTIN_SCM
+        ,
         .scm_data_slave  ( s_scm_l2_data_bus  ),
         .scm_instr_slave ( s_scm_l2_instr_bus )
+`endif
     );
 
 
@@ -551,7 +554,7 @@ module pulp_soc #(
         .spi_master0_sdi2       ( spi_master0_sdi2_i     ),
         .spi_master0_sdi3       ( spi_master0_sdi3_i     ),
 
-        .sdclk_o                ( sdio_clk_o             ),           
+        .sdclk_o                ( sdio_clk_o             ),
         .sdcmd_o                ( sdio_cmd_o             ),
         .sdcmd_i                ( sdio_cmd_i             ),
         .sdcmd_oen_o            ( sdio_cmd_oen_o         ),
@@ -637,10 +640,10 @@ module pulp_soc #(
         .l2_data_master      ( s_lint_fc_data_bus  ),
         .l2_instr_master     ( s_lint_fc_instr_bus ),
         .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-
+`ifdef QUENTIN_SCM
         .scm_l2_data_master  ( s_scm_l2_data_bus   ),
         .scm_l2_instr_master ( s_scm_l2_instr_bus  ),
-
+`endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_debug     ( s_apb_debug_bus     ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
@@ -723,7 +726,7 @@ module pulp_soc #(
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
         .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
-	
+
         .axi_from_cluster ( s_data_in_bus       ),
         .axi_to_cluster   ( s_data_out_bus      ),
 
@@ -794,7 +797,7 @@ module pulp_soc #(
     assign s_data_slave.aw_id          = data_slave_aw_id_i          ;
     assign s_data_slave.aw_user        = data_slave_aw_user_i        ;
     assign data_slave_aw_readpointer_o = s_data_slave.aw_readpointer ;
- 
+
     assign s_data_slave.ar_writetoken  = data_slave_ar_writetoken_i  ;
     assign s_data_slave.ar_addr        = data_slave_ar_addr_i        ;
     assign s_data_slave.ar_prot        = data_slave_ar_prot_i        ;
@@ -808,14 +811,14 @@ module pulp_soc #(
     assign s_data_slave.ar_id          = data_slave_ar_id_i          ;
     assign s_data_slave.ar_user        = data_slave_ar_user_i        ;
     assign data_slave_ar_readpointer_o = s_data_slave.ar_readpointer ;
- 
+
     assign s_data_slave.w_writetoken   = data_slave_w_writetoken_i   ;
     assign s_data_slave.w_data         = data_slave_w_data_i         ;
     assign s_data_slave.w_strb         = data_slave_w_strb_i         ;
     assign s_data_slave.w_user         = data_slave_w_user_i         ;
     assign s_data_slave.w_last         = data_slave_w_last_i         ;
     assign data_slave_w_readpointer_o  = s_data_slave.w_readpointer  ;
- 
+
     assign data_slave_r_writetoken_o   = s_data_slave.r_writetoken   ;
     assign data_slave_r_data_o         = s_data_slave.r_data         ;
     assign data_slave_r_resp_o         = s_data_slave.r_resp         ;
@@ -823,7 +826,7 @@ module pulp_soc #(
     assign data_slave_r_id_o           = s_data_slave.r_id           ;
     assign data_slave_r_user_o         = s_data_slave.r_user         ;
     assign s_data_slave.r_readpointer  = data_slave_r_readpointer_i  ;
- 
+
     assign data_slave_b_writetoken_o   = s_data_slave.b_writetoken   ;
     assign data_slave_b_resp_o         = s_data_slave.b_resp         ;
     assign data_slave_b_id_o           = s_data_slave.b_id           ;
