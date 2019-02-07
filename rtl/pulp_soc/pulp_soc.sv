@@ -821,7 +821,7 @@ module pulp_soc #(
 
     dm_top #(
        // current implementation only supports 1 hart
-       .NrHarts           ( 1                         ),
+       .NrHarts           ( 32                        ),
        .BusWidth          ( 32                        )
     ) i_dm_top (
 
@@ -864,7 +864,7 @@ module pulp_soc #(
         .PER_ADDR_WIDTH ( 32  ),
         .APB_ADDR_WIDTH ( 32  )
     ) apb2per_newdebug_i (
-        .clk_i                ( ref_clk_i               ),
+        .clk_i                ( s_soc_clk               ),
         .rst_ni               ( s_soc_rstn              ),
 
         .PADDR                ( s_apb_debug_bus.paddr   ),
@@ -888,7 +888,7 @@ module pulp_soc #(
      );
 
      assign slave_grant = slave_req;
-     always_ff @(posedge ref_clk_i or negedge s_soc_rstn) begin : apb2per_valid
+     always_ff @(posedge s_soc_clk or negedge s_soc_rstn) begin : apb2per_valid
          if(~s_soc_rstn) begin
              slave_valid <= 0;
          end else begin
