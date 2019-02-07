@@ -373,7 +373,7 @@ module soc_peripherals #(
 
         .sys_clk_i        ( clk_i                ),
         .periph_clk_i     ( periph_clk_i         ),
-        .HRESETn          ( rst_ni               ),
+        .sys_resetn_i     ( rst_ni               ),
 
         .udma_apb_paddr   ( s_udma_bus.paddr     ),
         .udma_apb_pwdata  ( s_udma_bus.pwdata    ),
@@ -418,8 +418,8 @@ module soc_peripherals #(
         .i2s_slave_sck_o  ( i2s_slave_sck_o      ),
         .i2s_slave_sck_oe ( i2s_slave_sck_oe     ),
 
-        .uart_rx          ( uart_rx              ),
-        .uart_tx          ( uart_tx              ),
+        .uart_rx_i        ( uart_rx              ),
+        .uart_tx_o        ( uart_tx              ),
 
         .i2c_scl_i        ( i2c_scl_i            ),
         .i2c_scl_o        ( i2c_scl_o            ),

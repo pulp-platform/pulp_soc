@@ -136,7 +136,7 @@ module udma_subsystem
     localparam CH_ID_RX_SPIM  = 0;
     localparam CH_ID_RX_UART  = N_SPI;
     localparam CH_ID_RX_I2C   = N_SPI+N_UART;
-    localparam CH_ID_RX_SDIO  = N_SPI*2+N_UART+N_I2C;
+    localparam CH_ID_RX_SDIO  = N_SPI+N_UART+N_I2C;
     localparam CH_ID_RX_I2S   = CH_ID_RX_SDIO+1;
     localparam CH_ID_RX_CAM   = CH_ID_RX_I2S+1;
 
