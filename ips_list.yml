@@ -74,7 +74,7 @@ udma/udma_camera:
   commit: vega_v1.0.2
 udma/udma_filter:
   commit: vega_v1.0.3
-  domain: [soc]
+udma/udma_external_per:
+  commit: master
 hwpe-mac-engine:
   commit: f1d0b72
-
