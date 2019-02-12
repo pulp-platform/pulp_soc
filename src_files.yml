@@ -16,6 +16,9 @@ pulp_soc:
     rtl/pulp_soc/soc_peripherals.sv,
     rtl/pulp_soc/pulp_soc.sv,
   ]
+  vlog_opts : [
+    -L riscv_dbg_lib,
+  ]
 udma_subsystem:
   incdirs: [
     ../../rtl/includes,
@@ -78,4 +81,3 @@ components_behav:
   flags: [
     skip_synthesis,
   ]
-
