@@ -199,7 +199,10 @@ module pulp_soc #(
     output logic                          spi_master0_clk_o,
     output logic                          spi_master0_csn0_o,
     output logic                          spi_master0_csn1_o,
-    output logic [1:0]                    spi_master0_mode_o,
+    output logic                          spi_master0_oen0_o,
+    output logic                          spi_master0_oen1_o,
+    output logic                          spi_master0_oen2_o,
+    output logic                          spi_master0_oen3_o,
     output logic                          spi_master0_sdo0_o,
     output logic                          spi_master0_sdo1_o,
     output logic                          spi_master0_sdo2_o,
@@ -288,6 +291,8 @@ module pulp_soc #(
     logic                  s_pf_evt;
 
     logic                  s_fc_fetchen;
+
+    logic                  spi_master0_csn3, spi_master0_csn2;
 
     genvar                 i,j;
 
@@ -543,8 +548,8 @@ module pulp_soc #(
 
          //SPI
         .spi_clk     ( spi_master0_clk_o      ),
-        .spi_csn     ( spi_master0_csn        ),
-        .spi_oen     ( spi_master0_oen        ),
+        .spi_csn     ( {spi_master0_csn3, spi_master0_csn2, spi_master0_csn1_o, spi_master0_csn0_o}     ), //csn3 and csn2 unconnected
+        .spi_oen     ( {spi_master0_oen3_o, spi_master0_oen2_o, spi_master0_oen1_o, spi_master0_oen0_o} ),
         .spi_sdo     ( {spi_master0_sdo3_o, spi_master0_sdo2_o, spi_master0_sdo1_o, spi_master0_sdo0_o} ),
         .spi_sdi     ( {spi_master0_sdi3_i, spi_master0_sdi2_i, spi_master0_sdi1_i, spi_master0_sdi0_i} ),
 
