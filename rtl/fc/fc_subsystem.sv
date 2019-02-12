@@ -19,7 +19,7 @@ module fc_subsystem #(
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
     parameter PULP_SECURE         = 1,
-    parameter TB_RISCV            = 1
+    parameter TB_RISCV            = 0
 )
 (
     input  logic                      clk_i,
