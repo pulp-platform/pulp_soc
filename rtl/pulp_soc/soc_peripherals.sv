@@ -515,10 +515,11 @@ module soc_peripherals #(
     // ███████╗ ╚████╔╝ ███████╗██║ ╚████║   ██║       ╚██████╔╝███████╗██║ ╚████║ //
     // ╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝        ╚═════╝ ╚══════╝╚═╝  ╚═══╝ //
     /////////////////////////////////////////////////////////////////////////////////
+
     soc_event_generator #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .APB_EVNT_NUM   ( 8              ),
-        .PER_EVNT_NUM   ( 48             ),
+        .PER_EVNT_NUM   ( 160            ),
         .EVNT_WIDTH     ( EVNT_WIDTH     )
     ) u_evnt_gen (
         .HCLK             ( clk_i                      ),
