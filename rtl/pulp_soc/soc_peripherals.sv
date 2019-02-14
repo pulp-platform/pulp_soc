@@ -520,7 +520,8 @@ module soc_peripherals #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .APB_EVNT_NUM   ( 8              ),
         .PER_EVNT_NUM   ( 160            ),
-        .EVNT_WIDTH     ( EVNT_WIDTH     )
+        .EVNT_WIDTH     ( EVNT_WIDTH     ),
+        .FC_EVENT_POS   ( 7              )
     ) u_evnt_gen (
         .HCLK             ( clk_i                      ),
         .HRESETn          ( rst_ni                     ),
