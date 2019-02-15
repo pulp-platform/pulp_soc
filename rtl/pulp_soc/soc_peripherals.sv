@@ -140,7 +140,6 @@ module soc_peripherals #(
     APB_BUS s_soc_evnt_gen_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
-    APB_BUS s_apb_dummy_bus ();
 
     localparam UDMA_EVENTS = 16*8;
 
@@ -246,8 +245,7 @@ module soc_peripherals #(
         .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       ),
-        .dummy_master        ( s_apb_dummy_bus    )
+        .stdout_master       ( s_stdout_bus       )
     );
 
     `ifdef SYNTHESIS
@@ -573,6 +571,7 @@ module soc_peripherals #(
         .busy_o     (                         )
     );
 
+`ifdef PULP_TRAINING
 `ifndef SYNTHESIS
 
     apb_dummy_registers  #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_apb_dummy_reg_unit (
@@ -588,5 +587,6 @@ module soc_peripherals #(
         .PSLVERR    ( s_apb_dummy_bus.pslverr )
     );
 
+`endif
 `endif
 endmodule

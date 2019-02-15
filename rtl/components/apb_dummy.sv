@@ -39,8 +39,12 @@ module apb_dummy_registers
 
    assign s_apb_addr = PADDR[2]; //check whether it is REG_SIGNATURE or REG_SCRATCH
 
-   assign reg_signature = 32'hDA41DE;
+   assign reg_signature = '0;//COMPLETE THE EXERCIZE
 
+
+/*COMPLETE THE WRITE LOGIC*/
+
+/*
     // write data
     always_ff @(posedge HCLK, negedge HRESETn)
     begin
@@ -51,26 +55,22 @@ module apb_dummy_registers
       begin
         if (s_apb_write)
         begin
-          if (s_apb_addr == `REG_SCRATCH)
-          begin
-            reg_scratch <= PWDATA;
-          end
         end
       end
     end
+*/
 
+/*COMPLETE THE READ LOGIC*/
+
+/*
     // read data
     always_comb
     begin
         PRDATA = '0;
         case (s_apb_addr)
-          `REG_SIGNATURE:
-                PRDATA = reg_signature;
-          `REG_SCRATCH:
-                PRDATA = reg_scratch;
         endcase
     end
-
+*/
    assign PREADY     = 1'b1;
    assign PSLVERR    = 1'b0;
 
