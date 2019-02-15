@@ -240,6 +240,7 @@ module l2_ram_multi_bank #(
          .D     ( mem_pri_slave[1].wdata     ),
          .Q     ( mem_pri_slave[1].rdata     )
       );
+
       `ifdef QUENTIN_SCM
       model_6144x32_2048x32scm bank_sram24k_scm8k_pri0_i (
          .CLK      ( clk_i                      ),

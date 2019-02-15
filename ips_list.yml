@@ -29,7 +29,7 @@ apb/apb_adv_timer:
 apb/apb_fll_if:
   commit: tags/pulpissimo-v1.0
 apb/apb_gpio:
-  commit: tags/pulpissimo-v1.0
+  commit: 89480a7b11eff01b73f053abcc70813901ca9b44
 apb/apb_node:
   commit: tags/pulpissimo-v1.0
 apb_interrupt_cntrl:
@@ -63,21 +63,24 @@ generic_FLL:
 tech_cells_generic:
   commit: tags/pulpissimo-v1.0
 udma/udma_core:
-  commit: tags/pulpissimo-v1.0.2
+  commit: vega_v1.0.6
 udma/udma_uart:
-  commit: tags/pulpissimo-v1.0.1
+  commit: vega_v1.0.1
 udma/udma_i2c:
-  commit: tags/pulpissimo-v1.0.2
+  commit: vega_v1.0.0
 udma/udma_i2s:
-  commit: tags/pulpissimo-v1.0
+  commit: 407e4c6fb89854aae67ac7f89276f77a775b0e95
 udma/udma_qspi:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v1.0.0
 udma/udma_sdio:
-  commit: tags/pulpissimo-v1.0.1
+  commit: vega_v1.0.5
 udma/udma_camera:
-  commit: tags/pulpissimo-v1.0
+  commit: vega_v1.0.2
+udma/udma_filter:
+  commit: vega_v1.0.3
+udma/udma_external_per:
+  commit: master
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
   commit: pulpissimo_integration
-

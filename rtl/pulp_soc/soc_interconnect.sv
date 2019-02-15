@@ -256,9 +256,9 @@ module soc_interconnect #(
 
     localparam L2_OFFSET_PRI = 15'h1000; // FIXME Put the right FORMULA
 
-    // PRI_L2_CH1  //PRI_L2_CH0    //ROM          // AXI         // APB
+                                                                        // PRI_L2_CH1  //PRI_L2_CH0    //ROM          // AXI         // APB
     localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_START_ADDR = { 32'h1C00_8000, 32'h1C00_0000, 32'h1A00_0000,  32'h1000_0000, 32'h1A10_0000};
-    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A20_0000};
+    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A40_0000};
 
     localparam logic [ADDR_WIDTH-1:0] TCDM_START_ADDR = {32'h1C01_0000}; // Start of L2 interleaved
     localparam logic [ADDR_WIDTH-1:0] TCDM_END_ADDR   = {32'h1C08_2000}; // END of L2 interleaved
@@ -344,7 +344,7 @@ module soc_interconnect #(
     assign rom_csn_o                     = ~PER_data_req_TO_BRIDGE[2];
     assign rom_add_o                     = PER_data_add_TO_BRIDGE[2];
     assign PER_data_r_rdata_TO_BRIDGE[2] = rom_rdata_i;
-    
+
     assign PER_data_gnt_TO_BRIDGE[2]     = 1'b1;
     assign PER_data_r_opc_TO_BRIDGE[2]   = 1'b0;
     always_ff @(posedge clk or negedge rst_n)

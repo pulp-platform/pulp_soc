@@ -65,6 +65,7 @@ components_rtl:
   ]
   files: [
     rtl/components/glitch_free_clk_mux.sv,
+    rtl/components/apb_dummy.sv,
   ]
 
 
