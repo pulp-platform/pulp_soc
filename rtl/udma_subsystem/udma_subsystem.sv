@@ -113,7 +113,11 @@ module udma_subsystem
     localparam N_MRAM    = 0;
     localparam N_FILTER  = 1;
     localparam N_FPGA    = 0;
+`ifdef PULP_TRAINING
     localparam N_EXT_PER = 1;
+`else
+    localparam N_EXT_PER = 1;
+`endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER;
     localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_FPGA + N_EXT_PER;
@@ -904,6 +908,7 @@ module udma_subsystem
         .filter_ready_o           ( s_stream_ready[STREAM_ID_FILTER]    )
     );
 
+`ifdef PULP_TRAINING
     //PER_ID 8
     assign s_events[4*PER_ID_EXT_PER]            = s_rx_ch_events[CH_ID_RX_EXT_PER];
     assign s_events[4*PER_ID_EXT_PER+1]          = s_tx_ch_events[CH_ID_TX_EXT_PER];
@@ -962,5 +967,5 @@ module udma_subsystem
         .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_EXT_PER]       ),
         .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_EXT_PER]       )
     );
-
+`endif
 endmodule
