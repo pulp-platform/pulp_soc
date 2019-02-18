@@ -19,7 +19,9 @@ module fc_subsystem #(
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
     parameter PULP_SECURE         = 1,
-    parameter TB_RISCV            = 0
+    parameter TB_RISCV            = 0,
+    parameter CORE_ID             = 4'h0,
+    parameter CLUSTER_ID          = 6'h1F
 )
 (
     input  logic                      clk_i,
@@ -61,8 +63,6 @@ module fc_subsystem #(
     logic       core_irq_ack   ;
 
     // Boot address, core id, cluster id, fethc enable and core_status
-    logic [ 3:0] core_id_int      ;
-    logic [ 5:0] cluster_id_int   ;
     logic        fetch_en_int     ;
     logic        core_busy_int    ;
     logic        perf_counters_int;
@@ -82,8 +82,6 @@ module fc_subsystem #(
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
 
-    assign core_id_int       = 4'b0;
-    assign cluster_id_int    = 6'b01_1111;
     assign perf_counters_int = 1'b0;
     assign fetch_en_int      = fetch_en_eu & fetch_en_i;
 
@@ -175,8 +173,8 @@ module fc_subsystem #(
         .clock_en_i            ( core_clock_en     ),
         .test_en_i             ( test_en_i         ),
         .boot_addr_i           ( boot_addr_i       ),
-        .core_id_i             ( core_id_int       ),
-        .cluster_id_i          ( cluster_id_int    ),
+        .core_id_i             ( CORE_ID           ),
+        .cluster_id_i          ( CLUSTER_ID        ),
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
         .instr_addr_o          ( core_instr_addr   ),
@@ -235,8 +233,8 @@ module fc_subsystem #(
         .clock_en_i            ( core_clock_en     ),
         .test_en_i             ( test_en_i         ),
         .boot_addr_i           ( boot_addr_i       ),
-        .core_id_i             ( core_id_int       ),
-        .cluster_id_i          ( cluster_id_int    ),
+        .core_id_i             ( CORE_ID           ),
+        .cluster_id_i          ( CLUSTER_ID        ),
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
         .instr_addr_o          ( core_instr_addr   ),

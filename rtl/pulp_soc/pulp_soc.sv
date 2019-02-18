@@ -239,6 +239,25 @@ module pulp_soc #(
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
+    localparam FC_Core_CLUSTER_ID    = 6'd31;
+    localparam FC_Core_CORE_ID       = 4'd0;
+    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+
+    /*
+        PULP RISC-V cores have not continguos MHARTID.
+        This leads to set the number of HARTS >= the maximum value of the MHARTID.
+        In this case, the MHARD ID is {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID} --> 996 (1024 chosen as power of 2)
+        To avoid paying 1024 flip flop for each number of harts's related register, we implemented
+        the masking parameter, aka SELECTABLE_HARTS.
+        In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
+        e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
+        This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
+        will remove the other flip flops and related logic.
+    */
+
+    localparam NrHarts                               = 1024;
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
+
 
     /*
        This module has been tested only with the default parameters.
@@ -287,7 +306,7 @@ module pulp_soc #(
     logic                  s_pf_evt;
 
     logic                  s_fc_fetchen;
-    logic                  dm_debug_req;
+    logic [NrHarts-1:0]    dm_debug_req;
 
     logic [7:0]            soc_jtag_reg_tap;
     logic [7:0]            soc_jtag_reg_soc;
@@ -300,7 +319,6 @@ module pulp_soc #(
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
-    XBAR_TCDM_BUS          s_lint_debug_bus();
 
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -414,7 +432,7 @@ module pulp_soc #(
     ) dc_fifo_datain_bus_i (
         .clk_i            ( s_soc_clk               ),
         .rst_ni           ( s_rstn_cluster_sync_soc ),
-	.test_cgbypass_i  ( 1'b0                    ),
+        .test_cgbypass_i  ( 1'b0                    ),
         .isolate_i        ( s_cluster_isolate_dc    ),
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
@@ -628,8 +646,10 @@ module pulp_soc #(
 
 
     fc_subsystem #(
-        .CORE_TYPE ( CORE_TYPE ),
-        .USE_FPU   ( USE_FPU   )
+        .CORE_TYPE  ( CORE_TYPE          ),
+        .USE_FPU    ( USE_FPU            ),
+        .CORE_ID    ( FC_Core_CORE_ID    ),
+        .CLUSTER_ID ( FC_Core_CLUSTER_ID )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
@@ -649,7 +669,7 @@ module pulp_soc #(
 `endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req        ),
+        .debug_req_i         ( dm_debug_req[FC_Core_MHARTID] ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
@@ -824,9 +844,9 @@ module pulp_soc #(
 
 
     dm_top #(
-       // current implementation only supports 1 hart
-       .NrHarts           ( 32                        ),
-       .BusWidth          ( 32                        )
+       .NrHarts           ( NrHarts                   ),
+       .BusWidth          ( 32                        ),
+       .Selectable_Harts  ( SELECTABLE_HARTS          )
     ) i_dm_top (
 
        .clk_i             ( s_soc_clk                 ),
