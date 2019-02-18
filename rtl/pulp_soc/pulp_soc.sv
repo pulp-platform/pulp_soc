@@ -221,7 +221,6 @@ module pulp_soc #(
     ///////////////////////////////////////////////////
     input  logic                          jtag_tck_i,                  //shifted in the PULP_CHIP
     input  logic                          jtag_trst_ni,                //shifted in the PULP_CHIP
-    input  logic                          jtag_tms_i,                  //shifted in the PULP_CHIP
     input  logic                          jtag_axireg_tdi_i,           //shifted in the PULP_CHIP
     output logic                          jtag_axireg_tdo_o,           //shifted in the PULP_CHIP
     input  logic                          jtag_axireg_sel_i,           //shifted in the PULP_CHIP
