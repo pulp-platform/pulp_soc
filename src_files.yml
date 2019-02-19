@@ -54,6 +54,7 @@ components:
     rtl/components/glitch_free_clk_mux.sv,
     rtl/components/scm_2048x32.sv,
     rtl/components/scm_512x32.sv,
+    rtl/components/tcdm_arbiter_2x1.sv,
   ]
 
 components_rtl:

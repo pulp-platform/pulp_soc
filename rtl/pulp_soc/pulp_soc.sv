@@ -374,8 +374,9 @@ module pulp_soc #(
     UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
 `endif
 
-    XBAR_TCDM_BUS s_lint_debug_bus ();
-    XBAR_TCDM_BUS s_lint_jtag_bus ();
+    XBAR_TCDM_BUS s_lint_debug_bus();
+    XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
+    XBAR_TCDM_BUS s_lint_riscv_jtag_bus();
     XBAR_TCDM_BUS s_lint_udma_tx_bus ();
     XBAR_TCDM_BUS s_lint_udma_rx_bus ();
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
@@ -497,7 +498,7 @@ module pulp_soc #(
         .clk_i                  ( s_soc_clk              ),
         .periph_clk_i           ( s_periph_clk           ),
         .rst_ni                 ( s_soc_rstn             ),
-        .sel_fll_clk_i          ( sel_fll_clk_i          ),
+        .sel_fll_clk_i          ( s_sel_fll_clk          ),
         .ref_clk_i              ( ref_clk_i              ),
         .slow_clk_i             ( slow_clk_i             ),
 
@@ -516,8 +517,8 @@ module pulp_soc #(
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
 
-        .soc_jtag_reg_i         ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o         ( soc_jtag_reg_o         ),
+        .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
+        .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
 
         .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
         .fc_events_o            ( s_fc_events            ),
@@ -683,7 +684,7 @@ module pulp_soc #(
     soc_clk_rst_gen i_clk_rst_gen (
         .ref_clk_i                  ( ref_clk_i                     ),
         .test_clk_i                 ( test_clk_i                    ),
-        .sel_fll_clk_i              ( sel_fll_clk                   ),
+        .sel_fll_clk_i              ( s_sel_fll_clk                 ),
 
         .rstn_glob_i                ( rstn_glob_i                   ),
         .rstn_soc_sync_o            ( s_soc_rstn                    ),
@@ -770,7 +771,7 @@ module pulp_soc #(
     logic             slave_grant, slave_valid, slave_req , slave_we;
     logic             [31:0] slave_addr, slave_wdata, slave_rdata;
     logic             [3:0]  slave_be;
-    logic             lint_debug_master_we;
+    logic             lint_riscv_jtag_bus_master_we;
     logic int_td;
 
     logic         master_req;
@@ -783,22 +784,6 @@ module pulp_soc #(
     logic [31:0]  master_r_rdata;
 
     /* Debug Subsystem */
-/*
-    lint_jtag_wrap i_lint_jtag (
-        .tck_i        ( jtag_tck_i        ),
-        .tdi_i        ( jtag_axireg_tdi_i ),
-        .trstn_i      ( jtag_trst_ni      ),
-        .tdo_o        ( jtag_axireg_tdo_o ),
-        .shift_dr_i   ( jtag_shift_dr_i   ),
-        .pause_dr_i   ( 1'b0              ),
-        .update_dr_i  ( jtag_update_dr_i  ),
-        .capture_dr_i ( jtag_capture_dr_i ),
-        .lint_select_i( jtag_axireg_sel_i ),
-        .clk_i        ( s_soc_clk  ),
-        .rst_ni       ( s_soc_rstn ),
-        .jtag_lint_master(s_lint_debug_bus)
-    );
-*/
 
     dmi_jtag i_dmi_jtag (
         .clk_i                ( s_soc_clk           ),
@@ -818,30 +803,6 @@ module pulp_soc #(
         .td_o                 ( int_td              ),
         .tdo_oe_o             (                     )
     );
-
-    jtag_tap_top jtag_tap_top_i
-    (
-        .tck_i                   ( jtag_tck_i             ),
-        .trst_ni                 ( jtag_trst_ni           ),
-        .tms_i                   ( jtag_tms_i             ),
-        .td_i                    ( int_td                 ),
-        .td_o                    ( jtag_tdo_o             ),
-
-        .test_clk_i              ( 1'b0                   ),
-        .test_rstn_i             ( s_rstn_sync            ),
-
-        .jtag_shift_dr_o         (                        ),
-        .jtag_update_dr_o        (                        ),
-        .jtag_capture_dr_o       (                        ),
-
-        .axireg_sel_o            (                        ),
-        .dbg_axi_scan_in_o       (                        ),
-        .dbg_axi_scan_out_i      (                        ),
-        .soc_jtag_reg_i          ( soc_jtag_reg_soc       ),
-        .soc_jtag_reg_o          ( soc_jtag_reg_tap       ),
-        .sel_fll_clk_o           ( sel_fll_clk            )
-    );
-
 
     dm_top #(
        .NrHarts           ( NrHarts                   ),
@@ -864,14 +825,14 @@ module pulp_soc #(
        .slave_wdata_i     ( slave_wdata               ),
        .slave_rdata_o     ( slave_rdata               ),
 
-       .master_req_o      ( s_lint_debug_bus.req      ),
-       .master_add_o      ( s_lint_debug_bus.add      ),
-       .master_we_o       ( lint_debug_master_we      ),
-       .master_wdata_o    ( s_lint_debug_bus.wdata    ),
-       .master_be_o       ( s_lint_debug_bus.be       ),
-       .master_gnt_i      ( s_lint_debug_bus.gnt      ),
-       .master_r_valid_i  ( s_lint_debug_bus.r_valid  ),
-       .master_r_rdata_i  ( s_lint_debug_bus.r_rdata  ),
+       .master_req_o      ( s_lint_riscv_jtag_bus.req      ),
+       .master_add_o      ( s_lint_riscv_jtag_bus.add      ),
+       .master_we_o       ( lint_riscv_jtag_bus_master_we  ),
+       .master_wdata_o    ( s_lint_riscv_jtag_bus.wdata    ),
+       .master_be_o       ( s_lint_riscv_jtag_bus.be       ),
+       .master_gnt_i      ( s_lint_riscv_jtag_bus.gnt      ),
+       .master_r_valid_i  ( s_lint_riscv_jtag_bus.r_valid  ),
+       .master_r_rdata_i  ( s_lint_riscv_jtag_bus.r_rdata  ),
 
        .dmi_rst_ni        ( s_soc_rstn                ),
        .dmi_req_valid_i   ( jtag_req_valid            ),
@@ -881,8 +842,54 @@ module pulp_soc #(
        .dmi_resp_ready_i  ( jtag_resp_ready           ),
        .dmi_resp_o        ( debug_resp                )
     );
-    assign s_lint_debug_bus.wen = ~lint_debug_master_we;
+    assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
 
+    jtag_tap_top jtag_tap_top_i
+    (
+        .tck_i                    ( jtag_tck_i         ),
+        .trst_ni                  ( jtag_trst_ni       ),
+        .tms_i                    ( jtag_tms_i         ),
+        .td_i                     ( int_td             ),
+        .td_o                     ( jtag_tdo_o         ),
+
+        .test_clk_i               ( 1'b0               ),
+        .test_rstn_i              ( s_soc_rstn         ),
+
+        .jtag_shift_dr_o          ( s_jtag_shift_dr    ),
+        .jtag_update_dr_o         ( s_jtag_update_dr   ),
+        .jtag_capture_dr_o        ( s_jtag_capture_dr  ),
+
+        .axireg_sel_o             ( s_jtag_axireg_sel  ),
+        .dbg_axi_scan_in_o        ( s_jtag_axireg_tdi  ),
+        .dbg_axi_scan_out_i       ( s_jtag_axireg_tdo  ),
+        .soc_jtag_reg_i           ( soc_jtag_reg_soc   ),
+        .soc_jtag_reg_o           ( soc_jtag_reg_tap   ),
+        .sel_fll_clk_o            ( s_sel_fll_clk      )
+    );
+
+    lint_jtag_wrap i_lint_jtag (
+        .tck_i                    ( jtag_tck_i           ),
+        .tdi_i                    ( s_jtag_axireg_tdi    ),
+        .trstn_i                  ( jtag_trst_ni         ),
+        .tdo_o                    ( s_jtag_axireg_tdo    ),
+        .shift_dr_i               ( s_jtag_shift_dr      ),
+        .pause_dr_i               ( 1'b0                 ),
+        .update_dr_i              ( s_jtag_update_dr     ),
+        .capture_dr_i             ( s_jtag_capture_dr    ),
+        .lint_select_i            ( s_jtag_axireg_sel    ),
+        .clk_i                    ( s_soc_clk            ),
+        .rst_ni                   ( s_soc_rstn           ),
+        .jtag_lint_master         ( s_lint_pulp_jtag_bus )
+    );
+
+    tcdm_arbiter_2x1 jtag_lint_arbiter_i
+     (
+        .clk_i(s_soc_clk),
+        .rst_ni(s_soc_rstn),
+        .tcdm_bus_1_i(s_lint_pulp_jtag_bus),
+        .tcdm_bus_0_i(s_lint_riscv_jtag_bus),
+        .tcdm_bus_o(s_lint_debug_bus)
+    );
 
     apb2per #(
         .PER_ADDR_WIDTH ( 32  ),
