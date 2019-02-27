@@ -116,7 +116,7 @@ module udma_subsystem
 `ifdef PULP_TRAINING
     localparam N_EXT_PER = 1;
 `else
-    localparam N_EXT_PER = 1;
+    localparam N_EXT_PER = 0;
 `endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER;
