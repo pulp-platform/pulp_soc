@@ -816,7 +816,7 @@ module pulp_soc #(
        .ndmreset_o        (                           ),
        .dmactive_o        (                           ), // active debug session
        .debug_req_o       ( dm_debug_req              ),
-       .unavailable_i     ( '0                        ),
+       .unavailable_i     ( ~SELECTABLE_HARTS         ),
 
        .slave_req_i       ( slave_req                 ),
        .slave_we_i        ( slave_we                  ),
