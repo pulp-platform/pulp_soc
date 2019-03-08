@@ -785,7 +785,9 @@ module pulp_soc #(
 
     /* Debug Subsystem */
 
-    dmi_jtag i_dmi_jtag (
+    dmi_jtag #(
+        .IdcodeValue          ( `DMI_JTAG_IDCODE    )
+    ) i_dmi_jtag (
         .clk_i                ( s_soc_clk           ),
         .rst_ni               ( s_soc_rstn          ),
         .testmode_i           ( 1'b0                ),
@@ -807,7 +809,7 @@ module pulp_soc #(
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
-       .Selectable_Harts  ( SELECTABLE_HARTS          )
+       .SelectableHarts   ( SELECTABLE_HARTS          )
     ) i_dm_top (
 
        .clk_i             ( s_soc_clk                 ),
@@ -816,7 +818,7 @@ module pulp_soc #(
        .ndmreset_o        (                           ),
        .dmactive_o        (                           ), // active debug session
        .debug_req_o       ( dm_debug_req              ),
-       .unavailable_i     ( '0                        ),
+       .unavailable_i     ( ~SELECTABLE_HARTS         ),
 
        .slave_req_i       ( slave_req                 ),
        .slave_we_i        ( slave_we                  ),
