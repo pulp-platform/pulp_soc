@@ -308,6 +308,28 @@ module pulp_soc #(
     logic                  s_fc_fetchen;
     logic [NrHarts-1:0]    dm_debug_req;
 
+    logic                  jtag_req_valid;
+    logic                  debug_req_ready;
+    logic                  jtag_resp_ready;
+    logic                  jtag_resp_valid;
+    dm::dmi_req_t          jtag_dmi_req;
+    dm::dmi_resp_t         debug_resp;
+    logic                  slave_grant, slave_valid, slave_req , slave_we;
+    logic                  [31:0] slave_addr, slave_wdata, slave_rdata;
+    logic                  [3:0]  slave_be;
+    logic                  lint_riscv_jtag_bus_master_we;
+    logic                  int_td;
+
+    logic                  master_req;
+    logic [31:0]           master_add;
+    logic                  master_we;
+    logic [31:0]           master_wdata;
+    logic [3:0]            master_be;
+    logic                  master_gnt;
+    logic                  master_r_valid;
+    logic [31:0]           master_r_rdata;
+
+
     logic [7:0]            soc_jtag_reg_tap;
     logic [7:0]            soc_jtag_reg_soc;
 
@@ -761,28 +783,6 @@ module pulp_soc #(
     );
 
 
-
-    logic             jtag_req_valid;
-    logic             debug_req_ready;
-    logic             jtag_resp_ready;
-    logic             jtag_resp_valid;
-    dm::dmi_req_t     jtag_dmi_req;
-    dm::dmi_resp_t    debug_resp;
-    logic             slave_grant, slave_valid, slave_req , slave_we;
-    logic             [31:0] slave_addr, slave_wdata, slave_rdata;
-    logic             [3:0]  slave_be;
-    logic             lint_riscv_jtag_bus_master_we;
-    logic int_td;
-
-    logic         master_req;
-    logic [31:0]  master_add;
-    logic         master_we;
-    logic [31:0]  master_wdata;
-    logic [3:0]   master_be;
-    logic         master_gnt;
-    logic         master_r_valid;
-    logic [31:0]  master_r_rdata;
-
     /* Debug Subsystem */
 
     dmi_jtag i_dmi_jtag (
@@ -886,8 +886,8 @@ module pulp_soc #(
      (
         .clk_i(s_soc_clk),
         .rst_ni(s_soc_rstn),
-        .tcdm_bus_1_i(s_lint_pulp_jtag_bus),
-        .tcdm_bus_0_i(s_lint_riscv_jtag_bus),
+        .tcdm_bus_1_i(s_lint_riscv_jtag_bus),
+        .tcdm_bus_0_i(s_lint_pulp_jtag_bus),
         .tcdm_bus_o(s_lint_debug_bus)
     );
 
