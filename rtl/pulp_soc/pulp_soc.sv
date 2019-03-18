@@ -527,6 +527,8 @@ module pulp_soc #(
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( 1'b0                   ),
 
+        .boot_l2_i              ( boot_l2_i              ),
+
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),
 
