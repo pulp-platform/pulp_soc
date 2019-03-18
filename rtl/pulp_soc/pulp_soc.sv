@@ -45,6 +45,7 @@ module pulp_soc #(
     input  logic [7:0]                    soc_jtag_reg_i,
     output logic [7:0]                    soc_jtag_reg_o,
     input  logic                          boot_l2_i,
+    input  logic                          bootsel_i,
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -485,6 +486,8 @@ module pulp_soc #(
         .dft_cg_enable_i        ( 1'b0                   ),
 
         .boot_l2_i              ( boot_l2_i              ),
+
+        .bootsel_i              ( bootsel_i              ),
 
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),
