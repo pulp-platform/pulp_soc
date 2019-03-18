@@ -36,6 +36,8 @@ module soc_peripherals #(
     output logic                       fc_fetchen_o,
     input  logic [7:0]                 soc_jtag_reg_i,
     output logic [7:0]                 soc_jtag_reg_o,
+
+    input  logic                       boot_l2_i,
     // SLAVE PORTS
     // APB SLAVE PORT
     APB_BUS.Slave                      apb_slave,
@@ -457,6 +459,7 @@ module soc_peripherals #(
         .PSLVERR        ( s_soc_ctrl_bus.pslverr ),
 
         .sel_fll_clk_i  ( sel_fll_clk_i          ),
+        .boot_l2_i      ( boot_l2_i              ),
 
         .fc_bootaddr_o  ( fc_bootaddr_o          ),
         .fc_fetchen_o   ( fc_fetchen_o           ),
