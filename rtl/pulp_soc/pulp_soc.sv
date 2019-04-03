@@ -257,8 +257,15 @@ module pulp_soc #(
 
     localparam NrHarts                               = 1024;
     localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
-
-
+    localparam dm::hartinfo_t RI5CY_HARTINFO = '{
+                                                zero1:        '0,
+                                                nscratch:      2, // Debug module needs at least two scratch regs
+                                                zero0:        '0,
+                                                dataaccess: 1'b1, // data registers are memory mapped in the debugger
+                                                datasize: dm::DataCount,
+                                                dataaddr: dm::DataAddr
+                                               };
+    localparam dm::hartinfo_t [NrHarts-1:0] HARTINFO = '{FC_Core_MHARTID: RI5CY_HARTINFO, default: 0};
     /*
        This module has been tested only with the default parameters.
     */
@@ -821,6 +828,7 @@ module pulp_soc #(
        .dmactive_o        (                           ), // active debug session
        .debug_req_o       ( dm_debug_req              ),
        .unavailable_i     ( ~SELECTABLE_HARTS         ),
+       .hartinfo_i        ( HARTINFO                  ),
 
        .slave_req_i       ( slave_req                 ),
        .slave_we_i        ( slave_we                  ),
