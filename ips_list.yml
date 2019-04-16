@@ -47,7 +47,7 @@ timer_unit:
 common_cells:
   commit: df60199539995b8dba7a598ae10b57e361968845
 fpnew:
-  commit: tags/vega_v1.1.1
+  commit: tags/pulpissimov1.0.0
 jtag_pulp:
   commit: dbg_dev
 riscv:
