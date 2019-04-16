@@ -165,6 +165,7 @@ module fc_subsystem #(
         .PULP_SECURE         ( 1                   ),
         .PULP_CLUSTER        ( 0                   ),
         .FPU                 ( USE_FPU             ),
+        .FP_DIVSQRT          ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
         .SHARED_FP_DIVSQRT   ( 2                   )
     ) lFC_CORE (
