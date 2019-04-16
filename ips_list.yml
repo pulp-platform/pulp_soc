@@ -47,7 +47,7 @@ timer_unit:
 common_cells:
   commit: df60199539995b8dba7a598ae10b57e361968845
 fpnew:
-  commit: 8641a058a3731b38fdfe4bc1bb02e36d565f2bc0
+  commit: tags/vega_v1.1.1
 jtag_pulp:
   commit: dbg_dev
 riscv:
