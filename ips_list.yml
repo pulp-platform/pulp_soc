@@ -43,7 +43,7 @@ axi/axi_slice_dc:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: master
+  commit: 51ffae3ff2e339c672b51ae3ac2cb38c29dbe254
 fpu:
   commit: d5d216ba3ae5c36109f29dc845374f70b9815c79
 jtag_pulp:
