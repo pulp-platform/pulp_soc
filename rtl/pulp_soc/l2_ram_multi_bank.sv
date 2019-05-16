@@ -38,7 +38,7 @@ module l2_ram_multi_bank #(
 
 
    //use xilinx ips for l2 memories when on fpga !!NOTE: ONLY BANK_SIZE=8192 IS IMPLEMENTED!!
-   `ifdef PULP_FPGA_EMUL
+   `ifdef PULP_FPGA
 
       logic [NB_BANKS-1:0][7:0]   wea;
 
@@ -49,6 +49,7 @@ module l2_ram_multi_bank #(
             for(j=0; j<8; j++)
             assign wea[i][j] = ~mem_slave[i].csn & ~mem_slave[i].wen & mem_slave[i].be[j];
 
+/*
             xilinx_l2_mem_8192x64 l2_mem_i (
                .clka  ( clk_i                                ),
                .rsta  ( ~rst_ni                              ),
@@ -58,6 +59,17 @@ module l2_ram_multi_bank #(
                .dina  ( mem_slave[i].wdata                   ),
                .douta ( mem_slave[i].rdata                   )
             );
+*/
+			xilinx_bram_mem #(
+				.MEM_SIZE_KB  ( 64  )
+      		) l2_mem_i (
+      			.clock		(clk_i                                                ),
+      			.we			(wea[i]                                               ),
+      			.addr		(mem_slave[i].add[$clog2(64*1024/4)-1:0]     ),
+      			.data_in	(mem_slave[i].wdata								      ),
+      			.data_out	(mem_slave[i].rdata                                   ) 
+      		);
+
          end
       endgenerate
 

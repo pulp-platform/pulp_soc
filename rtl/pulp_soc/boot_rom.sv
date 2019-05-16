@@ -22,7 +22,7 @@ module boot_rom #(
      input logic             test_mode_i
     );
 
-    `ifndef PULP_FPGA_EMUL
+    `ifndef PULP_FPGA
 
         generic_rom #(
             .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
@@ -46,6 +46,7 @@ module boot_rom #(
         assign wea = 8'b0;
         logic [63:0] dina;
         assign dina = 64'b0;
+        /*
         xilinx_rom_bank_1024x64 rom_mem_i (
             .clka  ( clk_i              ),
             .rsta  ( rsta               ),
@@ -55,6 +56,17 @@ module boot_rom #(
             .dina  ( dina               ),
             .douta ( mem_slave.rdata    )
         );
+        */
+        xilinx_bram_mem #(
+			.MEM_SIZE_KB  ( 8  )
+  		) rom_mem_i (
+  			.clock		(clk_i                                   ),
+  			.we			(wea                                     ),
+  			.addr		(mem_slave.add[$clog2(8*1024/4)-1:0]     ),
+  			.data_in	(mem_slave.wdata					     ),
+  			.data_out	(mem_slave.rdata                         ) 
+  		);
+
 
     `endif
 

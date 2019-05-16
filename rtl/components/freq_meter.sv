@@ -27,7 +27,8 @@ module freq_meter
   logic rstn;
   integer     FILE;
 
-  string filename = {FLL_NAME,".log"};
+  string filename = {string'(FLL_NAME),".log"};
+  //string filename = "CLK_FLL.log";
 
   initial
   begin

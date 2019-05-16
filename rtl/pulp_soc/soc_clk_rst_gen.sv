@@ -14,10 +14,18 @@
 module soc_clk_rst_gen (
     input  logic        ref_clk_i,
     input  logic        test_clk_i,
-`ifdef PULP_FPGA_EMUL
-    input  logic        zynq_soc_clk_i,
-    input  logic        zynq_per_clk_i,
-`endif
+
+	`ifdef PULP_FPGA
+		input logic     ref_clk_fll_i,
+	`endif
+		//end antonio
+		
+	//led 
+	`ifdef PULP_FPGA_DEBUG
+		output logic clk_soc_led,
+		output logic clk_per_led,
+	`endif
+
     input  logic        rstn_glob_i,
     input  logic        test_mode_i,
     input  logic        sel_fll_clk_i,
@@ -67,14 +75,15 @@ module soc_clk_rst_gen (
     logic s_rstn_soc_sync;
     logic s_rstn_cluster_sync;
 
-    //synopsys translate_off
-    freq_meter #(.FLL_NAME("SOC_FLL"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_fll_soc));
-    freq_meter #(.FLL_NAME("PER_FLL"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_fll_per));
-    freq_meter #(.FLL_NAME("CLUSTER_FLL"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_fll_cluster));
-    //synopsys translate_on
-
+	`ifndef PULP_FPGA
+    	//synopsys translate_off
+    	freq_meter #(.FLL_NAME("SOC_FLL"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_fll_soc));
+    	freq_meter #(.FLL_NAME("PER_FLL"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_fll_per));
+   	 	freq_meter #(.FLL_NAME("CLUSTER_FLL"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_fll_cluster));
+    	//synopsys translate_on
+	`endif
     // currently, FLLs are not supported for FPGA emulation
-    `ifndef PULP_FPGA_EMUL
+    `ifndef PULP_FPGA
         gf22_FLL i_fll_soc
         (
             .FLLCLK ( s_clk_fll_soc            ),
@@ -175,20 +184,77 @@ module soc_clk_rst_gen (
             .clk_o     ( s_clk_cluster      )
         );
     `else
-        assign s_clk_fll_soc          = zynq_soc_clk_i;
-        assign soc_fll_slave_lock_o   = '1;
-        assign soc_fll_slave_ack_o    = '1;
-        assign soc_fll_slave_r_data_o = '0;
+        xilinx_pll i_pll_soc (
+            .clk_o        ( s_clk_fll_soc            ),
 
-        assign s_clk_fll_per          = zynq_per_clk_i;
-        assign per_fll_slave_lock_o   = '1;
-        assign per_fll_slave_ack_o    = '1;
-        assign per_fll_slave_r_data_o = '0;
+            .ref_clk_i    ( ref_clk_fll_i            ),
+
+            .cfg_lock_o   ( soc_fll_slave_lock_o     ),
+            .cfg_req_i    ( soc_fll_slave_req_i      ),
+            .cfg_ack_o    ( soc_fll_slave_ack_o      ),
+            .cfg_add_i    ( soc_fll_slave_add_i[1:0] ),
+            .cfg_data_i   ( soc_fll_slave_data_i     ),
+            .cfg_r_data_o ( soc_fll_slave_r_data_o   ),
+            .cfg_wrn_i    ( soc_fll_slave_wrn_i      ),
+            .rstn_glob_i  ( rstn_glob_i              )
+        );
+
+        xilinx_pll i_pll_per (
+            .clk_o        ( s_clk_fll_per            ),
+
+            .ref_clk_i    ( ref_clk_fll_i            ),
+
+            .cfg_lock_o   ( per_fll_slave_lock_o     ),
+            .cfg_req_i    ( per_fll_slave_req_i      ),
+            .cfg_ack_o    ( per_fll_slave_ack_o      ),
+            .cfg_add_i    ( per_fll_slave_add_i[1:0] ),
+            .cfg_data_i   ( per_fll_slave_data_i     ),
+            .cfg_r_data_o ( per_fll_slave_r_data_o   ),
+            .cfg_wrn_i    ( per_fll_slave_wrn_i      ),
+            .rstn_glob_i  ( rstn_glob_i              )
+        );
+
+        pulp_clock_mux2 clk_mux_fll_soc_i (
+            `ifdef TEST_FLL
+            .clk0_i    ( 1'bz           ),
+            `else
+            .clk0_i    ( s_clk_fll_soc  ),
+            `endif
+            .clk1_i    ( ref_clk_i      ),
+            .clk_sel_i ( sel_fll_clk_i  ),
+            .clk_o     ( s_clk_soc      )
+        );
+
+        pulp_clock_mux2 clk_mux_fll_per_i (
+            `ifdef TEST_FLL
+            .clk0_i    ( 1'bz           ),
+            `else
+            .clk0_i    ( s_clk_fll_per  ),
+            `endif
+            .clk1_i    ( ref_clk_i      ),
+            .clk_sel_i ( sel_fll_clk_i  ),
+            .clk_o     ( s_clk_per      )
+        );
+
+        pulp_clock_mux2 clk_mux_fll_cluster_i (
+            `ifdef TEST_FLL
+            .clk0_i    ( 1'bz               ),
+            `else
+            .clk0_i    ( s_clk_fll_cluster  ),
+            `endif
+            .clk1_i    ( ref_clk_i          ),
+            .clk_sel_i ( sel_fll_clk_i      ),
+            .clk_o     ( s_clk_cluster      )
+        );
+
+
+
+
     `endif
 
     assign s_rstn_soc = rstn_glob_i;
 
-    `ifndef PULP_FPGA_EMUL
+    `ifndef PULP_FPGA
 
         rstgen i_soc_rstgen (
             .clk_i       ( clk_soc_o       ),
@@ -204,7 +270,7 @@ module soc_clk_rst_gen (
     `endif
 
 
-    `ifndef PULP_FPGA_EMUL
+    `ifndef PULP_FPGA
         rstgen i_cluster_rstgen (
             .clk_i       ( clk_cluster_o       ),
             .rst_ni      ( s_rstn_soc          ),
@@ -230,5 +296,11 @@ module soc_clk_rst_gen (
             @(posedge clk) (soc_fll_slave_req_i == 1'b0 && per_fll_slave_req_i == 1'b0)  ) else $display("There should be no FLL request (%t)", $time);
     `endif
 
+
+    //LED:
+    `ifdef PULP_FPGA_DEBUG
+        assign clk_soc_led=s_clk_fll_soc;
+        assign clk_per_led=s_clk_fll_per;
+    `endif
 
 endmodule
