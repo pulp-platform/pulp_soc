@@ -47,7 +47,7 @@ timer_unit:
 common_cells:
   commit: fpga-genesys
 fpnew:
-  commit: tags/pulpissimov1.0.0
+  commit: fpga-genesys
 jtag_pulp:
   commit: dbg_dev
 riscv:
