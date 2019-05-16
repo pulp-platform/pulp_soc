@@ -45,17 +45,17 @@ axi/axi_mem_if:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: df60199539995b8dba7a598ae10b57e361968845
+  commit: fpga-genesys
 fpnew:
   commit: tags/pulpissimov1.0.0
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: tags/pulpissimo-v3.0.0
+  commit: fpga-genesys
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
-  commit: tags/pulpissimo-v1.0
+  commit: fpga-genesys
 generic_FLL:
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
