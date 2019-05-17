@@ -48,6 +48,7 @@ components_behav:
   ]
   files: [
     freq_meter.sv,
+    apb_dummy.sv,
   ]
   flags: [
     skip_synthesis,

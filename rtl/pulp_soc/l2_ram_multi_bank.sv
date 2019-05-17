@@ -21,9 +21,12 @@ module l2_ram_multi_bank #(
    input logic             init_ni,
    input logic             test_mode_i,
    UNICAD_MEM_BUS_32.Slave mem_slave[NB_BANKS-1:0],
-   UNICAD_MEM_BUS_32.Slave mem_pri_slave[NB_BANKS_PRI-1:0],
+   UNICAD_MEM_BUS_32.Slave mem_pri_slave[NB_BANKS_PRI-1:0]
+`ifdef QUENTIN_SCM
+   ,
    UNICAD_MEM_BUS_32.Slave scm_data_slave,
    UNICAD_MEM_BUS_32.Slave scm_instr_slave
+`endif
 );
    //Used in testbenches
    localparam  BANK_SIZE_PRI1       = 8192;
@@ -68,7 +71,7 @@ module l2_ram_multi_bank #(
       // PRIVATE BANKS
       /*
          This model the hybrid SRAM and SCM configuration
-         that has been tape-out.
+         that has been tape-out in the QUENTIN_SCM version
       */
       generic_memory #(
          .ADDR_WIDTH ( MEM_ADDR_WIDTH_PRI  ),
@@ -84,6 +87,7 @@ module l2_ram_multi_bank #(
          .Q     ( mem_pri_slave[1].rdata     )
       );
 
+      `ifdef QUENTIN_SCM
       model_6144x32_2048x32scm bank_sram24k_scm8k_pri0_i (
          .CLK      ( clk_i                      ),
          .RSTN     ( rst_ni                     ),
@@ -108,5 +112,20 @@ module l2_ram_multi_bank #(
          .Q_scm0   ( scm_data_slave.rdata       ),
          .Q_scm1   ( scm_instr_slave.rdata      )
       );
+      `else
+      generic_memory #(
+         .ADDR_WIDTH ( MEM_ADDR_WIDTH_PRI  ),
+         .DATA_WIDTH ( 32                  )
+      ) bank_sram_pri0_i (
+         .CLK   ( clk_i                      ),
+         .INITN ( 1'b1                       ),
+         .CEN   ( mem_pri_slave[0].csn       ),
+         .BEN   ( ~mem_pri_slave[0].be       ),
+         .WEN   ( mem_pri_slave[0].wen       ),
+         .A     ( mem_pri_slave[0].add[MEM_ADDR_WIDTH_PRI-1:0] ),
+         .D     ( mem_pri_slave[0].wdata     ),
+         .Q     ( mem_pri_slave[0].rdata     )
+      );
+      `endif
 
 endmodule // l2_ram_multi_bank

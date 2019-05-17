@@ -16,6 +16,9 @@ pulp_soc:
     rtl/pulp_soc/soc_peripherals.sv,
     rtl/pulp_soc/pulp_soc.sv,
   ]
+  vlog_opts : [
+    -L riscv_dbg_lib,
+  ]
 udma_subsystem:
   incdirs: [
     ../../rtl/includes,
@@ -51,6 +54,7 @@ components:
     rtl/components/glitch_free_clk_mux.sv,
     rtl/components/scm_2048x32.sv,
     rtl/components/scm_512x32.sv,
+    rtl/components/tcdm_arbiter_2x1.sv,
   ]
 
 components_rtl:
@@ -62,6 +66,7 @@ components_rtl:
   ]
   files: [
     rtl/components/glitch_free_clk_mux.sv,
+    rtl/components/apb_dummy.sv,
   ]
 
 
@@ -78,4 +83,3 @@ components_behav:
   flags: [
     skip_synthesis,
   ]
-

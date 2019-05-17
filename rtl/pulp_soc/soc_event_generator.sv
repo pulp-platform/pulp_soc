@@ -9,18 +9,41 @@
 // specific language governing permissions and limitations under the License.
 
 
-`define REG_EVENT          4'b0000 //BASEADDR+0x00
-`define REG_FC_MASK_MSB    4'b0001 //BASEADDR+0x04
-`define REG_FC_MASK_LSB    4'b0010 //BASEADDR+0x08
-`define REG_CL_MASK_MSB    4'b0011 //BASEADDR+0x0C
-`define REG_CL_MASK_LSB    4'b0100 //BASEADDR+0x10
-`define REG_PR_MASK_MSB    4'b0101 //BASEADDR+0x14
-`define REG_PR_MASK_LSB    4'b0110 //BASEADDR+0x18
-`define REG_ERR_MSB        4'b0111 //BASEADDR+0x1C
-`define REG_ERR_LSB        4'b1000 //BASEADDR+0x20
-`define REG_TIMER_SEL_HI   4'b1001 //BASEADDR+0x24
-`define REG_TIMER_SEL_LO   4'b1010 //BASEADDR+0x28
-
+`define REG_EVENT         6'b000000 //BASEADDR+0x00
+`define REG_FC_MASK_0     6'b000001 //BASEADDR+0x04
+`define REG_FC_MASK_1     6'b000010 //BASEADDR+0x08
+`define REG_FC_MASK_2     6'b000011 //BASEADDR+0x0C
+`define REG_FC_MASK_3     6'b000100 //BASEADDR+0x10
+`define REG_FC_MASK_4     6'b000101 //BASEADDR+0x14
+`define REG_FC_MASK_5     6'b000110 //BASEADDR+0x18
+`define REG_FC_MASK_6     6'b000111 //BASEADDR+0x1C
+`define REG_FC_MASK_7     6'b001000 //BASEADDR+0x20
+`define REG_CL_MASK_0     6'b001001 //BASEADDR+0x24
+`define REG_CL_MASK_1     6'b001010 //BASEADDR+0x28
+`define REG_CL_MASK_2     6'b001011 //BASEADDR+0x2C
+`define REG_CL_MASK_3     6'b001100 //BASEADDR+0x30
+`define REG_CL_MASK_4     6'b001101 //BASEADDR+0x34
+`define REG_CL_MASK_5     6'b001110 //BASEADDR+0x38
+`define REG_CL_MASK_6     6'b001111 //BASEADDR+0x3C
+`define REG_CL_MASK_7     6'b010000 //BASEADDR+0x40
+`define REG_PR_MASK_0     6'b010001 //BASEADDR+0x44
+`define REG_PR_MASK_1     6'b010010 //BASEADDR+0x48
+`define REG_PR_MASK_2     6'b010011 //BASEADDR+0x4C
+`define REG_PR_MASK_3     6'b010100 //BASEADDR+0x50
+`define REG_PR_MASK_4     6'b010101 //BASEADDR+0x54
+`define REG_PR_MASK_5     6'b010110 //BASEADDR+0x58
+`define REG_PR_MASK_6     6'b010111 //BASEADDR+0x5C
+`define REG_PR_MASK_7     6'b011000 //BASEADDR+0x60
+`define REG_ERR_0         6'b011001 //BASEADDR+0x64
+`define REG_ERR_1         6'b011010 //BASEADDR+0x68
+`define REG_ERR_2         6'b011011 //BASEADDR+0x6C
+`define REG_ERR_3         6'b011100 //BASEADDR+0x70
+`define REG_ERR_4         6'b011101 //BASEADDR+0x74
+`define REG_ERR_5         6'b011110 //BASEADDR+0x78
+`define REG_ERR_6         6'b011111 //BASEADDR+0x7C
+`define REG_ERR_7         6'b100000 //BASEADDR+0x80
+`define REG_TIMER1_SEL_HI 6'b100001 //BASEADDR+0x84
+`define REG_TIMER1_SEL_LO 6'b100010 //BASEADDR+0x88
 
 module soc_event_generator #(
     parameter APB_ADDR_WIDTH = 12, //APB slaves are 4KB by default
@@ -60,25 +83,25 @@ module soc_event_generator #(
 
     localparam EVNT_NUM = PER_EVNT_NUM + APB_EVNT_NUM + 1; //number of events going to the event BUS
 
-    logic [5:0] r_timer_sel_hi;
-    logic [5:0] r_timer_sel_lo;
+    logic [7:0] r_timer_sel_hi;
+    logic [7:0] r_timer_sel_lo;
 
     logic [EVNT_WIDTH-1:0] s_event_data ;
     logic                  s_event_valid;
     logic                  s_event_ready;
 
     logic [EVNT_NUM-1:0] s_err   ;
-    logic [        63:0] r_err   ;
+    logic  [      255:0] r_err   ;
     logic [EVNT_NUM-1:0] s_req   ;
     logic [EVNT_NUM-1:0] s_ack   ;
     logic [EVNT_NUM-1:0] s_events;
     logic [EVNT_NUM-1:0] s_grant ;
 
-    logic [3:0] s_apb_addr;
+    logic [5:0] s_apb_addr;
 
-    logic [63:0] r_fc_mask;
-    logic [63:0] r_cl_mask;
-    logic [63:0] r_pr_mask;
+    logic [255:0] r_fc_mask;
+    logic [255:0] r_cl_mask;
+    logic [255:0] r_pr_mask;
 
     logic [EVNT_NUM-1:0] s_fc_mask;
     logic [EVNT_NUM-1:0] s_cl_mask;
@@ -99,7 +122,7 @@ module soc_event_generator #(
 
     assign fc_events_o = per_events_i[FC_EVENT_POS+1:FC_EVENT_POS];
 
-    assign s_apb_addr = PADDR[4:2];
+    assign s_apb_addr = PADDR[7:2];
 
     assign s_ls_rise = ~r_ls_sync[2] & r_ls_sync[1];
 
@@ -174,13 +197,13 @@ module soc_event_generator #(
     always @ (posedge HCLK or negedge HRESETn)
     begin
         if(~HRESETn) begin
-            r_apb_events     =  'h0;
-            r_fc_mask        =  {64{1'b1}};
-            r_cl_mask        =  {64{1'b1}};
-            r_pr_mask        =  {64{1'b1}};
-            r_timer_sel_lo   =  'h0;
-            r_timer_sel_hi   =  'h0;
-            r_err            =  'h0;
+            r_apb_events      =  'h0;
+            r_fc_mask        <=  {256{1'b1}};
+            r_cl_mask        <=  {256{1'b1}};
+            r_pr_mask        <=  {256{1'b1}};
+            r_timer_sel_lo   <=  'h0;
+            r_timer_sel_hi   <=  'h0;
+            r_err             =  'h0;
         end
         else begin
             for (int i=0;i<EVNT_NUM;i++)
@@ -189,41 +212,133 @@ module soc_event_generator #(
             r_apb_events     =  'h0;
             if (PSEL && PENABLE && PWRITE) begin
                 case (s_apb_addr)
-                    `REG_EVENT: begin
+                    `REG_EVENT:
+                    begin
                         r_apb_events   = PWDATA[APB_EVNT_NUM-1:0];
                     end
-                    `REG_FC_MASK_MSB: begin
-                        r_fc_mask[63:32]  = PWDATA;
+                    `REG_FC_MASK_0:
+                    begin
+                            r_fc_mask[31:0]  <= PWDATA;
                     end
-                    `REG_FC_MASK_LSB: begin
-                        r_fc_mask[31:0]   = PWDATA;
+                    `REG_FC_MASK_1:
+                    begin
+                            r_fc_mask[63:32]  <= PWDATA;
                     end
-                    `REG_CL_MASK_MSB: begin
-                        r_cl_mask[63:32]  = PWDATA;
+                    `REG_FC_MASK_2:
+                    begin
+                            r_fc_mask[95:64]  <= PWDATA;
                     end
-                    `REG_CL_MASK_LSB: begin
-                        r_cl_mask[31:0]   = PWDATA;
+                    `REG_FC_MASK_3:
+                    begin
+                            r_fc_mask[127:96]  <= PWDATA;
                     end
-                    `REG_PR_MASK_MSB: begin
-                        r_pr_mask[63:32]  = PWDATA;
+                    `REG_FC_MASK_4:
+                    begin
+                            r_fc_mask[159:128]  <= PWDATA;
                     end
-                    `REG_PR_MASK_LSB: begin
-                        r_pr_mask[31:0]   = PWDATA;
+                    `REG_FC_MASK_5:
+                    begin
+                            r_fc_mask[191:160]  <= PWDATA;
                     end
-                    `REG_TIMER_SEL_LO: begin
-                        r_timer_sel_lo = PWDATA[4:0];
+                    `REG_FC_MASK_6:
+                    begin
+                            r_fc_mask[223:192]  <= PWDATA;
                     end
-                    `REG_TIMER_SEL_HI: begin
-                        r_timer_sel_hi = PWDATA[4:0];
+                    `REG_FC_MASK_7:
+                    begin
+                            r_fc_mask[255:224]  <= PWDATA;
                     end
-                endcase
-            end
-            else if (PSEL && PENABLE && ~PWRITE) begin
+                    `REG_CL_MASK_0:
+                    begin
+                            r_cl_mask[31:0]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_1:
+                    begin
+                            r_cl_mask[63:32]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_2:
+                    begin
+                            r_cl_mask[95:64]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_3:
+                    begin
+                            r_cl_mask[127:96]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_4:
+                    begin
+                            r_cl_mask[159:128]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_5:
+                    begin
+                            r_cl_mask[191:160]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_6:
+                    begin
+                            r_cl_mask[223:192]  <= PWDATA;
+                    end
+                    `REG_CL_MASK_7:
+                    begin
+                            r_cl_mask[255:224]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_0:
+                    begin
+                            r_pr_mask[31:0]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_1:
+                    begin
+                            r_pr_mask[63:32]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_2:
+                    begin
+                            r_pr_mask[95:64]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_3:
+                    begin
+                            r_pr_mask[127:96]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_4:
+                    begin
+                            r_pr_mask[159:128]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_5:
+                    begin
+                            r_pr_mask[191:160]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_6:
+                    begin
+                            r_pr_mask[223:192]  <= PWDATA;
+                    end
+                    `REG_PR_MASK_7:
+                    begin
+                            r_pr_mask[255:224]  <= PWDATA;
+                    end
+                    `REG_TIMER1_SEL_LO:
+                    begin
+                        r_timer_sel_lo      <= PWDATA[7:0];
+                    end
+                    `REG_TIMER1_SEL_HI:
+                    begin
+                        r_timer_sel_hi      <= PWDATA[7:0];
+                    end
+                endcase // s_apb_addr
+            end else if (PSEL && PENABLE && ~PWRITE) begin
                 case (s_apb_addr)
-                    `REG_ERR_LSB:
-                        r_err[31:0]  = 'h0;
-                    `REG_ERR_MSB:
-                        r_err[63:32] = 'h0;
+                    `REG_ERR_0:
+                            r_err[31:0]  = 'h0;
+                    `REG_ERR_1:
+                            r_err[63:32] = 'h0;
+                    `REG_ERR_2:
+                            r_err[95:64] = 'h0;
+                    `REG_ERR_3:
+                            r_err[127:96] = 'h0;
+                    `REG_ERR_4:
+                            r_err[159:128] = 'h0;
+                    `REG_ERR_5:
+                            r_err[191:160] = 'h0;
+                    `REG_ERR_6:
+                            r_err[223:192] = 'h0;
+                    `REG_ERR_7:
+                            r_err[255:224] = 'h0;
                 endcase // s_apb_addr
             end
         end
@@ -233,26 +348,74 @@ module soc_event_generator #(
     begin
         PRDATA = 'h0;
         case (s_apb_addr)
-            `REG_FC_MASK_LSB:
-                PRDATA = r_fc_mask[31:0];
-            `REG_FC_MASK_MSB:
-                PRDATA = r_fc_mask[63:32];
-            `REG_CL_MASK_LSB:
-                PRDATA = r_cl_mask[31:0];
-            `REG_CL_MASK_MSB:
-                PRDATA = r_fc_mask[63:32];
-            `REG_PR_MASK_LSB:
-                PRDATA = r_pr_mask[31:0];
-            `REG_PR_MASK_MSB:
-                PRDATA = r_pr_mask[63:32];
-            `REG_ERR_LSB:
-                PRDATA = r_err[31:0];
-            `REG_ERR_MSB:
-                PRDATA = r_err[63:32];
-            `REG_TIMER_SEL_LO:
-                PRDATA = {26'h0,r_timer_sel_lo};
-            `REG_TIMER_SEL_HI:
-                PRDATA = {26'h0,r_timer_sel_hi};
+            `REG_FC_MASK_0:
+                    PRDATA = r_fc_mask[31:0];
+            `REG_FC_MASK_1:
+                    PRDATA = r_fc_mask[63:32];
+            `REG_FC_MASK_2:
+                    PRDATA = r_fc_mask[95:64];
+            `REG_FC_MASK_3:
+                    PRDATA = r_fc_mask[127:96];
+            `REG_FC_MASK_4:
+                    PRDATA = r_fc_mask[159:128];
+            `REG_FC_MASK_5:
+                    PRDATA = r_fc_mask[191:160];
+            `REG_FC_MASK_6:
+                    PRDATA = r_fc_mask[223:192];
+            `REG_FC_MASK_7:
+                    PRDATA = r_fc_mask[255:224];
+            `REG_CL_MASK_0:
+                    PRDATA = r_cl_mask[31:0];
+            `REG_CL_MASK_1:
+                    PRDATA = r_cl_mask[63:32];
+            `REG_CL_MASK_2:
+                    PRDATA = r_cl_mask[95:64];
+            `REG_CL_MASK_3:
+                    PRDATA = r_cl_mask[127:96];
+            `REG_CL_MASK_4:
+                    PRDATA = r_cl_mask[159:128];
+            `REG_CL_MASK_5:
+                    PRDATA = r_cl_mask[191:160];
+            `REG_CL_MASK_6:
+                    PRDATA = r_cl_mask[223:192];
+            `REG_CL_MASK_7:
+                    PRDATA = r_cl_mask[255:224];
+            `REG_PR_MASK_0:
+                    PRDATA = r_pr_mask[31:0];
+            `REG_PR_MASK_1:
+                    PRDATA = r_pr_mask[63:32];
+            `REG_PR_MASK_2:
+                    PRDATA = r_pr_mask[95:64];
+            `REG_PR_MASK_3:
+                    PRDATA = r_pr_mask[127:96];
+            `REG_PR_MASK_4:
+                    PRDATA = r_pr_mask[159:128];
+            `REG_PR_MASK_5:
+                    PRDATA = r_pr_mask[191:160];
+            `REG_PR_MASK_6:
+                    PRDATA = r_pr_mask[223:192];
+            `REG_PR_MASK_7:
+                    PRDATA = r_pr_mask[255:224];
+            `REG_ERR_0:
+                    PRDATA = r_err[31:0];
+            `REG_ERR_1:
+                    PRDATA = r_err[63:32];
+            `REG_ERR_2:
+                    PRDATA = r_err[95:64];
+            `REG_ERR_3:
+                    PRDATA = r_err[127:96];
+            `REG_ERR_4:
+                    PRDATA = r_err[159:128];
+            `REG_ERR_5:
+                    PRDATA = r_err[191:160];
+            `REG_ERR_6:
+                    PRDATA = r_err[223:192];
+            `REG_ERR_7:
+                    PRDATA = r_err[255:224];
+            `REG_TIMER1_SEL_LO:
+                PRDATA = {24'h0,r_timer_sel_lo};
+            `REG_TIMER1_SEL_HI:
+                PRDATA = {24'h0,r_timer_sel_hi};
             default:
                 PRDATA = 'h0;
         endcase
