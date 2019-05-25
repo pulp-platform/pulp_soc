@@ -138,7 +138,45 @@ module soc_clk_rst_gen (
             .JTQ    (                              )  //TO FIX DFT
         );
 
+    pulp_clock_mux2 clk_mux_fll_soc_i (
+      `ifdef TEST_FLL
+                                       .clk0_i    ( 1'bz           ),
+      `else
+                                       .clk0_i    ( s_clk_fll_soc  ),
+      `endif
+                                       .clk1_i    ( ref_clk_i      ),
+                                       .clk_sel_i ( sel_fll_clk_i  ),
+                                       .clk_o     ( s_clk_soc      )
+                                       );
+
+    pulp_clock_mux2 clk_mux_fll_per_i (
+      `ifdef TEST_FLL
+                                       .clk0_i    ( 1'bz           ),
+      `else
+                                       .clk0_i    ( s_clk_fll_per  ),
+      `endif
+                                       .clk1_i    ( ref_clk_i      ),
+                                       .clk_sel_i ( sel_fll_clk_i  ),
+                                       .clk_o     ( s_clk_per      )
+                                       );
+
+    pulp_clock_mux2 clk_mux_fll_cluster_i (
+      `ifdef TEST_FLL
+                                           .clk0_i    ( 1'bz               ),
+      `else
+                                           .clk0_i    ( s_clk_fll_cluster  ),
+      `endif
+                                           .clk1_i    ( ref_clk_i          ),
+                                           .clk_sel_i ( sel_fll_clk_i      ),
+                                           .clk_o     ( s_clk_cluster      )
+                                           );
+
     `else // !`ifndef PULP_FPGA_EMUL
+
+    // Use FPGA dependent clock generation module for both clocks
+    // For the FPGA port we remove the clock multiplexers since it doesn't make
+    // much sense to clock the circuit directly with the board reference clock
+    // (e.g. 200MHz for genesys2 board).
 
        fpga_clk_gen i_fpga_clk_gen (
                         .ref_clk_i,
@@ -170,40 +208,14 @@ module soc_clk_rst_gen (
                         .cluster_cfg_r_data_o(cluster_fll_slave_r_data_o),
                         .cluster_cfg_wrn_i(cluster_fll_slave_wrn_i)
                         );
+
+    assign s_clk_soc     = s_clk_fll_soc;
+    assign s_clk_cluster = s_clk_fll_cluster;
+    assign s_clk_per     = s_clk_fll_per;
+
     `endif
 
-    pulp_clock_mux2 clk_mux_fll_soc_i (
-        `ifdef TEST_FLL
-        .clk0_i    ( 1'bz           ),
-        `else
-        .clk0_i    ( s_clk_fll_soc  ),
-        `endif
-        .clk1_i    ( ref_clk_i      ),
-        .clk_sel_i ( sel_fll_clk_i  ),
-        .clk_o     ( s_clk_soc      )
-    );
 
-    pulp_clock_mux2 clk_mux_fll_per_i (
-        `ifdef TEST_FLL
-        .clk0_i    ( 1'bz           ),
-        `else
-        .clk0_i    ( s_clk_fll_per  ),
-        `endif
-        .clk1_i    ( ref_clk_i      ),
-        .clk_sel_i ( sel_fll_clk_i  ),
-        .clk_o     ( s_clk_per      )
-    );
-
-    pulp_clock_mux2 clk_mux_fll_cluster_i (
-        `ifdef TEST_FLL
-        .clk0_i    ( 1'bz               ),
-        `else
-        .clk0_i    ( s_clk_fll_cluster  ),
-        `endif
-        .clk1_i    ( ref_clk_i          ),
-        .clk_sel_i ( sel_fll_clk_i      ),
-        .clk_o     ( s_clk_cluster      )
-    );
 
     assign s_rstn_soc = rstn_glob_i;
 
