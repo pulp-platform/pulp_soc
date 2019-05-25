@@ -42,22 +42,36 @@ module l2_ram_multi_bank #(
 
          //INTERLEAVED
          for(i=0; i<NB_BANKS; i++)
-         begin : CUTS
-            /*
-               This model the hybrid SRAM and SCM configuration
-               that has been tape-out.
-            */
-                  model_sram_28672x32_scm_512x32 bank_i (
-                     .CLK   ( clk_i                                ),
-		     .RSTN  ( rst_ni                               ),
-                     .D     ( mem_slave[i].wdata                   ),
-                     .A     ( mem_slave[i].add[MEM_ADDR_WIDTH-1:0] ),
-                     .CEN   ( mem_slave[i].csn                     ),
-                     .WEN   ( mem_slave[i].wen                     ),
-                     .BEN   ( ~mem_slave[i].be                     ),
-                     .Q     ( mem_slave[i].rdata                   )
-                  );
-         end
+             begin : CUTS
+                 `ifndef PULP_FPGA_EMUL
+                 /*
+                  This model the hybrid SRAM and SCM configuration
+                  that has been tape-out.
+                  */
+                 model_sram_28672x32_scm_512x32 bank_i (
+                                                        .CLK   ( clk_i                                ),
+		                                                .RSTN  ( rst_ni                               ),
+                                                        .D     ( mem_slave[i].wdata                   ),
+                                                        .A     ( mem_slave[i].add[MEM_ADDR_WIDTH-1:0] ),
+                                                        .CEN   ( mem_slave[i].csn                     ),
+                                                        .WEN   ( mem_slave[i].wen                     ),
+                                                        .BEN   ( ~mem_slave[i].be                     ),
+                                                        .Q     ( mem_slave[i].rdata                   )
+                                                        );
+                 `else // !`ifndef PULP_FPGA_EMUL
+                 fpga_interleaved_ram #(.ADDR_WIDTH(MEM_ADDR_WIDTH)) bank_i
+                     (
+                      .clk_i,
+                      .rst_ni,
+                      .csn_i(mem_slave[i].csn),
+                      .wen_i(mem_slave[i].wen),
+                      .be_i(mem_slave[i].be),
+                      .addr_i(mem_slave[i].add[MEM_ADDR_WIDTH-1:0]),
+                      .wdata_i(mem_slave[i].wdata),
+                      .rdata_o(mem_slave[i].rdata)
+                      );
+                 `endif
+             end
       endgenerate
 
       /*
@@ -73,6 +87,7 @@ module l2_ram_multi_bank #(
          This model the hybrid SRAM and SCM configuration
          that has been tape-out in the QUENTIN_SCM version
       */
+      `ifndef PULP_FPGA_EMUL
       generic_memory #(
          .ADDR_WIDTH ( MEM_ADDR_WIDTH_PRI  ),
          .DATA_WIDTH ( 32                  )
@@ -86,7 +101,21 @@ module l2_ram_multi_bank #(
          .D     ( mem_pri_slave[1].wdata     ),
          .Q     ( mem_pri_slave[1].rdata     )
       );
+      `else // !`ifndef PULP_FPGA_EMUL
+      fpga_private_ram #(.ADDR_WIDTH(MEM_ADDR_WIDTH_PRI)) bank_sram_pri1_i
+          (
+           .clk_i,
+           .rst_ni,
+           .csn_i(mem_pri_slave[1].csn),
+           .wen_i(mem_pri_slave[1].wen),
+           .be_i(mem_pri_slave[1].be),
+           .addr_i(mem_pri_slave[1].add[MEM_ADDR_WIDTH-1:0]),
+           .wdata_i(mem_pri_slave[1].wdata),
+           .rdata_o(mem_pri_slave[1].rdata)
+           );
+      `endif
 
+    `ifndef PULP_FPGA_EMUL
       `ifdef QUENTIN_SCM
       model_6144x32_2048x32scm bank_sram24k_scm8k_pri0_i (
          .CLK      ( clk_i                      ),
@@ -126,6 +155,20 @@ module l2_ram_multi_bank #(
          .D     ( mem_pri_slave[0].wdata     ),
          .Q     ( mem_pri_slave[0].rdata     )
       );
-      `endif
+      `endif // !`ifdef QUENTIN_SCM
+    `else // !`ifndef PULP_FPGA_EMUL
+    fpga_private_ram #(.ADDR_WIDTH(MEM_ADDR_WIDTH_PRI)) bank_sram_pri0_i
+        (
+         .clk_i,
+         .rst_ni,
+         .csn_i(mem_pri_slave[0].csn),
+         .wen_i(mem_pri_slave[0].wen),
+         .be_i(mem_pri_slave[0].be),
+         .addr_i(mem_pri_slave[0].add[MEM_ADDR_WIDTH-1:0]),
+         .wdata_i(mem_pri_slave[0].wdata),
+         .rdata_o(mem_pri_slave[0].rdata)
+         );
+
+    `endif
 
 endmodule // l2_ram_multi_bank
