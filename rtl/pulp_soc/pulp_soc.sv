@@ -692,7 +692,8 @@ module pulp_soc
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
         .CORE_ID    ( FC_Core_CORE_ID    ),
-        .CLUSTER_ID ( FC_Core_CLUSTER_ID )
+        .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
+        .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
