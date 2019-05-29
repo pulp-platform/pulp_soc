@@ -234,7 +234,7 @@ module pulp_soc
     localparam FLL_ADDR_WIDTH        = 32;
     localparam FLL_DATA_WIDTH        = 32;
     localparam NB_L2_BANKS           = `NB_L2_CHANNELS;
-    localparam L2_BANK_SIZE          = 16384;            // in 32-bit words
+    localparam L2_BANK_SIZE          = 29184;            // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
     localparam NB_L2_BANKS_PRI       = 2;
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
