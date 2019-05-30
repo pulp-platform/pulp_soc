@@ -45,9 +45,9 @@ axi/axi_mem_if:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: df60199539995b8dba7a598ae10b57e361968845
+  commit: 0b8c10c21c9f810509bbd7bf86cfbdc4e6626c8e
 fpnew:
-  commit: v0.5.1
+  commit: 35c792ddddc3acc108ed5e9a3bad47f4b61bed1c
 jtag_pulp:
   commit: dbg_dev
 riscv:
