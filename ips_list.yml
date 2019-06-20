@@ -55,11 +55,11 @@ riscv:
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
-  commit: fpga
+  commit: c9109bb333a7a9ed939eb11876d5f358bafbe6b6
 generic_FLL:
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
-  commit: fpga
+  commit: 0532e53c1a323db4a55381d123c55bdc4fab06f6
 udma/udma_core:
   commit: vega_v1.0.6
 udma/udma_uart:
