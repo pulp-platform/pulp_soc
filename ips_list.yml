@@ -51,11 +51,11 @@ fpnew:
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: edf229b9c88017fa1c6e1e2006f5f150ba96f86f
+  commit: pulpissimo-v3.1.0
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
-  commit: c9109bb333a7a9ed939eb11876d5f358bafbe6b6
+  commit: 300c13879d3b6e28782e14fd466a7c09c875a031
 generic_FLL:
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
