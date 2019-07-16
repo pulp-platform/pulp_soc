@@ -51,7 +51,7 @@ fpnew:
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: tags/pulpissimo-v3.0.0
+  commit: tags/pulpissimo-v3.3.0
 zero-riscy:
   commit: tags/pulpissimo-v1.0.1
 scm:
@@ -81,4 +81,4 @@ udma/udma_external_per:
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
-  commit: tags/pulpissimo-v1.0
+  commit: tags/v0.1
