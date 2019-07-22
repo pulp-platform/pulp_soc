@@ -47,7 +47,7 @@ jtag_pulp:
 #common_cells:
 #  commit: master
 fpnew:
-  commit: tags/vega_v1.0.10
+  commit: tags/v0.6.1
 riscv:
   commit: fp_integration
 zero-riscy:
