@@ -224,46 +224,46 @@ module fc_subsystem #(
         .fregfile_disable_i    ( 1'b0              ) // try me!
     );
     end else begin: FC_CORE
-    zeroriscy_core #(
-        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .RV32E               ( ZERORISCY_RV32E     ),
-        .RV32M               ( ZERORISCY_RV32M     )
-    ) lFC_CORE (
-        .clk_i                 ( clk_i             ),
-        .rst_ni                ( rst_ni            ),
-        .clock_en_i            ( core_clock_en     ),
-        .test_en_i             ( test_en_i         ),
-        .boot_addr_i           ( boot_addr_i       ),
-        .core_id_i             ( CORE_ID           ),
-        .cluster_id_i          ( CLUSTER_ID        ),
+    // zeroriscy_core #(
+    //     .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
+    //     .RV32E               ( ZERORISCY_RV32E     ),
+    //     .RV32M               ( ZERORISCY_RV32M     )
+    // ) lFC_CORE (
+    //     .clk_i                 ( clk_i             ),
+    //     .rst_ni                ( rst_ni            ),
+    //     .clock_en_i            ( core_clock_en     ),
+    //     .test_en_i             ( test_en_i         ),
+    //     .boot_addr_i           ( boot_addr_i       ),
+    //     .core_id_i             ( CORE_ID           ),
+    //     .cluster_id_i          ( CLUSTER_ID        ),
 
-        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
-        .instr_gnt_i           ( core_instr_gnt    ),
-        .instr_rvalid_i        ( core_instr_rvalid ),
+    //     // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
+    //     .instr_addr_o          ( core_instr_addr   ),
+    //     .instr_req_o           ( core_instr_req    ),
+    //     .instr_rdata_i         ( core_instr_rdata  ),
+    //     .instr_gnt_i           ( core_instr_gnt    ),
+    //     .instr_rvalid_i        ( core_instr_rvalid ),
 
-        // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
-        .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
-        .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
-        .data_rvalid_i         ( core_data_rvalid  ),
+    //     // Data memory interface:
+    //     .data_addr_o           ( core_data_addr    ),
+    //     .data_req_o            ( core_data_req     ),
+    //     .data_be_o             ( core_data_be      ),
+    //     .data_rdata_i          ( core_data_rdata   ),
+    //     .data_we_o             ( core_data_we      ),
+    //     .data_gnt_i            ( core_data_gnt     ),
+    //     .data_wdata_o          ( core_data_wdata   ),
+    //     .data_rvalid_i         ( core_data_rvalid  ),
 
-        .irq_i                 ( core_irq_req      ),
-        .irq_id_i              ( core_irq_id       ),
-        .irq_ack_o             ( core_irq_ack      ),
-        .irq_id_o              ( core_irq_ack_id   ),
+    //     .irq_i                 ( core_irq_req      ),
+    //     .irq_id_i              ( core_irq_id       ),
+    //     .irq_ack_o             ( core_irq_ack      ),
+    //     .irq_id_o              ( core_irq_ack_id   ),
 
-        .debug_req_i           ( debug_req_i       ),
+    //     .debug_req_i           ( debug_req_i       ),
 
-        .fetch_enable_i        ( fetch_en_int      ),
-        .ext_perf_counters_i   ( perf_counters_int )
-    );
+    //     .fetch_enable_i        ( fetch_en_int      ),
+    //     .ext_perf_counters_i   ( perf_counters_int )
+    // );
     end
     endgenerate
 

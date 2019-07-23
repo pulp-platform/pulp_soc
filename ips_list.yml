@@ -51,9 +51,9 @@ fpnew:
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: tags/pulpissimo-v3.3.0
-zero-riscy:
-  commit: tags/pulpissimo-v1.0.1
+  commit: 8d2bddaff52b6b31c54696a3d966a6b4de4d3b97
+# zero-riscy:
+#   commit: tags/pulpissimo-v1.0.1
 scm:
   commit: tags/pulpissimo-v1.0
 generic_FLL:

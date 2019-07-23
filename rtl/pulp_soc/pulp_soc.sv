@@ -463,7 +463,7 @@ module pulp_soc #(
     ) dc_fifo_datain_bus_i (
         .clk_i            ( s_soc_clk               ),
         .rst_ni           ( s_rstn_cluster_sync_soc ),
-        .test_cgbypass_i  ( 1'b0                    ),
+        // .test_cgbypass_i  ( 1'b0                    ),
         .isolate_i        ( s_cluster_isolate_dc    ),
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
