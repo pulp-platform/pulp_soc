@@ -57,11 +57,14 @@ module fc_subsystem #(
     localparam IBEX_RV32E = CORE_TYPE == 2;
 
     // Interrupt signals
-    logic       core_irq_req   ;
-    logic       core_irq_sec   ;
-    logic [4:0] core_irq_id    ;
-    logic [4:0] core_irq_ack_id;
-    logic       core_irq_ack   ;
+    logic        core_irq_req   ;
+    logic        core_irq_sec   ;
+    logic [4:0]  core_irq_id    ;
+    logic [4:0]  core_irq_ack_id;
+    logic        core_irq_ack   ;
+    logic [14:0] core_irq_fast  ;
+
+    logic [3:0]  irq_ack_id;
 
     // Boot address, core id, cluster id, fethc enable and core_status
     logic        fetch_en_int     ;
@@ -268,10 +271,14 @@ module fc_subsystem #(
         .data_rvalid_i         ( core_data_rvalid  ),
         .data_err_i            ( core_data_err     ),
 
-        .irq_i                 ( core_irq_req      ),
-        .irq_id_i              ( core_irq_id       ),
+        .irq_software_i        ( 1'b0              ),
+        .irq_timer_i           ( 1'b0              ),
+        .irq_external_i        ( 1'b0              ),
+        .irq_fast_i            ( core_irq_fast     ),
+        .irq_nm_i              ( 1'b0              ),
+
         .irq_ack_o             ( core_irq_ack      ),
-        .irq_id_o              ( core_irq_ack_id   ),
+        .irq_ack_id_o          ( irq_ack_id        ),
 
         .debug_req_i           ( debug_req_i       ),
 
@@ -282,6 +289,32 @@ module fc_subsystem #(
     endgenerate
 
     assign supervisor_mode_o = 1'b1;
+
+    generate
+    if ( USE_IBEX == 1) begin : convert_irqs
+    // Ibex supports 15 fast interrupts and reads the interrupt lines directly
+    // Convert ID back to interrupt lines
+    always_comb begin : gen_core_irq_fast
+        core_irq_fast = '0;
+        if (core_irq_req && (core_irq_id == 26)) begin
+            // remap SoC Event FIFO
+            core_irq_fast[10] = 1'b1;
+        end else if (core_irq_req && (core_irq_id < 15)) begin
+            core_irq_fast[core_irq_id] = 1'b1;
+        end
+    end
+
+    // remap ack ID for SoC Event FIFO
+    always_comb begin : gen_core_irq_ack_id
+        if (irq_ack_id == 10) begin
+            core_irq_ack_id = 26;
+        end else begin
+            core_irq_ack_id = {1'b0, irq_ack_id};
+        end
+    end
+
+    end
+    endgenerate
 
     apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
         .clk_i              ( clk_i              ),

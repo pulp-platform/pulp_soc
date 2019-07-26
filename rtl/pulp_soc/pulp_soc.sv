@@ -515,6 +515,7 @@ module pulp_soc
     //********************************************************
 
     soc_peripherals #(
+        .CORE_TYPE          ( CORE_TYPE                             ),
         .MEM_ADDR_WIDTH     ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
         .APB_ADDR_WIDTH     ( 32                                    ),
         .APB_DATA_WIDTH     ( 32                                    ),
