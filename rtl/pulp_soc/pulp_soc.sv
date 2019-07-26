@@ -12,12 +12,12 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
-import dm::*;
-
-
-module pulp_soc #(
+module pulp_soc
+    import dm::*;
+#(
     parameter CORE_TYPE          = 0,
     parameter USE_FPU            = 1,
+    parameter USE_HWPE           = 1,
     parameter USE_CLUSTER_EVENT  = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
@@ -266,7 +266,16 @@ module pulp_soc #(
                                                 datasize: dm::DataCount,
                                                 dataaddr: dm::DataAddr
                                                };
+    `ifndef PULP_FPGA_EMUL //The following construct is a little bit to fancy
+                           //for vivado.
     localparam dm::hartinfo_t [NrHarts-1:0] HARTINFO = '{FC_Core_MHARTID: RI5CY_HARTINFO, default: 0};
+    `else
+    dm::hartinfo_t [NrHarts-1:0]            HARTINFO;
+    always_comb begin
+        HARTINFO = '{default: '0};
+        HARTINFO[FC_Core_MHARTID] = RI5CY_HARTINFO;
+    end
+    `endif
     /*
        This module has been tested only with the default parameters.
     */
@@ -360,22 +369,22 @@ module pulp_soc #(
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_slave ();
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
 
     AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
 
     FLL_BUS #(
@@ -683,7 +692,8 @@ module pulp_soc #(
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
         .CORE_ID    ( FC_Core_CORE_ID    ),
-        .CLUSTER_ID ( FC_Core_CLUSTER_ID )
+        .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
+        .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
