@@ -266,16 +266,9 @@ module pulp_soc
                                                 datasize: dm::DataCount,
                                                 dataaddr: dm::DataAddr
                                                };
-    `ifndef PULP_FPGA_EMUL //The following construct is a little bit to fancy
-                           //for vivado.
-    localparam dm::hartinfo_t [NrHarts-1:0] HARTINFO = '{FC_Core_MHARTID: RI5CY_HARTINFO, default: 0};
-    `else
-    dm::hartinfo_t [NrHarts-1:0]            HARTINFO;
-    always_comb begin
-        HARTINFO = '{default: '0};
-        HARTINFO[FC_Core_MHARTID] = RI5CY_HARTINFO;
-    end
-    `endif
+
+    dm::hartinfo_t [NrHarts-1:0] hartinfo;
+
     /*
        This module has been tested only with the default parameters.
     */
@@ -827,6 +820,12 @@ module pulp_soc
         .tdo_oe_o             (                     )
     );
 
+    // assign hartinfo
+    always_comb begin
+        hartinfo = '{default: '0};
+        hartinfo[FC_Core_MHARTID] = RI5CY_HARTINFO;
+    end
+
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
@@ -840,7 +839,7 @@ module pulp_soc
        .dmactive_o        (                           ), // active debug session
        .debug_req_o       ( dm_debug_req              ),
        .unavailable_i     ( ~SELECTABLE_HARTS         ),
-       .hartinfo_i        ( HARTINFO                  ),
+       .hartinfo_i        ( hartinfo                  ),
 
        .slave_req_i       ( slave_req                 ),
        .slave_we_i        ( slave_we                  ),
