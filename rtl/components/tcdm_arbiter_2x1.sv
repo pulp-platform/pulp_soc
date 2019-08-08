@@ -41,6 +41,10 @@ module tcdm_arbiter_2x1
       tcdm_bus_1_i.r_valid = 1'b0;
       tcdm_bus_0_i.r_rdata = tcdm_bus_o.r_rdata;
       tcdm_bus_1_i.r_rdata = tcdm_bus_o.r_rdata;
+      tcdm_bus_o.add       = tcdm_bus_0_i.add;
+      tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
+      tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
+      tcdm_bus_o.be        = tcdm_bus_0_i.be;
 
       unique case (offset_fsm_cs)
 
