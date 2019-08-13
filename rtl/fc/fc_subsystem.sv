@@ -67,6 +67,7 @@ module fc_subsystem #(
     logic [3:0]  irq_ack_id;
 
     // Boot address, core id, cluster id, fethc enable and core_status
+    logic [31:0] boot_addr        ;
     logic        fetch_en_int     ;
     logic        core_busy_int    ;
     logic        perf_counters_int;
@@ -171,6 +172,7 @@ module fc_subsystem #(
     //********************************************************
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
+    assign boot_addr = boot_addr_i;
     riscv_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
         .PULP_SECURE         ( 1                   ),
@@ -184,7 +186,7 @@ module fc_subsystem #(
         .rst_ni                ( rst_ni            ),
         .clock_en_i            ( core_clock_en     ),
         .test_en_i             ( test_en_i         ),
-        .boot_addr_i           ( boot_addr_i       ),
+        .boot_addr_i           ( boot_addr         ),
         .core_id_i             ( CORE_ID           ),
         .cluster_id_i          ( CLUSTER_ID        ),
 
@@ -235,7 +237,14 @@ module fc_subsystem #(
         .fregfile_disable_i    ( 1'b0              ) // try me!
     );
     end else begin: FC_CORE
+    assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
+`ifdef VERILATOR
     ibex_core #(
+`elsif TRACE_EXECUTION
+    ibex_core_tracing #(
+`else
+    ibex_core #(
+`endif
         .PMPEnable           ( 0            ),
         .MHPMCounterNum      ( 8            ),
         .MHPMCounterWidth    ( 40           ),
@@ -250,7 +259,7 @@ module fc_subsystem #(
         .test_en_i             ( test_en_i         ),
 
         .hart_id_i             ( hart_id           ),
-        .boot_addr_i           ( boot_addr_i       ),
+        .boot_addr_i           ( boot_addr         ),
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
         .instr_addr_o          ( core_instr_addr   ),
