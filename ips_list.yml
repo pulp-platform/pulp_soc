@@ -53,7 +53,7 @@ jtag_pulp:
 riscv:
   commit: pulpissimo-v3.3.1
 ibex:
-  commit: pulpissimo
+  commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
 scm:
   commit: 300c13879d3b6e28782e14fd466a7c09c875a031
