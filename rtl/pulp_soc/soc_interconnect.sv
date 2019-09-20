@@ -366,7 +366,7 @@ module soc_interconnect #(
     genvar k;
     generate
         // Private mem Binding
-        for (k = 0; k< N_L2_BANKS_PRI; k++) begin
+        for (k = 0; k< N_L2_BANKS_PRI; k++) begin : GEN_L2_PRI_BINDING
             assign L2_pri_D_o   [k] =  PER_data_wdata_TO_BRIDGE[k+3];
             assign L2_pri_A_o   [k] =  PER_data_add_TO_BRIDGE  [k+3][ADDR_L2_PRI_WIDTH+1:2];
             assign L2_pri_CEN_o [k] = ~PER_data_req_TO_BRIDGE  [k+3];
@@ -425,7 +425,7 @@ module soc_interconnect #(
 
     genvar j;
     generate
-        for(j=0;j<N_CH0+N_CH1;j++) begin
+        for(j=0;j<N_CH0+N_CH1;j++) begin : GEN_TCDM_DATA_ADD_RESIZE
             assign TCDM_data_add_DEM_TO_XBAR_resized[j] = TCDM_data_add_DEM_TO_XBAR[j][ADDR_L2_WIDTH+$clog2(N_L2_BANKS)+2-1:2];
         end
     endgenerate

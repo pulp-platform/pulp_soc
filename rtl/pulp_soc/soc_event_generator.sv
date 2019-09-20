@@ -158,7 +158,7 @@ module soc_event_generator #(
     assign timer_event_hi_o = s_events[r_timer_sel_hi];
 
     generate
-        for (j=0;j<EVNT_NUM;j++) begin
+        for (j=0;j<EVNT_NUM;j++) begin : GEN_EVENT_QUEUE
             soc_event_queue u_soc_event_queue (
                 .clk_i       ( HCLK        ),
                 .rstn_i      ( HRESETn     ),

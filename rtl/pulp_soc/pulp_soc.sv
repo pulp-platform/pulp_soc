@@ -956,24 +956,24 @@ module pulp_soc
     //********************************************************
 
     generate
-        for (i=0; i<32; i++) begin
-            for (j=0; j<6; j++) begin
+        for (i=0; i<32; i++) begin : GEN_GPIO_CFG_I
+            for (j=0; j<6; j++) begin : GEN_GPIO_CFG_J
                 assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
             end
         end
     endgenerate
 
     generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<2; j++) begin
+        for (i=0; i<64; i++) begin : GEN_PAD_MUX_I
+            for (j=0; j<2; j++) begin : GEN_PAD_MUX_J
                 assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
             end
         end
     endgenerate
 
     generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<6; j++) begin
+        for (i=0; i<64; i++) begin : GEN_PAD_CFG_I
+            for (j=0; j<6; j++) begin : GEN_PAD_CFG_J
                 assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
             end
         end

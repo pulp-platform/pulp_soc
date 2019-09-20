@@ -365,7 +365,8 @@ module fc_subsystem #(
         assign apb_slave_hwpe.prdata  = '0;
         assign apb_slave_hwpe.pready  = '0;
         assign apb_slave_hwpe.pslverr = '0;
-        for(genvar ii=0; ii<NB_HWPE_PORTS; ii++) begin
+        genvar ii;
+        for(ii=0; ii<NB_HWPE_PORTS; ii++) begin : HWPE_MASTER_GEN
             assign l2_hwpe_master[ii].req   = '0;
             assign l2_hwpe_master[ii].wen   = '0;
             assign l2_hwpe_master[ii].wdata = '0;
