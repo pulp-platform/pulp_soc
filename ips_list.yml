@@ -52,8 +52,9 @@ jtag_pulp:
   commit: dbg_dev
 riscv:
   commit: pulpissimo-v3.3.1
-# zero-riscy:
-#   commit: tags/pulpissimo-v1.0.1
+ibex:
+  commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
+  group: lowRISC
 scm:
   commit: 300c13879d3b6e28782e14fd466a7c09c875a031
 generic_FLL:

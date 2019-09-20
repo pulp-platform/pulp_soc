@@ -52,21 +52,26 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o
 );
 
-    localparam USE_ZERORISCY   = CORE_TYPE == 1 || CORE_TYPE == 2;
-    localparam ZERORISCY_RV32M = CORE_TYPE == 1;
-    localparam ZERORISCY_RV32E = CORE_TYPE == 2;
+    localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
+    localparam IBEX_RV32M = CORE_TYPE == 1;
+    localparam IBEX_RV32E = CORE_TYPE == 2;
 
     // Interrupt signals
-    logic       core_irq_req   ;
-    logic       core_irq_sec   ;
-    logic [4:0] core_irq_id    ;
-    logic [4:0] core_irq_ack_id;
-    logic       core_irq_ack   ;
+    logic        core_irq_req   ;
+    logic        core_irq_sec   ;
+    logic [4:0]  core_irq_id    ;
+    logic [4:0]  core_irq_ack_id;
+    logic        core_irq_ack   ;
+    logic [14:0] core_irq_fast  ;
+
+    logic [3:0]  irq_ack_id;
 
     // Boot address, core id, cluster id, fethc enable and core_status
+    logic [31:0] boot_addr        ;
     logic        fetch_en_int     ;
     logic        core_busy_int    ;
     logic        perf_counters_int;
+    logic [31:0] hart_id;
 
     //EU signals
     logic core_clock_en;
@@ -74,17 +79,19 @@ module fc_subsystem #(
 
     //Core Instr Bus
     logic [31:0] core_instr_addr, core_instr_rdata;
-    logic        core_instr_req, core_instr_gnt, core_instr_rvalid;
+    logic        core_instr_req, core_instr_gnt, core_instr_rvalid, core_instr_err;
 
     //Core Data Bus
     logic [31:0] core_data_addr, core_data_rdata, core_data_wdata;
-    logic        core_data_req, core_data_gnt, core_data_rvalid;
+    logic        core_data_req, core_data_gnt, core_data_rvalid, core_data_err;
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
 
     assign perf_counters_int = 1'b0;
     assign fetch_en_int      = fetch_en_eu & fetch_en_i;
+
+    assign hart_id = {21'b0, CLUSTER_ID[5:0], 1'b0, CORE_ID[3:0]};
 
     XBAR_TCDM_BUS core_data_bus ();
     XBAR_TCDM_BUS core_instr_bus ();
@@ -112,6 +119,7 @@ module fc_subsystem #(
     assign core_instr_gnt       = core_instr_bus.gnt;
     assign core_instr_rvalid    = core_instr_bus.r_valid;
     assign core_instr_rdata     = core_instr_bus.r_rdata;
+    assign core_instr_err       = 1'b0;
 
     assign is_scm_data_req = (core_data_addr < `SOC_L2_PRI_CH0_SCM_END_ADDR) && (core_data_addr >= `SOC_L2_PRI_CH0_SCM_START_ADDR) || (core_data_addr < `ALIAS_SOC_L2_PRI_CH0_SCM_END_ADDR) && (core_data_addr >= `ALIAS_SOC_L2_PRI_CH0_SCM_START_ADDR);
 
@@ -132,6 +140,7 @@ module fc_subsystem #(
     assign core_data_gnt       = core_data_bus.gnt;
     assign core_data_rvalid    = core_data_bus.r_valid;
     assign core_data_rdata     = core_data_bus.r_rdata;
+    assign core_data_err       = 1'b0;
 `else
 
     assign l2_data_master.req    = core_data_req;
@@ -142,6 +151,7 @@ module fc_subsystem #(
     assign core_data_gnt         = l2_data_master.gnt;
     assign core_data_rvalid      = l2_data_master.r_valid;
     assign core_data_rdata       = l2_data_master.r_rdata;
+    assign core_data_err         = l2_data_master.r_opc;
 
 
     assign l2_instr_master.req   = core_instr_req;
@@ -152,6 +162,7 @@ module fc_subsystem #(
     assign core_instr_gnt        = l2_instr_master.gnt;
     assign core_instr_rvalid     = l2_instr_master.r_valid;
     assign core_instr_rdata      = l2_instr_master.r_rdata;
+    assign core_instr_err        = l2_instr_master.r_opc;
 
 
 `endif
@@ -160,7 +171,8 @@ module fc_subsystem #(
     //************ RISCV CORE ********************************
     //********************************************************
     generate
-    if ( USE_ZERORISCY == 0) begin: FC_CORE
+    if ( USE_IBEX == 0) begin: FC_CORE
+    assign boot_addr = boot_addr_i;
     riscv_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
         .PULP_SECURE         ( 1                   ),
@@ -174,7 +186,7 @@ module fc_subsystem #(
         .rst_ni                ( rst_ni            ),
         .clock_en_i            ( core_clock_en     ),
         .test_en_i             ( test_en_i         ),
-        .boot_addr_i           ( boot_addr_i       ),
+        .boot_addr_i           ( boot_addr         ),
         .core_id_i             ( CORE_ID           ),
         .cluster_id_i          ( CLUSTER_ID        ),
 
@@ -225,50 +237,93 @@ module fc_subsystem #(
         .fregfile_disable_i    ( 1'b0              ) // try me!
     );
     end else begin: FC_CORE
-    // zeroriscy_core #(
-    //     .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-    //     .RV32E               ( ZERORISCY_RV32E     ),
-    //     .RV32M               ( ZERORISCY_RV32M     )
-    // ) lFC_CORE (
-    //     .clk_i                 ( clk_i             ),
-    //     .rst_ni                ( rst_ni            ),
-    //     .clock_en_i            ( core_clock_en     ),
-    //     .test_en_i             ( test_en_i         ),
-    //     .boot_addr_i           ( boot_addr_i       ),
-    //     .core_id_i             ( CORE_ID           ),
-    //     .cluster_id_i          ( CLUSTER_ID        ),
+    assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
+`ifdef VERILATOR
+    ibex_core #(
+`elsif TRACE_EXECUTION
+    ibex_core_tracing #(
+`else
+    ibex_core #(
+`endif
+        .PMPEnable           ( 0            ),
+        .MHPMCounterNum      ( 8            ),
+        .MHPMCounterWidth    ( 40           ),
+        .RV32E               ( IBEX_RV32E   ),
+        .RV32M               ( IBEX_RV32M   ),
+        .DmHaltAddr          ( 32'h1A110800 ),
+        .DmExceptionAddr     ( 32'h1A110808 )
+    ) lFC_CORE (
+        .clk_i                 ( clk_i             ),
+        .rst_ni                ( rst_ni            ),
 
-    //     // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-    //     .instr_addr_o          ( core_instr_addr   ),
-    //     .instr_req_o           ( core_instr_req    ),
-    //     .instr_rdata_i         ( core_instr_rdata  ),
-    //     .instr_gnt_i           ( core_instr_gnt    ),
-    //     .instr_rvalid_i        ( core_instr_rvalid ),
+        .test_en_i             ( test_en_i         ),
 
-    //     // Data memory interface:
-    //     .data_addr_o           ( core_data_addr    ),
-    //     .data_req_o            ( core_data_req     ),
-    //     .data_be_o             ( core_data_be      ),
-    //     .data_rdata_i          ( core_data_rdata   ),
-    //     .data_we_o             ( core_data_we      ),
-    //     .data_gnt_i            ( core_data_gnt     ),
-    //     .data_wdata_o          ( core_data_wdata   ),
-    //     .data_rvalid_i         ( core_data_rvalid  ),
+        .hart_id_i             ( hart_id           ),
+        .boot_addr_i           ( boot_addr         ),
 
-    //     .irq_i                 ( core_irq_req      ),
-    //     .irq_id_i              ( core_irq_id       ),
-    //     .irq_ack_o             ( core_irq_ack      ),
-    //     .irq_id_o              ( core_irq_ack_id   ),
+        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
+        .instr_addr_o          ( core_instr_addr   ),
+        .instr_req_o           ( core_instr_req    ),
+        .instr_rdata_i         ( core_instr_rdata  ),
+        .instr_gnt_i           ( core_instr_gnt    ),
+        .instr_rvalid_i        ( core_instr_rvalid ),
+        .instr_err_i           ( core_instr_err    ),
 
-    //     .debug_req_i           ( debug_req_i       ),
+        // Data memory interface:
+        .data_addr_o           ( core_data_addr    ),
+        .data_req_o            ( core_data_req     ),
+        .data_be_o             ( core_data_be      ),
+        .data_rdata_i          ( core_data_rdata   ),
+        .data_we_o             ( core_data_we      ),
+        .data_gnt_i            ( core_data_gnt     ),
+        .data_wdata_o          ( core_data_wdata   ),
+        .data_rvalid_i         ( core_data_rvalid  ),
+        .data_err_i            ( core_data_err     ),
 
-    //     .fetch_enable_i        ( fetch_en_int      ),
-    //     .ext_perf_counters_i   ( perf_counters_int )
-    // );
+        .irq_software_i        ( 1'b0              ),
+        .irq_timer_i           ( 1'b0              ),
+        .irq_external_i        ( 1'b0              ),
+        .irq_fast_i            ( core_irq_fast     ),
+        .irq_nm_i              ( 1'b0              ),
+
+        .irq_ack_o             ( core_irq_ack      ),
+        .irq_ack_id_o          ( irq_ack_id        ),
+
+        .debug_req_i           ( debug_req_i       ),
+
+        .fetch_enable_i        ( fetch_en_int      ),
+        .core_sleep_o          (                   )
+    );
     end
     endgenerate
 
     assign supervisor_mode_o = 1'b1;
+
+    generate
+    if ( USE_IBEX == 1) begin : convert_irqs
+    // Ibex supports 15 fast interrupts and reads the interrupt lines directly
+    // Convert ID back to interrupt lines
+    always_comb begin : gen_core_irq_fast
+        core_irq_fast = '0;
+        if (core_irq_req && (core_irq_id == 26)) begin
+            // remap SoC Event FIFO
+            core_irq_fast[10] = 1'b1;
+        end else if (core_irq_req && (core_irq_id < 15)) begin
+            core_irq_fast[core_irq_id] = 1'b1;
+        end
+    end
+
+    // remap ack ID for SoC Event FIFO
+    always_comb begin : gen_core_irq_ack_id
+        if (irq_ack_id == 10) begin
+            core_irq_ack_id = 26;
+        end else begin
+            core_irq_ack_id = {1'b0, irq_ack_id};
+        end
+    end
+
+    end
+    endgenerate
 
     apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
         .clk_i              ( clk_i              ),
