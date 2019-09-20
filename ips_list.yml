@@ -83,7 +83,3 @@ hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
   commit: tags/v0.1
-hwpe-hd-accelerator:
-  server: git@iis-git.ee.ethz.ch
-  group: rosetta
-  commit: master
