@@ -45,8 +45,8 @@ module fc_subsystem #(
 
     input  logic                      event_fifo_valid_i,
     output logic                      event_fifo_fulln_o,
-    input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i,
-    input  logic [31:0]               events_i,
+    input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
+    input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
     output logic [1:0]                hwpe_events_o,
 
     output logic                      supervisor_mode_o

@@ -219,7 +219,11 @@ module soc_peripherals #(
     assign fc_events_o[23]  = 1'b0;
     assign fc_events_o[24]  = 1'b0;
     assign fc_events_o[25]  = 1'b0;
-    assign fc_events_o[26]  = 1'b0; //RESERVED for soc event FIFO
+    assign fc_events_o[26]  = 1'b0; // RESERVED for soc event FIFO
+                                    // (many events get implicitely muxed into
+                                    // this interrupt. A user that gets such an
+                                    // interrupt has to check the event unit's
+                                    // registers to see what happened)
     assign fc_events_o[27]  = 1'b0;
     assign fc_events_o[28]  = 1'b0;
     assign fc_events_o[29]  = s_fc_err_events;
