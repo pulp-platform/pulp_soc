@@ -79,6 +79,8 @@ module apb_soc_ctrl
     output logic                      PSLVERR,
 
     input  logic                      sel_fll_clk_i,
+    input  logic                      boot_l2_i,
+    input  logic                      bootsel_i,
 
     output logic         [63:0] [5:0] pad_cfg,
     output logic         [63:0] [1:0] pad_mux,
@@ -125,6 +127,7 @@ module apb_soc_ctrl
    logic            r_cluster_irq;
 
    logic            r_sel_hyper_axi;
+   logic      [1:0] r_bootsel;
 
    logic s_apb_write;
 
@@ -437,7 +440,7 @@ module apb_soc_ctrl
           `REG_CS_RO:
             PRDATA = r_corestatus;
           `REG_BOOTSEL:
-            PRDATA =  32'h0;
+            PRDATA =  {30'h0, r_bootsel};
           `REG_CLKSEL:
             PRDATA = {31'h0,sel_fll_clk_i};
           `REG_CLUSTER_CTRL:
@@ -468,6 +471,18 @@ module apb_soc_ctrl
             end
         endcase
     end
+
+   always_ff @(posedge HCLK, negedge HRESETn)
+    begin
+      if(~HRESETn) begin
+        r_bootsel <= 2'b00;
+      end
+      else
+      begin
+        r_bootsel <= {r_bootsel[0],bootsel_i};
+      end
+    end
+
 
    assign n_cores    = NB_CORES;
    assign n_clusters = NB_CLUSTERS;

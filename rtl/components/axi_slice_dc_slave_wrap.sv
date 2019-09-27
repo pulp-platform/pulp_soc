@@ -54,6 +54,8 @@ module axi_slice_dc_slave_wrap
    (
       .clk_i(clk_i),
       .rst_ni(rst_ni),
+      
+      .test_cgbypass_i ( 1'b0 ),
 
       .axi_slave_aw_valid(axi_slave.aw_valid),
       .axi_slave_aw_addr(axi_slave.aw_addr),
@@ -154,6 +156,7 @@ module axi_slice_dc_slave_wrap
       .axi_master_b_readpointer(axi_master_async.b_readpointer)
     );
 
+/*
 `ifndef SYNTHESIS
 
     Axi4PC #(
@@ -218,5 +221,5 @@ module axi_slice_dc_slave_wrap
     );
 
 `endif
-
+*/
 endmodule

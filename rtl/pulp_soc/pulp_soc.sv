@@ -12,9 +12,16 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
-module pulp_soc #(
+module pulp_soc
+    import dm::*;
+#(
     parameter CORE_TYPE          = 0,
+<<<<<<< HEAD
     //parameter USE_FPU            = 1,
+=======
+    parameter USE_FPU            = 1,
+    parameter USE_HWPE           = 1,
+>>>>>>> d56be8ada8406e584933618348241696d5f63147
     parameter USE_CLUSTER_EVENT  = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
@@ -27,23 +34,27 @@ module pulp_soc #(
     parameter BUFFER_WIDTH       = 8,
     parameter EVNT_WIDTH         = 8,
     parameter NB_HWPE_PORTS      = 4,
+<<<<<<< HEAD
 
     parameter FC_FPU            = 0,
     parameter FC_FP_DIVSQRT     = 0
+=======
+    parameter NGPIO              = 43,
+    parameter NPAD               = 64,
+    parameter NBIT_PADCFG        = 4,
+    parameter NBIT_PADMUX        = 2
+>>>>>>> d56be8ada8406e584933618348241696d5f63147
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
-    input  logic                          sel_fll_clk_i,
-
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
-    input  logic [7:0]                    soc_jtag_reg_i,
-    output logic [7:0]                    soc_jtag_reg_o,
     input  logic                          boot_l2_i,
+    input  logic                          bootsel_i,
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -187,20 +198,21 @@ module pulp_soc #(
     input  logic                          i2c1_sda_i,
     output logic                          i2c1_sda_o,
     output logic                          i2c1_sda_oe_o,
-    input  logic                          i2s_sd0_i,
-    input  logic                          i2s_sd1_i,
-    input  logic                          i2s_sck_i,
-    input  logic                          i2s_ws_i,
-    output logic                          i2s_sck0_o,
-    output logic                          i2s_ws0_o,
-    output logic [1:0]                    i2s_mode0_o,
-    output logic                          i2s_sck1_o,
-    output logic                          i2s_ws1_o,
-    output logic [1:0]                    i2s_mode1_o,
+    input  logic                          i2s_slave_sd0_i,
+    input  logic                          i2s_slave_sd1_i,
+    input  logic                          i2s_slave_ws_i,
+    output logic                          i2s_slave_ws_o,
+    output logic                          i2s_slave_ws_oe,
+    input  logic                          i2s_slave_sck_i,
+    output logic                          i2s_slave_sck_o,
+    output logic                          i2s_slave_sck_oe,
     output logic                          spi_master0_clk_o,
     output logic                          spi_master0_csn0_o,
     output logic                          spi_master0_csn1_o,
-    output logic [1:0]                    spi_master0_mode_o,
+    output logic                          spi_master0_oen0_o,
+    output logic                          spi_master0_oen1_o,
+    output logic                          spi_master0_oen2_o,
+    output logic                          spi_master0_oen3_o,
     output logic                          spi_master0_sdo0_o,
     output logic                          spi_master0_sdo1_o,
     output logic                          spi_master0_sdo2_o,
@@ -209,7 +221,7 @@ module pulp_soc #(
     input  logic                          spi_master0_sdi1_i,
     input  logic                          spi_master0_sdi2_i,
     input  logic                          spi_master0_sdi3_i,
-    output logic                          sdio_clk_o,           
+    output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
     output logic                          sdio_cmd_oen_o,
@@ -221,14 +233,11 @@ module pulp_soc #(
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
     ///////////////////////////////////////////////////
-    input  logic                          jtag_tck_i,                  //shifted in the PULP_CHIP
-    input  logic                          jtag_trst_ni,                //shifted in the PULP_CHIP
-    input  logic                          jtag_axireg_tdi_i,           //shifted in the PULP_CHIP
-    output logic                          jtag_axireg_tdo_o,           //shifted in the PULP_CHIP
-    input  logic                          jtag_axireg_sel_i,           //shifted in the PULP_CHIP
-    input  logic                          jtag_shift_dr_i,             //shifted in the PULP_CHIP
-    input  logic                          jtag_update_dr_i,            //shifted in the PULP_CHIP
-    input  logic                          jtag_capture_dr_i            //shifted in the PULP_CHIP
+    input  logic                          jtag_tck_i,
+    input  logic                          jtag_trst_ni,
+    input  logic                          jtag_tms_i,
+    input  logic                          jtag_tdi_i,
+    output logic                          jtag_tdo_o
     ///////////////////////////////////////////////////
 );
 
@@ -241,6 +250,34 @@ module pulp_soc #(
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
+    localparam FC_Core_CLUSTER_ID    = 6'd31;
+    localparam FC_Core_CORE_ID       = 4'd0;
+    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+
+    /*
+        PULP RISC-V cores have not continguos MHARTID.
+        This leads to set the number of HARTS >= the maximum value of the MHARTID.
+        In this case, the MHARD ID is {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID} --> 996 (1024 chosen as power of 2)
+        To avoid paying 1024 flip flop for each number of harts's related register, we implemented
+        the masking parameter, aka SELECTABLE_HARTS.
+        In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
+        e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
+        This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
+        will remove the other flip flops and related logic.
+    */
+
+    localparam NrHarts                               = 1024;
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
+    localparam dm::hartinfo_t RI5CY_HARTINFO = '{
+                                                zero1:        '0,
+                                                nscratch:      2, // Debug module needs at least two scratch regs
+                                                zero0:        '0,
+                                                dataaccess: 1'b1, // data registers are memory mapped in the debugger
+                                                datasize: dm::DataCount,
+                                                dataaddr: dm::DataAddr
+                                               };
+
+    dm::hartinfo_t [NrHarts-1:0] hartinfo;
 
     /*
        This module has been tested only with the default parameters.
@@ -289,39 +326,68 @@ module pulp_soc #(
     logic                  s_pf_evt;
 
     logic                  s_fc_fetchen;
+    logic [NrHarts-1:0]    dm_debug_req;
+
+    logic                  jtag_req_valid;
+    logic                  debug_req_ready;
+    logic                  jtag_resp_ready;
+    logic                  jtag_resp_valid;
+    dm::dmi_req_t          jtag_dmi_req;
+    dm::dmi_resp_t         debug_resp;
+    logic                  slave_grant, slave_valid, slave_req , slave_we;
+    logic                  [31:0] slave_addr, slave_wdata, slave_rdata;
+    logic                  [3:0]  slave_be;
+    logic                  lint_riscv_jtag_bus_master_we;
+    logic                  int_td;
+
+    logic                  master_req;
+    logic [31:0]           master_add;
+    logic                  master_we;
+    logic [31:0]           master_wdata;
+    logic [3:0]            master_be;
+    logic                  master_gnt;
+    logic                  master_r_valid;
+    logic [31:0]           master_r_rdata;
+
+
+    logic [7:0]            soc_jtag_reg_tap;
+    logic [7:0]            soc_jtag_reg_soc;
+
+
+    logic                  spi_master0_csn3, spi_master0_csn2;
 
     genvar                 i,j;
 
     APB_BUS                s_apb_eu_bus ();
-    APB_BUS                s_apb_debug_bus ();
     APB_BUS                s_apb_hwpe_bus ();
-    
+    APB_BUS                s_apb_debug_bus();
+
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_master ();
-    
+
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_slave ();
-    
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
-    
+
     AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
 
     FLL_BUS #(
@@ -339,19 +405,20 @@ module pulp_soc #(
         .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
     ) s_cluster_fll_master ();
 
-
     APB_BUS s_apb_periph_bus ();
 
     UNICAD_MEM_BUS_32 s_mem_rom_bus ();
 
     UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
     UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-
+`ifdef QUENTIN_SCM
     UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
     UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
+`endif
 
-    XBAR_TCDM_BUS s_lint_debug_bus ();
-    XBAR_TCDM_BUS s_lint_jtag_bus ();
+    XBAR_TCDM_BUS s_lint_debug_bus();
+    XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
+    XBAR_TCDM_BUS s_lint_riscv_jtag_bus();
     XBAR_TCDM_BUS s_lint_udma_tx_bus ();
     XBAR_TCDM_BUS s_lint_udma_rx_bus ();
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
@@ -364,7 +431,7 @@ module pulp_soc #(
     `endif
 
 
-    
+
     logic s_cluster_isolate_dc;
     logic s_rstn_cluster_sync_soc;
 
@@ -408,7 +475,7 @@ module pulp_soc #(
     ) dc_fifo_datain_bus_i (
         .clk_i            ( s_soc_clk               ),
         .rst_ni           ( s_rstn_cluster_sync_soc ),
-	.test_cgbypass_i  ( 1'b0                    ),
+        // .test_cgbypass_i  ( 1'b0                    ),
         .isolate_i        ( s_cluster_isolate_dc    ),
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
@@ -430,9 +497,12 @@ module pulp_soc #(
         .init_ni         ( 1'b1               ),
         .test_mode_i     ( dft_test_mode_i    ),
         .mem_slave       ( s_mem_l2_bus       ),
-        .mem_pri_slave   ( s_mem_l2_pri_bus   ),
+        .mem_pri_slave   ( s_mem_l2_pri_bus   )
+`ifdef QUENTIN_SCM
+        ,
         .scm_data_slave  ( s_scm_l2_data_bus  ),
         .scm_instr_slave ( s_scm_l2_instr_bus )
+`endif
     );
 
 
@@ -455,22 +525,31 @@ module pulp_soc #(
     //********************************************************
 
     soc_peripherals #(
-        .MEM_ADDR_WIDTH ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
-        .APB_ADDR_WIDTH ( 32                                    ),
-        .APB_DATA_WIDTH ( 32                                    ),
-        .NB_CORES       ( `NB_CORES                             ),
-        .NB_CLUSTERS    ( `NB_CLUSTERS                          ),
-        .EVNT_WIDTH     ( EVNT_WIDTH                            )
+        .CORE_TYPE          ( CORE_TYPE                             ),
+        .MEM_ADDR_WIDTH     ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
+        .APB_ADDR_WIDTH     ( 32                                    ),
+        .APB_DATA_WIDTH     ( 32                                    ),
+        .NB_CORES           ( `NB_CORES                             ),
+        .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
+        .EVNT_WIDTH         ( EVNT_WIDTH                            ),
+        .NGPIO              ( NGPIO                                 ),
+        .NPAD               ( NPAD                                  ),
+        .NBIT_PADCFG        ( NBIT_PADCFG                           ),
+        .NBIT_PADMUX        ( NBIT_PADMUX                           )
     ) soc_peripherals_i (
+
         .clk_i                  ( s_soc_clk              ),
         .periph_clk_i           ( s_periph_clk           ),
         .rst_ni                 ( s_soc_rstn             ),
-        .sel_fll_clk_i          ( sel_fll_clk_i          ),
+        .sel_fll_clk_i          ( s_sel_fll_clk          ),
         .ref_clk_i              ( ref_clk_i              ),
         .slow_clk_i             ( slow_clk_i             ),
 
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( 1'b0                   ),
+
+        .boot_l2_i              ( boot_l2_i              ),
+        .bootsel_i              ( bootsel_i              ),
 
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),
@@ -484,8 +563,8 @@ module pulp_soc #(
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
 
-        .soc_jtag_reg_i         ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o         ( soc_jtag_reg_o         ),
+        .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
+        .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
 
         .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
         .fc_events_o            ( s_fc_events            ),
@@ -506,55 +585,43 @@ module pulp_soc #(
         .pad_mux_o              ( s_pad_mux              ),
         .pad_cfg_o              ( s_pad_cfg              ),
 
-        .uart_tx                ( uart_tx_o              ),
-        .uart_rx                ( uart_rx_i              ),
-
+        //CAMERA
         .cam_clk_i              ( cam_clk_i              ),
         .cam_data_i             ( cam_data_i             ),
         .cam_hsync_i            ( cam_hsync_i            ),
         .cam_vsync_i            ( cam_vsync_i            ),
 
-        .i2c0_scl_i             ( i2c0_scl_i             ),
-        .i2c0_scl_o             ( i2c0_scl_o             ),
-        .i2c0_scl_oe_o          ( i2c0_scl_oe_o          ),
-        .i2c0_sda_i             ( i2c0_sda_i             ),
-        .i2c0_sda_o             ( i2c0_sda_o             ),
-        .i2c0_sda_oe_o          ( i2c0_sda_oe_o          ),
+        //UART
+        .uart_tx                ( uart_tx_o              ),
+        .uart_rx                ( uart_rx_i              ),
 
-        .i2c1_scl_i             ( i2c1_scl_i             ),
-        .i2c1_scl_o             ( i2c1_scl_o             ),
-        .i2c1_scl_oe_o          ( i2c1_scl_oe_o          ),
-        .i2c1_sda_i             ( i2c1_sda_i             ),
-        .i2c1_sda_o             ( i2c1_sda_o             ),
-        .i2c1_sda_oe_o          ( i2c1_sda_oe_o          ),
+        //I2C
+        .i2c_scl_i    ( { i2c1_scl_i,    i2c0_scl_i    } ),
+        .i2c_scl_o    ( { i2c1_scl_o,    i2c0_scl_o    } ),
+        .i2c_scl_oe   ( { i2c1_scl_oe_o, i2c0_scl_oe_o } ),
+        .i2c_sda_i    ( { i2c1_sda_i,    i2c0_sda_i    } ),
+        .i2c_sda_o    ( { i2c1_sda_o,    i2c0_sda_o    } ),
+        .i2c_sda_oe   ( { i2c1_sda_oe_o, i2c0_sda_oe_o } ),
 
-        .i2s_sd0_i              ( i2s_sd0_i              ),
-        .i2s_sd1_i              ( i2s_sd1_i              ),
-        .i2s_ws_i               ( i2s_ws_i               ),
-        .i2s_sck_i              ( i2s_sck_i              ),
-        .i2s_ws0_o              ( i2s_ws0_o              ),
-        .i2s_mode0_o            ( i2s_mode0_o            ),
-        .i2s_sck0_o             ( i2s_sck0_o             ),
-        .i2s_ws1_o              ( i2s_ws1_o              ),
-        .i2s_sck1_o             ( i2s_sck1_o             ),
-        .i2s_mode1_o            ( i2s_mode1_o            ),
+        //I2S
+        .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),
+        .i2s_slave_sd1_i        ( i2s_slave_sd1_i        ),
+        .i2s_slave_ws_i         ( i2s_slave_ws_i         ),
+        .i2s_slave_ws_o         ( i2s_slave_ws_o         ),
+        .i2s_slave_ws_oe        ( i2s_slave_ws_oe        ),
+        .i2s_slave_sck_i        ( i2s_slave_sck_i        ),
+        .i2s_slave_sck_o        ( i2s_slave_sck_o        ),
+        .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
 
-        .spi_master0_clk        ( spi_master0_clk_o      ),
-        .spi_master0_csn0       ( spi_master0_csn0_o     ),
-        .spi_master0_csn1       ( spi_master0_csn1_o     ),
-        .spi_master0_csn2       (                        ),
-        .spi_master0_csn3       (                        ),
-        .spi_master0_mode       ( spi_master0_mode_o     ),
-        .spi_master0_sdo0       ( spi_master0_sdo0_o     ),
-        .spi_master0_sdo1       ( spi_master0_sdo1_o     ),
-        .spi_master0_sdo2       ( spi_master0_sdo2_o     ),
-        .spi_master0_sdo3       ( spi_master0_sdo3_o     ),
-        .spi_master0_sdi0       ( spi_master0_sdi0_i     ),
-        .spi_master0_sdi1       ( spi_master0_sdi1_i     ),
-        .spi_master0_sdi2       ( spi_master0_sdi2_i     ),
-        .spi_master0_sdi3       ( spi_master0_sdi3_i     ),
+         //SPI
+        .spi_clk     ( spi_master0_clk_o      ),
+        .spi_csn     ( {spi_master0_csn3, spi_master0_csn2, spi_master0_csn1_o, spi_master0_csn0_o}     ), //csn3 and csn2 unconnected
+        .spi_oen     ( {spi_master0_oen3_o, spi_master0_oen2_o, spi_master0_oen1_o, spi_master0_oen0_o} ),
+        .spi_sdo     ( {spi_master0_sdo3_o, spi_master0_sdo2_o, spi_master0_sdo1_o, spi_master0_sdo0_o} ),
+        .spi_sdi     ( {spi_master0_sdi3_i, spi_master0_sdi2_i, spi_master0_sdi1_i, spi_master0_sdi0_i} ),
 
-        .sdclk_o                ( sdio_clk_o             ),           
+        //SDIO
+        .sdclk_o                ( sdio_clk_o             ),
         .sdcmd_o                ( sdio_cmd_o             ),
         .sdcmd_i                ( sdio_cmd_i             ),
         .sdcmd_oen_o            ( sdio_cmd_oen_o         ),
@@ -582,6 +649,7 @@ module pulp_soc #(
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
         .cluster_irq_o          ( cluster_irq_o          )
     );
+
 
 
     dc_token_ring_fifo_din #(
@@ -625,6 +693,7 @@ module pulp_soc #(
 
 
     fc_subsystem #(
+<<<<<<< HEAD
         .CORE_TYPE ( CORE_TYPE ),
         //.USE_FPU   ( USE_FPU   )
         .FPU(FC_FPU),
@@ -633,6 +702,14 @@ module pulp_soc #(
     )
    fc_subsystem_i
     (
+=======
+        .CORE_TYPE  ( CORE_TYPE          ),
+        .USE_FPU    ( USE_FPU            ),
+        .CORE_ID    ( FC_Core_CORE_ID    ),
+        .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
+        .USE_HWPE   ( USE_HWPE           )
+    ) fc_subsystem_i (
+>>>>>>> d56be8ada8406e584933618348241696d5f63147
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
 
@@ -645,13 +722,13 @@ module pulp_soc #(
         .l2_data_master      ( s_lint_fc_data_bus  ),
         .l2_instr_master     ( s_lint_fc_instr_bus ),
         .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-
+`ifdef QUENTIN_SCM
         .scm_l2_data_master  ( s_scm_l2_data_bus   ),
         .scm_l2_instr_master ( s_scm_l2_instr_bus  ),
-
+`endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
-        .apb_slave_debug     ( s_apb_debug_bus     ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
+        .debug_req_i         ( dm_debug_req[FC_Core_MHARTID] ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
@@ -665,7 +742,7 @@ module pulp_soc #(
     soc_clk_rst_gen i_clk_rst_gen (
         .ref_clk_i                  ( ref_clk_i                     ),
         .test_clk_i                 ( test_clk_i                    ),
-        .sel_fll_clk_i              ( sel_fll_clk_i                 ),
+        .sel_fll_clk_i              ( s_sel_fll_clk                 ),
 
         .rstn_glob_i                ( rstn_glob_i                   ),
         .rstn_soc_sync_o            ( s_soc_rstn                    ),
@@ -731,7 +808,7 @@ module pulp_soc #(
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
         .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
-	
+
         .axi_from_cluster ( s_data_in_bus       ),
         .axi_to_cluster   ( s_data_out_bus      ),
 
@@ -741,20 +818,159 @@ module pulp_soc #(
         .mem_rom_bus      ( s_mem_rom_bus       )
     );
 
-    lint_jtag_wrap i_lint_jtag (
-        .tck_i        ( jtag_tck_i        ),
-        .tdi_i        ( jtag_axireg_tdi_i ),
-        .trstn_i      ( jtag_trst_ni      ),
-        .tdo_o        ( jtag_axireg_tdo_o ),
-        .shift_dr_i   ( jtag_shift_dr_i   ),
-        .pause_dr_i   ( 1'b0              ),
-        .update_dr_i  ( jtag_update_dr_i  ),
-        .capture_dr_i ( jtag_capture_dr_i ),
-        .lint_select_i( jtag_axireg_sel_i ),
-        .clk_i        ( s_soc_clk  ),
-        .rst_ni       ( s_soc_rstn ),
-        .jtag_lint_master(s_lint_debug_bus)
+
+    /* Debug Subsystem */
+
+    dmi_jtag #(
+        .IdcodeValue          ( `DMI_JTAG_IDCODE    )
+    ) i_dmi_jtag (
+        .clk_i                ( s_soc_clk           ),
+        .rst_ni               ( s_soc_rstn          ),
+        .testmode_i           ( 1'b0                ),
+        .dmi_req_o            ( jtag_dmi_req        ),
+        .dmi_req_valid_o      ( jtag_req_valid      ),
+        .dmi_req_ready_i      ( debug_req_ready     ),
+        .dmi_resp_i           ( debug_resp          ),
+        .dmi_resp_ready_o     ( jtag_resp_ready     ),
+        .dmi_resp_valid_i     ( jtag_resp_valid     ),
+        .dmi_rst_no           (                     ), // not connected
+        .tck_i                ( jtag_tck_i          ),
+        .tms_i                ( jtag_tms_i          ),
+        .trst_ni              ( jtag_trst_ni        ),
+        .td_i                 ( jtag_tdi_i          ),
+        .td_o                 ( int_td              ),
+        .tdo_oe_o             (                     )
     );
+
+    // assign hartinfo
+    always_comb begin
+        hartinfo = '{default: '0};
+        hartinfo[FC_Core_MHARTID] = RI5CY_HARTINFO;
+    end
+
+    dm_top #(
+       .NrHarts           ( NrHarts                   ),
+       .BusWidth          ( 32                        ),
+       .SelectableHarts   ( SELECTABLE_HARTS          )
+    ) i_dm_top (
+
+       .clk_i             ( s_soc_clk                 ),
+       .rst_ni            ( s_soc_rstn                ),
+       .testmode_i        ( 1'b0                      ),
+       .ndmreset_o        (                           ),
+       .dmactive_o        (                           ), // active debug session
+       .debug_req_o       ( dm_debug_req              ),
+       .unavailable_i     ( ~SELECTABLE_HARTS         ),
+       .hartinfo_i        ( hartinfo                  ),
+
+       .slave_req_i       ( slave_req                 ),
+       .slave_we_i        ( slave_we                  ),
+       .slave_addr_i      ( slave_addr                ),
+       .slave_be_i        ( slave_be                  ),
+       .slave_wdata_i     ( slave_wdata               ),
+       .slave_rdata_o     ( slave_rdata               ),
+
+       .master_req_o      ( s_lint_riscv_jtag_bus.req      ),
+       .master_add_o      ( s_lint_riscv_jtag_bus.add      ),
+       .master_we_o       ( lint_riscv_jtag_bus_master_we  ),
+       .master_wdata_o    ( s_lint_riscv_jtag_bus.wdata    ),
+       .master_be_o       ( s_lint_riscv_jtag_bus.be       ),
+       .master_gnt_i      ( s_lint_riscv_jtag_bus.gnt      ),
+       .master_r_valid_i  ( s_lint_riscv_jtag_bus.r_valid  ),
+       .master_r_rdata_i  ( s_lint_riscv_jtag_bus.r_rdata  ),
+
+       .dmi_rst_ni        ( s_soc_rstn                ),
+       .dmi_req_valid_i   ( jtag_req_valid            ),
+       .dmi_req_ready_o   ( debug_req_ready           ),
+       .dmi_req_i         ( jtag_dmi_req              ),
+       .dmi_resp_valid_o  ( jtag_resp_valid           ),
+       .dmi_resp_ready_i  ( jtag_resp_ready           ),
+       .dmi_resp_o        ( debug_resp                )
+    );
+    assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
+
+    jtag_tap_top jtag_tap_top_i
+    (
+        .tck_i                    ( jtag_tck_i         ),
+        .trst_ni                  ( jtag_trst_ni       ),
+        .tms_i                    ( jtag_tms_i         ),
+        .td_i                     ( int_td             ),
+        .td_o                     ( jtag_tdo_o         ),
+
+        .test_clk_i               ( 1'b0               ),
+        .test_rstn_i              ( s_soc_rstn         ),
+
+        .jtag_shift_dr_o          ( s_jtag_shift_dr    ),
+        .jtag_update_dr_o         ( s_jtag_update_dr   ),
+        .jtag_capture_dr_o        ( s_jtag_capture_dr  ),
+
+        .axireg_sel_o             ( s_jtag_axireg_sel  ),
+        .dbg_axi_scan_in_o        ( s_jtag_axireg_tdi  ),
+        .dbg_axi_scan_out_i       ( s_jtag_axireg_tdo  ),
+        .soc_jtag_reg_i           ( soc_jtag_reg_soc   ),
+        .soc_jtag_reg_o           ( soc_jtag_reg_tap   ),
+        .sel_fll_clk_o            ( s_sel_fll_clk      )
+    );
+
+    lint_jtag_wrap i_lint_jtag (
+        .tck_i                    ( jtag_tck_i           ),
+        .tdi_i                    ( s_jtag_axireg_tdi    ),
+        .trstn_i                  ( jtag_trst_ni         ),
+        .tdo_o                    ( s_jtag_axireg_tdo    ),
+        .shift_dr_i               ( s_jtag_shift_dr      ),
+        .pause_dr_i               ( 1'b0                 ),
+        .update_dr_i              ( s_jtag_update_dr     ),
+        .capture_dr_i             ( s_jtag_capture_dr    ),
+        .lint_select_i            ( s_jtag_axireg_sel    ),
+        .clk_i                    ( s_soc_clk            ),
+        .rst_ni                   ( s_soc_rstn           ),
+        .jtag_lint_master         ( s_lint_pulp_jtag_bus )
+    );
+
+    tcdm_arbiter_2x1 jtag_lint_arbiter_i
+     (
+        .clk_i(s_soc_clk),
+        .rst_ni(s_soc_rstn),
+        .tcdm_bus_1_i(s_lint_riscv_jtag_bus),
+        .tcdm_bus_0_i(s_lint_pulp_jtag_bus),
+        .tcdm_bus_o(s_lint_debug_bus)
+    );
+
+    apb2per #(
+        .PER_ADDR_WIDTH ( 32  ),
+        .APB_ADDR_WIDTH ( 32  )
+    ) apb2per_newdebug_i (
+        .clk_i                ( s_soc_clk               ),
+        .rst_ni               ( s_soc_rstn              ),
+
+        .PADDR                ( s_apb_debug_bus.paddr   ),
+        .PWDATA               ( s_apb_debug_bus.pwdata  ),
+        .PWRITE               ( s_apb_debug_bus.pwrite  ),
+        .PSEL                 ( s_apb_debug_bus.psel    ),
+        .PENABLE              ( s_apb_debug_bus.penable ),
+        .PRDATA               ( s_apb_debug_bus.prdata  ),
+        .PREADY               ( s_apb_debug_bus.pready  ),
+        .PSLVERR              ( s_apb_debug_bus.pslverr ),
+
+        .per_master_req_o     ( slave_req               ),
+        .per_master_add_o     ( slave_addr              ),
+        .per_master_we_o      ( slave_we                ),
+        .per_master_wdata_o   ( slave_wdata             ),
+        .per_master_be_o      ( slave_be                ),
+        .per_master_gnt_i     ( slave_grant             ),
+        .per_master_r_valid_i ( slave_valid             ),
+        .per_master_r_opc_i   ( '0                      ),
+        .per_master_r_rdata_i ( slave_rdata             )
+     );
+
+     assign slave_grant = slave_req;
+     always_ff @(posedge s_soc_clk or negedge s_soc_rstn) begin : apb2per_valid
+         if(~s_soc_rstn) begin
+             slave_valid <= 0;
+         end else begin
+             slave_valid <= slave_grant;
+         end
+     end
 
     //********************************************************
     //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
@@ -802,7 +1018,7 @@ module pulp_soc #(
     assign s_data_slave.aw_id          = data_slave_aw_id_i          ;
     assign s_data_slave.aw_user        = data_slave_aw_user_i        ;
     assign data_slave_aw_readpointer_o = s_data_slave.aw_readpointer ;
- 
+
     assign s_data_slave.ar_writetoken  = data_slave_ar_writetoken_i  ;
     assign s_data_slave.ar_addr        = data_slave_ar_addr_i        ;
     assign s_data_slave.ar_prot        = data_slave_ar_prot_i        ;
@@ -816,14 +1032,14 @@ module pulp_soc #(
     assign s_data_slave.ar_id          = data_slave_ar_id_i          ;
     assign s_data_slave.ar_user        = data_slave_ar_user_i        ;
     assign data_slave_ar_readpointer_o = s_data_slave.ar_readpointer ;
- 
+
     assign s_data_slave.w_writetoken   = data_slave_w_writetoken_i   ;
     assign s_data_slave.w_data         = data_slave_w_data_i         ;
     assign s_data_slave.w_strb         = data_slave_w_strb_i         ;
     assign s_data_slave.w_user         = data_slave_w_user_i         ;
     assign s_data_slave.w_last         = data_slave_w_last_i         ;
     assign data_slave_w_readpointer_o  = s_data_slave.w_readpointer  ;
- 
+
     assign data_slave_r_writetoken_o   = s_data_slave.r_writetoken   ;
     assign data_slave_r_data_o         = s_data_slave.r_data         ;
     assign data_slave_r_resp_o         = s_data_slave.r_resp         ;
@@ -831,7 +1047,7 @@ module pulp_soc #(
     assign data_slave_r_id_o           = s_data_slave.r_id           ;
     assign data_slave_r_user_o         = s_data_slave.r_user         ;
     assign s_data_slave.r_readpointer  = data_slave_r_readpointer_i  ;
- 
+
     assign data_slave_b_writetoken_o   = s_data_slave.b_writetoken   ;
     assign data_slave_b_resp_o         = s_data_slave.b_resp         ;
     assign data_slave_b_id_o           = s_data_slave.b_id           ;
