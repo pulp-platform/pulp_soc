@@ -37,7 +37,7 @@ apb_interrupt_cntrl:
 axi/axi_node:
   commit: tags/v1.1.2
 axi/axi_slice:
-  commit: tags/v1.1.5
+  commit: tags/v1.1.4
 axi/axi_slice_dc:
   commit: tags/v1.1.3
 axi/axi_mem_if:
@@ -45,7 +45,7 @@ axi/axi_mem_if:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: da7ac6bc22fd25626afcdceab30bccd58e9123a2
+  commit: 0b8c10c21c9f810509bbd7bf86cfbdc4e6626c8e
 fpnew:
   commit: v0.5.3
 jtag_pulp:
