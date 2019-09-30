@@ -58,7 +58,7 @@ ibex:
 scm:
   commit: 300c13879d3b6e28782e14fd466a7c09c875a031
 generic_FLL:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.1
 tech_cells_generic:
   commit: 0532e53c1a323db4a55381d123c55bdc4fab06f6
 udma/udma_core:
