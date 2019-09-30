@@ -33,7 +33,7 @@ apb/apb_gpio:
 apb/apb_node:
   commit: v0.1.1
 apb_interrupt_cntrl:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.0.1
 axi/axi_node:
   commit: tags/pulpissimo-v1.0
 axi/axi_slice:
