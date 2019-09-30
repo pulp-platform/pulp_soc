@@ -21,7 +21,7 @@
 L2_tcdm_hybrid_interco:
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
-  commit: 66e20f8ef3aae0198f36137ba28c26ff12b47eaa
+  commit: v0.0.1
 apb/apb2per:
   commit: tags/pulpissimo-v1.0
 apb/apb_adv_timer:
