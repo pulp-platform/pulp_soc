@@ -37,7 +37,7 @@ apb_interrupt_cntrl:
 axi/axi_node:
   commit: tags/pulpissimo-v1.0
 axi/axi_slice:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.1.4
 axi/axi_slice_dc:
   commit: v1.1.3
 axi/axi_mem_if:
