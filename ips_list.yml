@@ -25,7 +25,7 @@ adv_dbg_if:
 apb/apb2per:
   commit: v0.0.1
 apb/apb_adv_timer:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.0.2
 apb/apb_fll_if:
   commit: tags/pulpissimo-v1.0
 apb/apb_gpio:
