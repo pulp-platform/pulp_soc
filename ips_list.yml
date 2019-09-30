@@ -82,4 +82,4 @@ udma/udma_external_per:
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
-  commit: tags/v0.1
+  commit: v0.2
