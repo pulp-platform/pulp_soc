@@ -41,7 +41,7 @@ axi/axi_slice:
 axi/axi_slice_dc:
   commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
 axi/axi_mem_if:
-  commit: 313d075cac65e960fddc8b93848aceda18eebeac
+  commit: v0.2.0
 timer_unit:
   commit: v1.0.2
 common_cells:
