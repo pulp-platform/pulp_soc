@@ -80,6 +80,6 @@ udma/udma_filter:
 udma/udma_external_per:
   commit: master
 hwpe-mac-engine:
-  commit: f1d0b72
+  commit: v1.2
 riscv-dbg:
   commit: v0.2
