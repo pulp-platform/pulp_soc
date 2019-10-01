@@ -13,27 +13,19 @@
 
 module fc_subsystem #(                      
     parameter CORE_TYPE           = 0,
-<<<<<<< HEAD
-    //parameter USE_FPU             = 1,
-=======
     parameter USE_FPU             = 1,
     parameter USE_HWPE            = 1,
->>>>>>> d56be8ada8406e584933618348241696d5f63147
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
     parameter FPU                 = 1,
     parameter FP_DIVSQRT          = 1,
-    parameter PULP_SECURE         = 1,
-<<<<<<< HEAD
-    parameter TB_RISCV            = 0
-                                           
-=======
+    parameter PULP_SECURE         = 1,     
+
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F
->>>>>>> d56be8ada8406e584933618348241696d5f63147
 )
 (
 
@@ -182,162 +174,11 @@ module fc_subsystem #(
     //********************************************************
     //************ RISCV CORE ********************************
     //********************************************************
-<<<<<<< HEAD
 
-     generate
-     if(USE_ZERORISCY == 0) begin: FC_CORE
-     if(TB_RISCV) begin: TB_RISCV
-        tb_riscv_core #(
-       .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS    ),
-       .PULP_SECURE         ( 1                      ),
-       .PULP_CLUSTER        ( 0                      ),
-       .SHARED_FP           ( 0                      ),
-       .FPU                 ( FPU                    ),
-       .FP_DIVSQRT          ( FP_DIVSQRT             )  
-        ) lFC_CORE (
-            .clk_i                 ( clk_i             ),
-            .rst_ni                ( rst_ni            ),
-            .clock_en_i            ( core_clock_en     ),
-            .test_en_i             ( test_en_i         ),
-            .boot_addr_i           ( boot_addr_i       ),
-            .core_id_i             ( core_id_int       ),
-            .cluster_id_i          ( cluster_id_int    ),
-
-            // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-            .instr_addr_o          ( core_instr_addr   ),
-            .instr_req_o           ( core_instr_req    ),
-            .instr_rdata_i         ( core_instr_rdata  ),
-            .instr_gnt_i           ( core_instr_gnt    ),
-            .instr_rvalid_i        ( core_instr_rvalid ),
-
-            // Data memory interface:
-            .data_addr_o           ( core_data_addr    ),
-            .data_req_o            ( core_data_req     ),
-            .data_be_o             ( core_data_be      ),
-            .data_rdata_i          ( core_data_rdata   ),
-            .data_we_o             ( core_data_we      ),
-            .data_gnt_i            ( core_data_gnt     ),
-            .data_wdata_o          ( core_data_wdata   ),
-            .data_rvalid_i         ( core_data_rvalid  ),
-
-            // apu-interconnect
-            // handshake signals
-            .apu_master_req_o      (                   ),
-            .apu_master_ready_o    (                   ),
-            .apu_master_gnt_i      ( 1'b0              ),
-            // request channel
-            .apu_master_operands_o (                   ),
-            .apu_master_op_o       (                   ),
-            .apu_master_type_o     (                   ),
-            .apu_master_flags_o    (                   ),
-            // response channel
-            .apu_master_valid_i    ( '0                ),
-            .apu_master_result_i   ( '0                ),
-            .apu_master_flags_i    ( '0                ),
-
-            .irq_i                 ( core_irq_req      ),
-            .irq_id_i              ( core_irq_id       ),
-            .irq_ack_o             ( core_irq_ack      ),
-            .irq_id_o              ( core_irq_ack_id   ),
-            .irq_sec_i             ( 1'b0              ),
-            .sec_lvl_o             (                   ),
-
-            .debug_req_i           ( debug_req         ),
-            .debug_gnt_o           ( debug_gnt         ),
-            .debug_rvalid_o        ( debug_rvalid      ),
-            .debug_addr_i          ( debug_addr        ),
-            .debug_we_i            ( debug_we          ),
-            .debug_wdata_i         ( debug_wdata       ),
-            .debug_rdata_o         ( debug_rdata       ),
-            .debug_halted_o        (                   ),
-            .debug_halt_i          ( 1'b0              ),
-            .debug_resume_i        ( 1'b0              ),
-            .fetch_enable_i        ( fetch_en_int      ),
-            .core_busy_o           (                   ),
-            .ext_perf_counters_i   ( perf_counters_int ),
-            .fregfile_disable_i    ( 1'b0              ) // try me!
-        );
-     end else begin: CORE
-        riscv_core #(
-       .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS    ),
-       .PULP_SECURE         ( 1                      ),
-       .PULP_CLUSTER        ( 0                      ),
-       .SHARED_FP           ( 0                      ),
-       .FPU                 ( FPU                    ),
-       .FP_DIVSQRT          ( FP_DIVSQRT             )
-        ) lFC_CORE (
-            .clk_i                 ( clk_i             ),
-            .rst_ni                ( rst_ni            ),
-            .clock_en_i            ( core_clock_en     ),
-            .test_en_i             ( test_en_i         ),
-            .boot_addr_i           ( boot_addr_i       ),
-            .core_id_i             ( core_id_int       ),
-            .cluster_id_i          ( cluster_id_int    ),
-
-            // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-            .instr_addr_o          ( core_instr_addr   ),
-            .instr_req_o           ( core_instr_req    ),
-            .instr_rdata_i         ( core_instr_rdata  ),
-            .instr_gnt_i           ( core_instr_gnt    ),
-            .instr_rvalid_i        ( core_instr_rvalid ),
-
-            // Data memory interface:
-            .data_addr_o           ( core_data_addr    ),
-            .data_req_o            ( core_data_req     ),
-            .data_be_o             ( core_data_be      ),
-            .data_rdata_i          ( core_data_rdata   ),
-            .data_we_o             ( core_data_we      ),
-            .data_gnt_i            ( core_data_gnt     ),
-            .data_wdata_o          ( core_data_wdata   ),
-            .data_rvalid_i         ( core_data_rvalid  ),
-
-            // apu-interconnect
-            // handshake signals
-            .apu_master_req_o      (                   ),
-            .apu_master_ready_o    (                   ),
-            .apu_master_gnt_i      ( 1'b0              ),
-            // request channel
-            .apu_master_operands_o (                   ),
-            .apu_master_op_o       (                   ),
-            .apu_master_type_o     (                   ),
-            .apu_master_flags_o    (                   ),
-            // response channel
-            .apu_master_valid_i    ( '0                ),
-            .apu_master_result_i   ( '0                ),
-            .apu_master_flags_i    ( '0                ),
-
-            .irq_i                 ( core_irq_req      ),
-            .irq_id_i              ( core_irq_id       ),
-            .irq_ack_o             ( core_irq_ack      ),
-            .irq_id_o              ( core_irq_ack_id   ),
-            .irq_sec_i             ( 1'b0              ),
-            .sec_lvl_o             (                   ),
-
-            .debug_req_i           ( debug_req         ),
-            .debug_gnt_o           ( debug_gnt         ),
-            .debug_rvalid_o        ( debug_rvalid      ),
-            .debug_addr_i          ( debug_addr        ),
-            .debug_we_i            ( debug_we          ),
-            .debug_wdata_i         ( debug_wdata       ),
-            .debug_rdata_o         ( debug_rdata       ),
-            .debug_halted_o        (                   ),
-            .debug_halt_i          ( 1'b0              ),
-            .debug_resume_i        ( 1'b0              ),
-            .fetch_enable_i        ( fetch_en_int      ),
-            .core_busy_o           (                   ),
-            .ext_perf_counters_i   ( perf_counters_int ),
-            .fregfile_disable_i    ( 1'b0              ) // try me!
-        );
-     end
-    end else begin: FC_CORE
-
-    zeroriscy_core #(
-=======
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
     riscv_core #(
->>>>>>> d56be8ada8406e584933618348241696d5f63147
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
         .PULP_SECURE         ( 1                   ),
         .PULP_CLUSTER        ( 0                   ),

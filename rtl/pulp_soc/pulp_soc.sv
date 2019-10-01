@@ -16,12 +16,8 @@ module pulp_soc
     import dm::*;
 #(
     parameter CORE_TYPE          = 0,
-<<<<<<< HEAD
-    //parameter USE_FPU            = 1,
-=======
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
->>>>>>> d56be8ada8406e584933618348241696d5f63147
     parameter USE_CLUSTER_EVENT  = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
@@ -33,17 +29,12 @@ module pulp_soc
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
     parameter BUFFER_WIDTH       = 8,
     parameter EVNT_WIDTH         = 8,
-    parameter NB_HWPE_PORTS      = 4,
-<<<<<<< HEAD
+    parameter NB_HWPE_PORTS      = 4, 
 
-    parameter FC_FPU            = 0,
-    parameter FC_FP_DIVSQRT     = 0
-=======
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
     parameter NBIT_PADCFG        = 4,
     parameter NBIT_PADMUX        = 2
->>>>>>> d56be8ada8406e584933618348241696d5f63147
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -693,23 +684,12 @@ module pulp_soc
 
 
     fc_subsystem #(
-<<<<<<< HEAD
-        .CORE_TYPE ( CORE_TYPE ),
-        //.USE_FPU   ( USE_FPU   )
-        .FPU(FC_FPU),
-        .FP_DIVSQRT(FC_FP_DIVSQRT)
-
-    )
-   fc_subsystem_i
-    (
-=======
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
         .CORE_ID    ( FC_Core_CORE_ID    ),
         .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
->>>>>>> d56be8ada8406e584933618348241696d5f63147
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
 
