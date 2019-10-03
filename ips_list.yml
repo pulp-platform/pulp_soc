@@ -51,7 +51,7 @@ fpnew:
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: pulpissimo-v3.3.1
+  commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
 ibex:
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
@@ -79,7 +79,13 @@ udma/udma_filter:
   commit: vega_v1.0.3
 udma/udma_external_per:
   commit: master
-hwpe-mac-engine:
-  commit: f1d0b72
+#hwpe-mac-engine:
+#  commit: f1d0b72
 riscv-dbg:
   commit: tags/v0.1
+hw-lstm-engine:
+  group: lstm-accelerator
+  commit: release
+  server: git@iis-git.ee.ethz.ch 
+
+

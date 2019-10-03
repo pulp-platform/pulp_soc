@@ -19,7 +19,7 @@ module fc_subsystem #(
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
-    parameter PULP_SECURE         = 1,
+    parameter PULP_SECURE         = 0,
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F
@@ -45,8 +45,8 @@ module fc_subsystem #(
 
     input  logic                      event_fifo_valid_i,
     output logic                      event_fifo_fulln_o,
-    input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i,
-    input  logic [31:0]               events_i,
+    input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
+    input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
     output logic [1:0]                hwpe_events_o,
 
     output logic                      supervisor_mode_o
@@ -175,7 +175,7 @@ module fc_subsystem #(
     assign boot_addr = boot_addr_i;
     riscv_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .PULP_SECURE         ( 1                   ),
+        .PULP_SECURE         ( PULP_SECURE         ),
         .PULP_CLUSTER        ( 0                   ),
         .FPU                 ( USE_FPU             ),
         .FP_DIVSQRT          ( USE_FPU             ),
