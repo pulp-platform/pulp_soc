@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 
-module fc_hwpe
+module fc_lstm
 #(
     parameter N_MASTER_PORT = 4,
     parameter ID_WIDTH = 8,

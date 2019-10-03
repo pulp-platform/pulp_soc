@@ -6,5 +6,5 @@ fc:
   files: [
     fc_demux.sv,
     fc_subsystem.sv,
-    fc_hwpe.sv,
+    fc_hwlstm.sv,
   ]

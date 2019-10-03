@@ -346,11 +346,11 @@ module fc_subsystem #(
 
 
     generate
-    if(USE_HWPE) begin : fc_hwpe_gen
-        fc_hwpe #(
+    if(USE_HWPE) begin : fc_hwlstm_gen
+        fc_hwlstm #(
             .N_MASTER_PORT ( NB_HWPE_PORTS ),
             .ID_WIDTH      ( 2             )
-        ) i_fc_hwpe (
+        ) i_fc_hwlstm (
             .clk_i             ( clk_i          ),
             .rst_ni            ( rst_ni         ),
             .test_mode_i       ( test_en_i      ),
