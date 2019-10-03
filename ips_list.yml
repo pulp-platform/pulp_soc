@@ -85,7 +85,7 @@ riscv-dbg:
   commit: tags/v0.1
 hw-lstm-engine:
   group: lstm-accelerator
-  commit: release
+  commit: master
   server: git@iis-git.ee.ethz.ch 
 
 
