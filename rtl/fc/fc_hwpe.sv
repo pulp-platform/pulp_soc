@@ -74,9 +74,9 @@ module fc_hwpe
         .per_master_r_rdata_i ( periph_r_rdata          )
     );
 
-    mac_top_wrap #(
+    lstm_top_wrap #(
         .ID  ( ID_WIDTH )
-    ) i_mac_top_wrap (
+    ) i_lstm_top_wrap (
         .clk_i            ( clk_i          ),
         .rst_ni           ( rst_ni         ),
         .test_mode_i      ( test_mode_i    ),
