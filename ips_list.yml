@@ -51,7 +51,7 @@ fpnew:
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
+  commit: 4c10477241743307ebe477115594227c8c1b2d60
 ibex:
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
