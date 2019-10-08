@@ -14,6 +14,9 @@ components:
     glitch_free_clk_mux.sv,
     scm_2048x32.sv,
     scm_512x32.sv,
+    counter_wdt.sv,
+    ovf_detect.sv,
+    wdt.sv,
   ]
 
 components_xilinx:
