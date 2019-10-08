@@ -143,7 +143,10 @@ module soc_peripherals #(
     output logic                [63:0] cluster_boot_addr_o,
     output logic                       cluster_fetch_enable_o,
     output logic                       cluster_rstn_o,
-    output logic                       cluster_irq_o
+    output logic                       cluster_irq_o,
+
+    //wdt reset output:
+    output logic			wdt_reset_o
 );
 
     localparam USE_IBEX = CORE_TYPE == 1 || CORE_TYPE == 2;
@@ -157,6 +160,8 @@ module soc_peripherals #(
     APB_BUS s_soc_evnt_gen_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
+
+    APB_BUS s_apb_wdt_bus ();
 
     localparam UDMA_EVENTS = 16*8;
 
@@ -271,7 +276,7 @@ module soc_peripherals #(
     periph_bus_wrap #(
         .APB_ADDR_WIDTH ( 32 ),
         .APB_DATA_WIDTH ( 32 )
-    ) periph_bus_i (
+    ) i_periph_bus (
         .clk_i               ( clk_i              ),
         .rst_ni              ( rst_ni             ),
 
@@ -287,7 +292,8 @@ module soc_peripherals #(
         .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       )
+        .stdout_master       ( s_stdout_bus       ),
+        .wdt_master          ( s_apb_wdt_bus	  )
     );
 
     `ifdef SYNTHESIS
@@ -305,7 +311,8 @@ module soc_peripherals #(
     // ██║  ██║██║     ██████╔╝    ██║     ███████╗███████╗    ██║██║      //
     // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚═╝     ╚══════╝╚══════╝    ╚═╝╚═╝      //
     /////////////////////////////////////////////////////////////////////////
-    apb_fll_if #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) apb_fll_if_i (
+    apb_fll_if #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)
+    ) i_apb_fll_if (
         .HCLK        ( clk_i                   ),
         .HRESETn     ( rst_ni                  ),
 
@@ -352,7 +359,8 @@ module soc_peripherals #(
     // ╚═╝  ╚═╝╚═╝     ╚═════╝      ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  //
     ///////////////////////////////////////////////////////////////
 
-    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)) apb_gpio_i (
+    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)
+    ) i_apb_gpio (
         .HCLK            ( clk_i              ),
         .HRESETn         ( rst_ni             ),
 
@@ -484,7 +492,7 @@ module soc_peripherals #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
-    ) apb_soc_ctrl_i (
+    ) i_apb_soc_ctrl (
         .HCLK           ( clk_i                  ),
         .HRESETn        ( rst_ni                 ),
 
@@ -522,7 +530,7 @@ module soc_peripherals #(
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .EXTSIG_NUM     ( 32             )
-    ) apb_adv_timer_i (
+    ) i_apb_adv_timer (
         .HCLK            ( clk_i                   ),
         .HRESETn         ( rst_ni                  ),
 
@@ -563,7 +571,7 @@ module soc_peripherals #(
         .PER_EVNT_NUM   ( 160            ),
         .EVNT_WIDTH     ( EVNT_WIDTH     ),
         .FC_EVENT_POS   ( 7              )
-    ) u_evnt_gen (
+    ) i_u_evnt_gen (
         .HCLK             ( clk_i                      ),
         .HRESETn          ( rst_ni                     ),
 
@@ -595,7 +603,8 @@ module soc_peripherals #(
     );
 
 
-    apb_timer_unit #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_apb_timer_unit (
+    apb_timer_unit #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)
+    ) i_apb_timer_unit (
         .HCLK       ( clk_i                   ),
         .HRESETn    ( rst_ni                  ),
         .PADDR      ( s_apb_timer_bus.paddr   ),
@@ -617,7 +626,8 @@ module soc_peripherals #(
 `ifdef PULP_TRAINING
 `ifndef SYNTHESIS
 
-    apb_dummy_registers  #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_apb_dummy_reg_unit (
+    apb_dummy_registers  #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)
+    ) i_apb_dummy_reg_unit (
         .HCLK       ( clk_i                   ),
         .HRESETn    ( rst_ni                  ),
         .PADDR      ( s_apb_dummy_bus.paddr   ),
@@ -632,4 +642,39 @@ module soc_peripherals #(
 
 `endif
 `endif
+
+
+    /////////////////////////////////////////////////////////////////
+    //  █████╗ ██████╗ ██████╗       ██╗    ██╗ ██████╗  ████████╗ //
+    // ██╔══██╗██╔══██╗██╔══██╗      ██║    ██║ ██╔══██╗ ╚══██╔══╝ //
+    // ███████║██████╔╝██████╔╝      ██║ █╗ ██║ ██║  ██║    ██║    //
+    // ██╔══██║██╔═══╝ ██╔══██╗      ██║███╗██║ ██║  ██║    ██║    //
+    // ██║  ██║██║     ██████╔╝      ╚███╔███╔╝ ██████╔╝    ██║    //
+    // ╚═╝  ╚═╝╚═╝     ╚═════╝        ╚══╝╚══╝  ╚═════╝     ╚═╝    //
+    ////////////////////////////////////////////////////////////////
+    logic resetwdt_out;
+
+    wdt i_wdt_dut (
+        .clk1_i    ( clk_i                 ),
+        .clk2_i    ( clk_i                 ),
+        .rst_ni    ( rst_ni                ),
+
+        .reset_wdt ( resetwdt_out          ),
+
+        //apb
+        .HCLK      ( clk_i                 ),
+        .HRESETn   ( rst_ni                ),
+        .PADDR     ( s_apb_wdt_bus.paddr   ),
+        .PWDATA    ( s_apb_wdt_bus.pwdata  ),
+        .PWRITE    ( s_apb_wdt_bus.pwrite  ),
+        .PSEL      ( s_apb_wdt_bus.psel    ),
+        .PENABLE   ( s_apb_wdt_bus.penable ),
+
+        .PRDATA    ( s_apb_wdt_bus.prdata  ),
+        .PREADY    ( s_apb_wdt_bus.pready  ),
+        .PSLVERR   ( s_apb_wdt_bus.pslverr )
+    );
+
+    assign wdt_reset_o = resetwdt_out;
+
 endmodule
