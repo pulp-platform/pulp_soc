@@ -83,3 +83,7 @@ hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
   commit: tags/v0.1
+wdt:
+  server: git@iis-git.ee.ethz.ch
+  group: balasr
+  commit: v0.1
