@@ -50,8 +50,10 @@ fpnew:
   commit: v0.5.3
 jtag_pulp:
   commit: dbg_dev
-riscv:
+rnn-riscv:
+  group: andri
   commit: rnn_extension
+  server: git@iis-git.ee.ethz.ch
 ibex:
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
