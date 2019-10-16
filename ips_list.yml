@@ -45,13 +45,13 @@ axi/axi_mem_if:
 timer_unit:
   commit: tags/pulpissimo-v1.0
 common_cells:
-  commit: 0b8c10c21c9f810509bbd7bf86cfbdc4e6626c8e
+  commit: v1.13.1
 fpnew:
-  commit: v0.5.3
+  commit: v0.6.1
 jtag_pulp:
   commit: dbg_dev
 riscv:
-  commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
+  commit: 520ef0a418e3dc88d760fcb7092cdb15a81e724d
 ibex:
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
