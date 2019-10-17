@@ -51,7 +51,7 @@ common_cells:
 fpnew:
   commit: v0.6.1
 jtag_pulp:
-  commit: dbg_dev
+  commit: v0.1
 riscv:
   commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
 ibex:
