@@ -19,65 +19,96 @@
 #
 
 L2_tcdm_hybrid_interco:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
+  domain: [cluster, soc]
   commit: 66e20f8ef3aae0198f36137ba28c26ff12b47eaa
 apb/apb2per:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 apb/apb_adv_timer:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 apb/apb_fll_if:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 apb/apb_gpio:
+  domain: [soc]
   commit: 730a9204dbb0d7057f45ef833d0a6e868c46107b
 apb/apb_node:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 apb_interrupt_cntrl:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 axi/axi_node:
+  domain: [cluster, soc]
   commit: tags/pulpissimo-v1.0
 axi/axi_slice:
+  domain: [cluster, soc]
   commit: tags/pulpissimo-v1.0
 axi/axi_slice_dc:
+  domain: [cluster, soc]
   commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
 timer_unit:
+  domain: [cluster, soc]
   commit: tags/pulpissimo-v1.0
 common_cells:
+  domain: [cluster, soc]
   commit: v1.13.1
 fpnew:
+  domain: [cluster, soc]
   commit: v0.6.1
 jtag_pulp:
+  domain: [soc]
   commit: dbg_dev
 riscv:
+  domain: [cluster, soc]
   commit: 520ef0a418e3dc88d760fcb7092cdb15a81e724d
 ibex:
+  domain: [soc]
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
 scm:
+  domain: [cluster, soc]
   commit: 300c13879d3b6e28782e14fd466a7c09c875a031
 generic_FLL:
+  domain: [soc]
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
+  domain: [cluster, soc]
   commit: 0532e53c1a323db4a55381d123c55bdc4fab06f6
 udma/udma_core:
+  domain: [soc]
   commit: vega_v1.0.6
 udma/udma_uart:
+  domain: [soc]
   commit: vega_v1.0.1
 udma/udma_i2c:
+  domain: [soc]
   commit: vega_v1.0.0
 udma/udma_i2s:
+  domain: [soc]
   commit: 407e4c6fb89854aae67ac7f89276f77a775b0e95
 udma/udma_qspi:
+  domain: [soc]
   commit: vega_v1.0.0
 udma/udma_sdio:
+  domain: [soc]
   commit: vega_v1.0.5
 udma/udma_camera:
+  domain: [soc]
   commit: vega_v1.0.2
 udma/udma_filter:
+  domain: [soc]
   commit: vega_v1.0.3
 udma/udma_external_per:
+  domain: [soc]
   commit: master
 hwpe-mac-engine:
+  domain: [cluster]
   commit: f1d0b72
 riscv-dbg:
+  domain: [soc]
   commit: tags/v0.1
