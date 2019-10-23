@@ -36,7 +36,6 @@ module pulp_soc
     parameter NBIT_PADMUX        = 2
 ) (
     input  logic                          ref_clk_i,
-    input  logic                          slow_clk_i,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
@@ -539,7 +538,6 @@ module pulp_soc
         .rst_ni                 ( s_soc_rstn             ),
         .sel_fll_clk_i          ( s_sel_fll_clk          ),
         .ref_clk_i              ( ref_clk_i              ),
-        .slow_clk_i             ( slow_clk_i             ),
 
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( 1'b0                   ),
