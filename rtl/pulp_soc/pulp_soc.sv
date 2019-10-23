@@ -40,6 +40,12 @@ module pulp_soc
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
+`ifdef PULP_FPGA_EMUL
+   input  logic       zynq_soc_clk_i,
+   input  logic       zynq_cluster_clk_i,
+   input  logic       zynq_per_clk_i,
+`endif
+
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
@@ -722,6 +728,12 @@ module pulp_soc
         .ref_clk_i                  ( ref_clk_i                     ),
         .test_clk_i                 ( test_clk_i                    ),
         .sel_fll_clk_i              ( s_sel_fll_clk                 ),
+
+        `ifdef PULP_FPGA_EMUL
+        .zynq_soc_clk_i            ( zynq_soc_clk_i                ),
+        .zynq_cluster_clk_i        ( zynq_cluster_clk_i            ),
+        .zynq_per_clk_i            ( zynq_per_clk_i                ),
+        `endif
 
         .rstn_glob_i                ( rstn_glob_i                   ),
         .rstn_soc_sync_o            ( s_soc_rstn                    ),

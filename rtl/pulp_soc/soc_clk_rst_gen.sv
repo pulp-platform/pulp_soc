@@ -16,6 +16,12 @@ module soc_clk_rst_gen (
     input  logic        test_clk_i,
     input  logic        rstn_glob_i,
     input  logic        test_mode_i,
+
+`ifdef PULP_FPGA_EMUL
+    input  logic             zynq_soc_clk_i,
+    input  logic             zynq_cluster_clk_i,
+    input  logic             zynq_per_clk_i,
+`endif
     input  logic        sel_fll_clk_i,
     input  logic        shift_enable_i,
     input  logic        soc_fll_slave_req_i,
@@ -173,49 +179,10 @@ module soc_clk_rst_gen (
 
     `else // !`ifndef PULP_FPGA_EMUL
 
-    // Use FPGA dependent clock generation module for both clocks
-    // For the FPGA port we remove the clock multiplexers since it doesn't make
-    // much sense to clock the circuit directly with the board reference clock
-    // (e.g. 200MHz for genesys2 board).
-
-       fpga_clk_gen i_fpga_clk_gen (
-                        .ref_clk_i,
-                        .rstn_glob_i,
-                        .test_mode_i,
-                        .shift_enable_i,
-                        .soc_clk_o(s_clk_fll_soc),
-                        .per_clk_o(s_clk_fll_per),
-                        .cluster_clk_o(s_clk_cluster),
-                        .soc_cfg_lock_o(soc_fll_slave_lock_o),
-                        .soc_cfg_req_i(soc_fll_slave_req_i),
-                        .soc_cfg_ack_o(soc_fll_slave_ack_o),
-                        .soc_cfg_add_i(soc_fll_slave_add_i),
-                        .soc_cfg_data_i(soc_fll_slave_data_i),
-                        .soc_cfg_r_data_o(soc_fll_slave_r_data_o),
-                        .soc_cfg_wrn_i(soc_fll_slave_wrn_i),
-                        .per_cfg_lock_o(per_fll_slave_lock_o),
-                        .per_cfg_req_i(per_fll_slave_req_i),
-                        .per_cfg_ack_o(per_fll_slave_ack_o),
-                        .per_cfg_add_i(per_fll_slave_add_i),
-                        .per_cfg_data_i(per_fll_slave_data_i),
-                        .per_cfg_r_data_o(per_fll_slave_r_data_o),
-                        .per_cfg_wrn_i(per_fll_slave_wrn_i),
-                        .cluster_cfg_lock_o(cluster_fll_slave_lock_o),
-                        .cluster_cfg_req_i(cluster_fll_slave_req_i),
-                        .cluster_cfg_ack_o(cluster_fll_slave_ack_o),
-                        .cluster_cfg_add_i(cluster_fll_slave_add_i),
-                        .cluster_cfg_data_i(cluster_fll_slave_data_i),
-                        .cluster_cfg_r_data_o(cluster_fll_slave_r_data_o),
-                        .cluster_cfg_wrn_i(cluster_fll_slave_wrn_i)
-                        );
-
-    assign s_clk_soc     = s_clk_fll_soc;
-    assign s_clk_cluster = s_clk_fll_cluster;
-    assign s_clk_per     = s_clk_fll_per;
-
+    assign s_clk_soc     = zynq_soc_clk_i;
+    assign s_clk_cluster = zynq_cluster_clk_i;
+    assign s_clk_per     = zynq_per_clk_i;
     `endif
-
-
 
     assign s_rstn_soc = rstn_glob_i;
 
