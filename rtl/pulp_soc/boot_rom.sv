@@ -43,6 +43,7 @@ module boot_rom #(
                    .DATA_WIDTH(32)
                    ) rom_mem_i (
                             .CLK(clk_i),
+                            .RSTN(rst_ni),
                             .CEN(mem_slave.csn),
                             .A(mem_slave.add[ROM_ADDR_WIDTH-1:2]),
                             .Q(mem_slave.rdata)
