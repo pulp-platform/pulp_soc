@@ -213,7 +213,7 @@ module soc_clk_rst_gen (
             .init_no     (                     )                    //not used
         );
     `else
-        assign s_rstn_soc_sync = s_rstn_soc;
+        assign s_rstn_cluster_sync = s_rstn_soc;
     `endif
 
     assign clk_soc_o       = s_clk_soc;

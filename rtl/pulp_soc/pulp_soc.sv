@@ -677,6 +677,7 @@ module pulp_soc
         .valid_i ( dma_pe_irq_valid_i      )
     );
 
+    `ifndef PULP_FPGA_EMUL
     edge_propagator_rx ep_pf_evt_i (
         .clk_i   ( s_soc_clk               ),
         .rstn_i  ( s_rstn_cluster_sync_soc ),
@@ -684,7 +685,7 @@ module pulp_soc
         .ack_o   ( pf_evt_ack_o            ),
         .valid_i ( pf_evt_valid_i          )
     );
-
+    `endif
 
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
