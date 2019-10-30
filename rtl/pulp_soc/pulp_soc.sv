@@ -484,10 +484,6 @@ module pulp_soc import dm::*; #(
 
     UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
     UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-`ifdef QUENTIN_SCM
-    UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
-    UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
-`endif
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
@@ -658,11 +654,6 @@ module pulp_soc import dm::*; #(
         .test_mode_i     ( dft_test_mode_i    ),
         .mem_slave       ( s_mem_l2_bus       ),
         .mem_pri_slave   ( s_mem_l2_pri_bus   )
-`ifdef QUENTIN_SCM
-        ,
-        .scm_data_slave  ( s_scm_l2_data_bus  ),
-        .scm_instr_slave ( s_scm_l2_instr_bus )
-`endif
     );
 
 
@@ -882,10 +873,6 @@ module pulp_soc import dm::*; #(
         .l2_data_master      ( s_lint_fc_data_bus  ),
         .l2_instr_master     ( s_lint_fc_instr_bus ),
         .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-`ifdef QUENTIN_SCM
-        .scm_l2_data_master  ( s_scm_l2_data_bus   ),
-        .scm_l2_instr_master ( s_scm_l2_instr_bus  ),
-`endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
         .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
