@@ -64,23 +64,23 @@ generic_FLL:
 tech_cells_generic:
   commit: 0532e53c1a323db4a55381d123c55bdc4fab06f6
 udma/udma_core:
-  commit: vega_v1.0.6
+  commit: v1.0.0
 udma/udma_uart:
-  commit: vega_v1.0.1
+  commit: v1.0.0
 udma/udma_i2c:
-  commit: vega_v1.0.0
+  commit: rc_v1.0.0
 udma/udma_i2s:
-  commit: 407e4c6fb89854aae67ac7f89276f77a775b0e95
+  commit: v1.0.0
 udma/udma_qspi:
-  commit: vega_v1.0.0
+  commit: v1.0.0
 udma/udma_sdio:
   commit: vega_v1.0.5
 udma/udma_camera:
-  commit: vega_v1.0.2
+  commit: v1.0.0
 udma/udma_filter:
-  commit: vega_v1.0.3
+  commit: v1.0.0
 udma/udma_external_per:
-  commit: master
+  commit: v1.0.0
 hwpe-mac-engine:
   commit: v1.2
 riscv-dbg:
