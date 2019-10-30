@@ -29,7 +29,7 @@ apb/apb_adv_timer:
 apb/apb_fll_if:
   commit: tags/pulpissimo-v1.0
 apb/apb_gpio:
-  commit: 730a9204dbb0d7057f45ef833d0a6e868c46107b
+  commit: v0.2.0
 apb/apb_node:
   commit: v0.1.1
 apb_interrupt_cntrl:
