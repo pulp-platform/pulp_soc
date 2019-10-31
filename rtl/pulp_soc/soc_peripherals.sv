@@ -369,8 +369,7 @@ module soc_peripherals #(
     // ╚═╝  ╚═╝╚═╝     ╚═════╝      ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  //
     ///////////////////////////////////////////////////////////////
 
-    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)
-    ) i_apb_gpio (
+    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO), .NBIT_PADCFG(NBIT_PADCFG)) apb_gpio_i (
         .HCLK            ( clk_i              ),
         .HRESETn         ( rst_ni             ),
 
@@ -501,8 +500,9 @@ module soc_peripherals #(
     apb_soc_ctrl #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
-        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
-    ) i_apb_soc_ctrl (
+        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
+        .NBIT_PADCFG  ( NBIT_PADCFG  )
+    ) apb_soc_ctrl_i (
         .HCLK                ( clk_i                  ),
         .HRESETn             ( rst_ni                 ),
 

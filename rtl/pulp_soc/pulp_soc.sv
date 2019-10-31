@@ -31,6 +31,8 @@ module pulp_soc import dm::*; #(
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
+    parameter NBIT_PADCFG        = 4,
+    parameter NBIT_PADMUX        = 2,
 
     parameter int unsigned AXI_ID_INP_WIDTH_C07 = 6,
     parameter int unsigned AXI_ID_OUP_WIDTH_C07 = 6,
@@ -52,13 +54,9 @@ module pulp_soc import dm::*; #(
     parameter int unsigned AXI_ADDR_WIDTH_SMS = 32,
     parameter int unsigned AXI_DATA_WIDTH_SMS = 64,
 
-    parameter NBIT_PADCFG        = 4,
-    parameter NBIT_PADMUX        = 2,
-
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2
-
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -201,9 +199,9 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
     output logic [127:0]                  pad_mux_o,
     output logic [383:0]                  pad_cfg_o,
-    input  logic [31:0]                   gpio_in_i,
-    output logic [31:0]                   gpio_out_o,
-    output logic [31:0]                   gpio_dir_o,
+    input  logic [NGPIO-1:0]              gpio_in_i,
+    output logic [NGPIO-1:0]              gpio_out_o,
+    output logic [NGPIO-1:0]              gpio_dir_o,
     output logic [191:0]                  gpio_cfg_o,
     output logic                          uart_tx_o,
     input  logic                          uart_rx_i,
@@ -352,7 +350,7 @@ module pulp_soc import dm::*; #(
 
     logic [31:0]           s_fc_bootaddr;
 
-    logic [31:0][5:0]      s_gpio_cfg;
+    logic [NGPIO-1:0][NBIT_PADCFG-1:0] s_gpio_cfg;
     logic [63:0][1:0]      s_pad_mux;
     logic [63:0][5:0]      s_pad_cfg;
 

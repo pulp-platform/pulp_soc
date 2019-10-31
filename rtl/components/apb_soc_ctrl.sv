@@ -64,7 +64,8 @@ module apb_soc_ctrl
     parameter APB_ADDR_WIDTH = 12,  // APB slaves are 4KB by default
     parameter NB_CLUSTERS    = 0,   // N_CLUSTERS
     parameter NB_CORES       = 4,   // N_CORES
-    parameter JTAG_REG_SIZE  = 8
+    parameter JTAG_REG_SIZE  = 8,
+    parameter NBIT_PADCFG    = 6
     )
    (
     input  logic                      HCLK,
@@ -84,7 +85,7 @@ module apb_soc_ctrl
     input  logic                      fc_fetch_en_valid_i,
     input  logic                      fc_fetch_en_i,
 
-    output logic         [63:0] [5:0] pad_cfg,
+    output logic         [63:0] [NBIT_PADCFG-1:0] pad_cfg,
     output logic         [63:0] [1:0] pad_mux,
 
     input  logic                [JTAG_REG_SIZE-1:0] soc_jtag_reg_i,
