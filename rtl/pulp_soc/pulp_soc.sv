@@ -232,9 +232,12 @@ module pulp_soc
     input  logic                          jtag_trst_ni,
     input  logic                          jtag_tms_i,
     input  logic                          jtag_tdi_i,
-    output logic                          jtag_tdo_o
+    output logic                          jtag_tdo_o,
+    output logic [`NB_CORES-1:0]           cluster_dbg_irq_valid_o
     ///////////////////////////////////////////////////
 );
+
+    genvar dbg_var, nhart_var;
 
     localparam FLL_ADDR_WIDTH        = 32;
     localparam FLL_DATA_WIDTH        = 32;
@@ -245,9 +248,21 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
+   
     localparam FC_Core_CLUSTER_ID    = 6'd31;
+    localparam CL_Core_CLUSTER_ID    = 6'd0;
+   
     localparam FC_Core_CORE_ID       = 4'd0;
+   
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+    localparam CL_Core0_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd0};
+    localparam CL_Core1_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd1};
+    localparam CL_Core2_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd2};
+    localparam CL_Core3_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd3};
+    localparam CL_Core4_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd4};
+    localparam CL_Core5_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd5};
+    localparam CL_Core6_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd6};
+    localparam CL_Core7_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd7};
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -262,7 +277,19 @@ module pulp_soc
     */
 
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID | (1 << CL_Core0_MHARTID) | (1 << CL_Core1_MHARTID) | (1 << CL_Core2_MHARTID) | (1 << CL_Core3_MHARTID) | (1 << CL_Core4_MHARTID) | (1 << CL_Core5_MHARTID) | (1 << CL_Core6_MHARTID) | (1 << CL_Core7_MHARTID);
+
+    logic [`NB_CORES-1:0][9:0] CLUSTER_CORE_ID;
+
+    assign CLUSTER_CORE_ID[0] = CL_Core0_MHARTID;
+    assign CLUSTER_CORE_ID[1] = CL_Core1_MHARTID;
+    assign CLUSTER_CORE_ID[2] = CL_Core2_MHARTID;
+    assign CLUSTER_CORE_ID[3] = CL_Core3_MHARTID;
+    assign CLUSTER_CORE_ID[4] = CL_Core4_MHARTID;
+    assign CLUSTER_CORE_ID[5] = CL_Core5_MHARTID;
+    assign CLUSTER_CORE_ID[6] = CL_Core6_MHARTID;
+    assign CLUSTER_CORE_ID[7] = CL_Core7_MHARTID;
+
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
                                                 nscratch:      2, // Debug module needs at least two scratch regs
@@ -833,10 +860,25 @@ module pulp_soc
     );
 
     // assign hartinfo
-    always_comb begin
-        hartinfo = '{default: '0};
-        hartinfo[FC_Core_MHARTID] = RI5CY_HARTINFO;
-    end
+   generate
+
+    for(nhart_var=0;nhart_var<NrHarts;nhart_var=nhart_var+1)
+
+        assign hartinfo[nhart_var] = '{
+                             zero1:        '0,
+                             nscratch:      2, // Debug module needs at least two scratch regs
+                             zero0:        '0,
+                             dataaccess: 1'b1, // data registers are memory mapped in the debugger
+                             datasize: dm::DataCount,
+                             dataaddr: dm::DataAddr
+                           };
+    endgenerate
+
+    generate
+    for(dbg_var=0;dbg_var<`NB_CORES;dbg_var=dbg_var+1)
+        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
+    endgenerate
+
 
     dm_top #(
        .NrHarts           ( NrHarts                   ),
