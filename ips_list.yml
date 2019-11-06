@@ -42,9 +42,6 @@ apb/apb_node:
 apb_interrupt_cntrl:
   domain: [soc]
   commit: tags/pulpissimo-v1.0
-axi/axi:
-  domain: [cluster, soc]
-  commit: v0.7.0
 axi/axi_node:
   domain: [cluster, soc]
   commit: tags/v1.1.3
