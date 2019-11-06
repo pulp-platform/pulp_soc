@@ -42,15 +42,18 @@ apb/apb_node:
 apb_interrupt_cntrl:
   domain: [soc]
   commit: tags/pulpissimo-v1.0
+axi/axi:
+  domain: [cluster, soc]
+  commit: tags/v0.7.0
 axi/axi_node:
   domain: [cluster, soc]
-  commit: tags/pulpissimo-v1.0
+  commit: tags/v1.1.3
 axi/axi_slice:
   domain: [cluster, soc]
-  commit: tags/pulpissimo-v1.0
+  commit: tags/v1.1.4
 axi/axi_slice_dc:
   domain: [cluster, soc]
-  commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
+  commit: tags/v1.1.3
 timer_unit:
   domain: [cluster, soc]
   commit: tags/pulpissimo-v1.0
@@ -111,4 +114,4 @@ hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
   domain: [soc]
-  commit: tags/v0.1
+  commit: tags/v0.2
