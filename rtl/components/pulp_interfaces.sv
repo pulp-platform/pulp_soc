@@ -838,7 +838,6 @@ interface BRAM_PORT;
 
 endinterface // BRAM_PORT
 
-
 interface SP_ICACHE_CTRL_UNIT_BUS;
 
     // ICACHE_CTRL UNIT INTERFACE
@@ -848,9 +847,15 @@ interface SP_ICACHE_CTRL_UNIT_BUS;
     logic                 ctrl_req_disable;
     logic                 ctrl_ack_disable;
     logic                 ctrl_pending_trans;
-    logic                 flush_req;
-    logic                 flush_ack;
+    logic                 ctrl_flush_req;
+    logic                 ctrl_flush_ack;
     logic                 icache_is_private;
+
+
+    logic                 sel_flush_req;
+    logic [31:0]          sel_flush_addr;
+    logic                 sel_flush_ack;
+
 `ifdef FEATURE_ICACHE_STAT
     logic [31:0]          ctrl_hit_count;
     logic [31:0]          ctrl_trans_count;
@@ -867,13 +872,18 @@ interface SP_ICACHE_CTRL_UNIT_BUS;
     (
         output ctrl_req_enable,
         output ctrl_req_disable,
-        output flush_req,
+        output ctrl_flush_req,
         output icache_is_private,
-        input  flush_ack,
 
+        input  ctrl_flush_ack,
         input  ctrl_ack_enable,
         input  ctrl_ack_disable,
-        input  ctrl_pending_trans
+        input  ctrl_pending_trans,
+
+        output        sel_flush_req,
+        output        sel_flush_addr,
+        input         sel_flush_ack
+
     `ifdef FEATURE_ICACHE_STAT
         ,
         input  ctrl_hit_count,
@@ -890,13 +900,18 @@ interface SP_ICACHE_CTRL_UNIT_BUS;
     (
         input  ctrl_req_enable,
         input  ctrl_req_disable,
-        input  flush_req,
+        input  ctrl_flush_req,
         input  icache_is_private,
-        output flush_ack,
 
+        output ctrl_flush_ack,
         output ctrl_ack_enable,
         output ctrl_ack_disable,
-        output ctrl_pending_trans
+        output ctrl_pending_trans,
+
+        input        sel_flush_req,
+        input        sel_flush_addr,
+        output       sel_flush_ack
+
     `ifdef FEATURE_ICACHE_STAT
         ,
         output ctrl_hit_count,
@@ -1114,10 +1129,16 @@ interface PRI_ICACHE_CTRL_UNIT_BUS;
     logic                 flush_req;
     logic                 flush_ack;
 
+    logic                 sel_flush_req;
+    logic [31:0]          sel_flush_addr;
+    logic                 sel_flush_ack;
+
 `ifdef FEATURE_ICACHE_STAT
     logic [31:0]          ctrl_hit_count;
     logic [31:0]          ctrl_trans_count;
     logic [31:0]          ctrl_miss_count;
+    logic [31:0]          ctrl_cong_count;
+
     logic                 ctrl_clear_regs;
     logic                 ctrl_enable_regs;
 `endif
@@ -1129,13 +1150,19 @@ interface PRI_ICACHE_CTRL_UNIT_BUS;
         output bypass_req,
         output flush_req,
         input  bypass_ack,
-        input  flush_ack
+        input  flush_ack,
+
+        output sel_flush_req,
+        output sel_flush_addr,
+        input  sel_flush_ack
 
     `ifdef FEATURE_ICACHE_STAT
         ,
         input  ctrl_hit_count,
         input  ctrl_trans_count,
         input  ctrl_miss_count,
+        input  ctrl_cong_count,
+
         output ctrl_clear_regs,
         output ctrl_enable_regs
     `endif
@@ -1148,19 +1175,25 @@ interface PRI_ICACHE_CTRL_UNIT_BUS;
         input  bypass_req,
         input  flush_req,
         output bypass_ack,
-        output flush_ack
+        output flush_ack,
+
+        input  sel_flush_req,
+        input  sel_flush_addr,
+        output sel_flush_ack
+
     `ifdef FEATURE_ICACHE_STAT
         ,
         output ctrl_hit_count,
         output ctrl_trans_count,
         output ctrl_miss_count,
+        output ctrl_cong_count,
+
         input  ctrl_clear_regs,
         input  ctrl_enable_regs
     `endif
     );
 
 endinterface //~ PRI_ICACHE_CTRL_UNIT_BUS
-
 
 
 
