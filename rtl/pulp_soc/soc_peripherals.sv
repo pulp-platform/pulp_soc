@@ -464,10 +464,10 @@ module soc_peripherals #(
 
         .i2c_scl_i        ( i2c_scl_i            ),
         .i2c_scl_o        ( i2c_scl_o            ),
-        .i2c_scl_oe       ( i2c_scl_oe_o         ),
+        .i2c_scl_oe       ( i2c_scl_oe           ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe_o         )
+        .i2c_sda_oe       ( i2c_sda_oe           )
 
     );
 
