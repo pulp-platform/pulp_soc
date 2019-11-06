@@ -105,7 +105,7 @@ udma/udma_filter:
   commit: vega_v1.0.3
 udma/udma_external_per:
   domain: [soc]
-  commit: master
+  commit: 0e53cfed00a2b9cd60e5fc0e9397d335f7145457
 hwpe-mac-engine:
   domain: [cluster]
   commit: f1d0b72
