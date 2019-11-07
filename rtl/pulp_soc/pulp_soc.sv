@@ -61,6 +61,7 @@ module pulp_soc
     input  logic [3:0]                    data_slave_aw_region_i,
     input  logic [7:0]                    data_slave_aw_len_i,
     input  logic [2:0]                    data_slave_aw_size_i,
+    //input  logic [5:0]                    data_slave_aw_atop_i,
     input  logic [1:0]                    data_slave_aw_burst_i,
     input  logic                          data_slave_aw_lock_i,
     input  logic [3:0]                    data_slave_aw_cache_i,
@@ -107,6 +108,7 @@ module pulp_soc
     output logic [3:0]                    data_master_aw_region_o,
     output logic [7:0]                    data_master_aw_len_o,
     output logic [2:0]                    data_master_aw_size_o,
+    // output logic [5:0]                    data_master_aw_atop_o,
     output logic [1:0]                    data_master_aw_burst_o,
     output logic                          data_master_aw_lock_o,
     output logic [3:0]                    data_master_aw_cache_o,
@@ -383,14 +385,16 @@ module pulp_soc
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_master ();
 
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_slave ();
 
     AXI_BUS #(
@@ -400,12 +404,15 @@ module pulp_soc
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
 
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
+
+    //assign s_data_out_bus.aw_atop = 6'b0;
 
     FLL_BUS #(
         .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
@@ -492,7 +499,7 @@ module pulp_soc
     ) dc_fifo_datain_bus_i (
         .clk_i            ( s_soc_clk               ),
         .rst_ni           ( s_rstn_cluster_sync_soc ),
-        // .test_cgbypass_i  ( 1'b0                    ),
+        .test_cgbypass_i  ( 1'b0                    ),
         .isolate_i        ( s_cluster_isolate_dc    ),
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
@@ -1030,6 +1037,7 @@ module pulp_soc
     assign s_data_slave.aw_len         = data_slave_aw_len_i         ;
     assign s_data_slave.aw_size        = data_slave_aw_size_i        ;
     assign s_data_slave.aw_burst       = data_slave_aw_burst_i       ;
+     //assign s_data_slave.aw_atop        = data_slave_aw_atop_i        ;
     assign s_data_slave.aw_lock        = data_slave_aw_lock_i        ;
     assign s_data_slave.aw_cache       = data_slave_aw_cache_i       ;
     assign s_data_slave.aw_qos         = data_slave_aw_qos_i         ;
@@ -1082,6 +1090,7 @@ module pulp_soc
     assign data_master_aw_region_o      = s_data_master.aw_region     ;
     assign data_master_aw_len_o         = s_data_master.aw_len        ;
     assign data_master_aw_size_o        = s_data_master.aw_size       ;
+    //assign data_master_aw_atop_o        = s_data_master.aw_atop       ;
     assign data_master_aw_burst_o       = s_data_master.aw_burst      ;
     assign data_master_aw_lock_o        = s_data_master.aw_lock       ;
     assign data_master_aw_cache_o       = s_data_master.aw_cache      ;
