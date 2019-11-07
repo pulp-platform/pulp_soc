@@ -386,7 +386,7 @@ module pulp_soc
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH      
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_master ();
 
     AXI_BUS_ASYNC #(
@@ -394,7 +394,7 @@ module pulp_soc
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH      
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_slave ();
 
     AXI_BUS #(
