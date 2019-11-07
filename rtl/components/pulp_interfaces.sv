@@ -360,7 +360,7 @@ interface BBMUX_CONFIG_BUS;
 
 endinterface // BBMUX_CONFIG_BUS
 
-interface AXI_BUS
+interface AXI_BUS2
 #(
    parameter AXI_ADDR_WIDTH = 32,
    parameter AXI_DATA_WIDTH = 64,
@@ -473,7 +473,7 @@ interface AXI_BUS
 
 endinterface
 
-interface AXI_BUS_ASYNC
+interface AXI_BUS_ASYNC2
       #(
       parameter AXI_ADDR_WIDTH = 32,
       parameter AXI_DATA_WIDTH = 64,
