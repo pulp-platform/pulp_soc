@@ -49,7 +49,7 @@ common_cells:
 fpnew:
   commit: v0.5.3
 jtag_pulp:
-  commit: dbg_dev
+  commit: 8327a5a499aaaeab1128ddb1cbc8d71526eab043
 riscv:
   commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
 ibex:
@@ -78,7 +78,7 @@ udma/udma_camera:
 udma/udma_filter:
   commit: vega_v1.0.3
 udma/udma_external_per:
-  commit: master
+  commit: 0e53cfed00a2b9cd60e5fc0e9397d335f7145457
 hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
