@@ -68,7 +68,7 @@ udma/udma_core:
 udma/udma_uart:
   commit: v1.0.0
 udma/udma_i2c:
-  commit: rc_v1.0.0
+  commit: vega_v1.0.0
 udma/udma_i2s:
   commit: v1.0.0
 udma/udma_qspi:
