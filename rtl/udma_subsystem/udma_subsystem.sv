@@ -820,7 +820,6 @@ module udma_subsystem
         .cfg_data_o          ( s_periph_data_from[PER_ID_CAM]  ),
         .cfg_ready_o         ( s_periph_ready[PER_ID_CAM]      ),
 
-        .cfg_rx_filter_o     (    ),
         .cfg_rx_startaddr_o  ( s_rx_cfg_startaddr[CH_ID_RX_CAM]  ),
         .cfg_rx_size_o       ( s_rx_cfg_size[CH_ID_RX_CAM]       ),
         .cfg_rx_continuous_o ( s_rx_cfg_continuous[CH_ID_RX_CAM] ),

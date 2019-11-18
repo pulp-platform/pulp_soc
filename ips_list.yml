@@ -19,67 +19,69 @@
 #
 
 L2_tcdm_hybrid_interco:
-  commit: tags/pulpissimo-v1.0
+  commit: pulpissimo-v1.0
 adv_dbg_if:
-  commit: 66e20f8ef3aae0198f36137ba28c26ff12b47eaa
+  commit: v0.0.1
 apb/apb2per:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.0.1
 apb/apb_adv_timer:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.0.2
 apb/apb_fll_if:
-  commit: tags/pulpissimo-v1.0
+  commit: pulpissimo-v1.0
 apb/apb_gpio:
-  commit: 730a9204dbb0d7057f45ef833d0a6e868c46107b
+  commit: v0.2.0
 apb/apb_node:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.1.1
 apb_interrupt_cntrl:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.0.1
+axi/axi:
+  commit: v0.7.0
 axi/axi_node:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.1.3
 axi/axi_slice:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.1.4
 axi/axi_slice_dc:
-  commit: 5f889f887e58f6d5dadd79616b16e1a63381d569
+  commit: v1.1.3
 axi/axi_mem_if:
-  commit: 313d075cac65e960fddc8b93848aceda18eebeac
+  commit: v0.2.0
 timer_unit:
-  commit: tags/pulpissimo-v1.0
+  commit: v1.0.2
 common_cells:
-  commit: 0b8c10c21c9f810509bbd7bf86cfbdc4e6626c8e
+  commit: v1.13.1
 fpnew:
-  commit: v0.5.3
+  commit: v0.6.1
 jtag_pulp:
-  commit: dbg_dev
+  commit: v0.1
 riscv:
-  commit: b07b742ad211481c9585ddacdb8cb3a6174b7fe6
+  commit: pulpissimo-v3.4.0
 ibex:
   commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
   group: lowRISC
 scm:
-  commit: 300c13879d3b6e28782e14fd466a7c09c875a031
+  commit: v1.0.1
 generic_FLL:
-  commit: tags/pulpissimo-v1.0
+  commit: v0.1
 tech_cells_generic:
-  commit: 0532e53c1a323db4a55381d123c55bdc4fab06f6
+  commit: v0.1.6
 udma/udma_core:
-  commit: vega_v1.0.6
+  commit: v1.0.0
 udma/udma_uart:
-  commit: vega_v1.0.1
+  commit: v1.0.0
 udma/udma_i2c:
   commit: vega_v1.0.0
 udma/udma_i2s:
-  commit: 407e4c6fb89854aae67ac7f89276f77a775b0e95
+  commit: v1.0.0
 udma/udma_qspi:
-  commit: vega_v1.0.0
+  commit: v1.0.0
 udma/udma_sdio:
   commit: vega_v1.0.5
 udma/udma_camera:
-  commit: vega_v1.0.2
+  commit: v1.0.0
 udma/udma_filter:
-  commit: vega_v1.0.3
+  commit: v1.0.0
 udma/udma_external_per:
-  commit: master
+  commit: v1.0.0
 hwpe-mac-engine:
-  commit: f1d0b72
+  commit: v1.2
 riscv-dbg:
-  commit: tags/v0.1
+  commit: v0.2
