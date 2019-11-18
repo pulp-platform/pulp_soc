@@ -62,7 +62,7 @@ scm:
 generic_FLL:
   commit: v0.1
 tech_cells_generic:
-  commit: release-0.2.0-partial
+  commit: v0.1.6
 udma/udma_core:
   commit: v1.0.0
 udma/udma_uart:
