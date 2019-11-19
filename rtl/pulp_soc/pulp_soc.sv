@@ -29,6 +29,7 @@ module pulp_soc
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
     parameter BUFFER_WIDTH       = 8,
     parameter EVNT_WIDTH         = 8,
+    parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
@@ -230,7 +231,7 @@ module pulp_soc
     input  logic                          jtag_tms_i,
     input  logic                          jtag_tdi_i,
     output logic                          jtag_tdo_o,
-    output logic [`NB_CORES-1:0]          cluster_dbg_irq_valid_o
+    output logic [NB_CORES-1:0]          cluster_dbg_irq_valid_o
     ///////////////////////////////////////////////////
 );
 
@@ -273,9 +274,9 @@ module pulp_soc
     */
 
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID | (1 << CL_Core0_MHARTID) | (1 << CL_Core1_MHARTID) | (1 << CL_Core2_MHARTID) | (1 << CL_Core3_MHARTID) | (1 << CL_Core4_MHARTID) | (1 << CL_Core5_MHARTID) | (1 << CL_Core6_MHARTID) | (1 << CL_Core7_MHARTID);
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = (1 << FC_Core_MHARTID) | (1 << CL_Core0_MHARTID) | (1 << CL_Core1_MHARTID) | (1 << CL_Core2_MHARTID) | (1 << CL_Core3_MHARTID) | (1 << CL_Core4_MHARTID) | (1 << CL_Core5_MHARTID) | (1 << CL_Core6_MHARTID) | (1 << CL_Core7_MHARTID);
 
-    logic [`NB_CORES-1:0]   CLUSTER_CORE_ID;
+    logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
 
     assign CLUSTER_CORE_ID[0] = CL_Core0_MHARTID;
     assign CLUSTER_CORE_ID[1] = CL_Core1_MHARTID;
@@ -553,7 +554,7 @@ module pulp_soc
         .MEM_ADDR_WIDTH     ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
         .APB_ADDR_WIDTH     ( 32                                    ),
         .APB_DATA_WIDTH     ( 32                                    ),
-        .NB_CORES           ( `NB_CORES                             ),
+        .NB_CORES           ( NB_CORES                              ),
         .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
         .EVNT_WIDTH         ( EVNT_WIDTH                            ),
         .NGPIO              ( NGPIO                                 ),
@@ -869,7 +870,7 @@ module pulp_soc
    endgenerate
    
    generate
-      for(dbg_var=0;dbg_var<`NB_CORES;dbg_var=dbg_var+1)
+      for(dbg_var=0;dbg_var<NB_CORES;dbg_var=dbg_var+1)
         assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
    endgenerate
    
