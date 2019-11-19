@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2019-11-19
+
+### Changed
+- Bump `axi` to `v0.7.1`
+
+### Fixed
+- Remove `axi_test.sv` from synthesized files
+
 ## [1.0.0] - 2019-11-18
 
 ### Added
@@ -49,5 +57,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.1] - 2018-02-08
 
-## Added
+### Added
 - Initial release
