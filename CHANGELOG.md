@@ -6,10 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.1] - 2019-11-19
+## [1.0.1] - 2019-11-21
 
 ### Changed
 - Bump `axi` to `v0.7.1`
+- Bump `axi_node` to `v1.1.4`
 
 ### Fixed
 - Remove `axi_test.sv` from synthesized files
