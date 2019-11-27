@@ -33,6 +33,25 @@ module pulp_soc
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
+
+    parameter int unsigned AXI_ID_WIDTH_C07 = 6,
+    parameter int unsigned AXI_USER_WIDTH_C07 = 6,
+    parameter int unsigned AXI_STRB_WIDTH_C07 = 64/8,
+    parameter int unsigned AXI_ADDR_WIDTH_C07 = 32,
+    parameter int unsigned AXI_DATA_WIDTH_C07 = 64,
+
+    parameter int unsigned AXI_ID_WIDTH_NOCR07 = 6,
+    parameter int unsigned AXI_USER_WIDTH_NOCR07 = 6,
+    parameter int unsigned AXI_STRB_WIDTH_NOCR07 = 64/8,
+    parameter int unsigned AXI_ADDR_WIDTH_NOCR07 = 32,
+    parameter int unsigned AXI_DATA_WIDTH_NOCR07 = 64,
+
+    parameter int unsigned AXI_ID_WIDTH_SMS = 6,
+    parameter int unsigned AXI_USER_WIDTH_SMS = 6,
+    parameter int unsigned AXI_STRB_WIDTH_SMS = 64/8,
+    parameter int unsigned AXI_ADDR_WIDTH_SMS = 32,
+    parameter int unsigned AXI_DATA_WIDTH_SMS = 64,
+
     parameter NBIT_PADCFG        = 4,
     parameter NBIT_PADMUX        = 2
 ) (
@@ -46,6 +65,15 @@ module pulp_soc
     input  logic                          mode_select_i,
     input  logic                          boot_l2_i,
     input  logic                          bootsel_i,
+
+    // AXI interfaces to outside of control pulp
+    AXI_BUS.Slave                         axi_c07_slv,  // from c07
+    AXI_BUS.Master                        axi_c07_mst,
+
+    AXI_BUS.Slave                         axi_nocr07_slv, // from NoC
+    AXI_BUS.Master                        axi_nocr07_mst,
+
+    AXI_BUS.Slave                         axi_sms_slv,   // from security subsystem
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -246,10 +274,10 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
-   
+
     localparam FC_Core_CLUSTER_ID    = 6'd31;
     localparam CL_Core_CLUSTER_ID    = 6'd0;
-   
+
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
     localparam CL_Core0_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd0};
@@ -260,6 +288,12 @@ module pulp_soc
     localparam CL_Core5_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd5};
     localparam CL_Core6_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd6};
     localparam CL_Core7_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd7};
+
+
+    localparam int unsigned AXI_SOC_NODE_AW = 32;
+    localparam int unsigned AXI_SOC_NODE_DW = 64;
+    localparam int unsigned AXI_SOC_NODE_UW = 6;
+    localparam int unsigned AXI_SOC_NODE_IW_INP =6;
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -287,7 +321,7 @@ module pulp_soc
     assign CLUSTER_CORE_ID[6] = CL_Core6_MHARTID;
     assign CLUSTER_CORE_ID[7] = CL_Core7_MHARTID;
 
-    
+
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
                                                 nscratch:      2, // Debug module needs at least two scratch regs
@@ -408,13 +442,28 @@ module pulp_soc
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
 
-
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
+
+    // cl master -> soc_node
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) cl_in_mst ();
+
+    // soc_node -> soc
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) soc_in_mst ();
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
@@ -493,7 +542,7 @@ module pulp_soc
         .axi_slave_async ( s_data_slave             )
     );
 
-    // SOC TO CLUSTER
+    // soc to cluster
     axi_slice_dc_slave_wrap #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
@@ -508,6 +557,61 @@ module pulp_soc
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
     );
+
+
+    // data width conversions of AXI to 32-bit. Currently we fail here if we have
+    // a mismatch.
+    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_C07)
+        $fatal("AXI data width mismatch on c07");
+    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_NOCR07)
+        $fatal("AXI data width mismatch on nocr07");
+    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_SMS)
+        $fatal("AXI data width mismatch on sms");
+    /* axi_data_width_converter AUTO_TEMPLATE "_\([a-z]+\)" (
+     .slv (axi_in[]),
+     .mst (axi[]),
+     );
+     */
+
+    // Addr width conversion of AXI. Currently we fail here if we have a mismatch.
+    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_C07)
+        $fatal("AXI address width mismatch on c07");
+    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_NOCR07)
+        $fatal("AXI address width mismatch on nocr07");
+    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_SMS)
+        $fatal("AXI address width mismatch on sms");
+
+    //
+    // AXI BUS
+    //
+    // We connect the axi bus from the cluster with all the external axi master
+    // and slaves and route this to the tcdm interconnect
+
+    soc_node #(
+        // Parameters
+        .AXI_AW          (AXI_SOC_NODE_AW),
+        .AXI_DW          (AXI_SOC_NODE_DW),
+        .AXI_UW          (AXI_SOC_NODE_UW),
+        .AXI_IW_INP      (AXI_SOC_NODE_IW_INP),
+        .MST_SLICE_DEPTH (1),
+        .SLV_SLICE_DEPTH (1)
+    ) i_soc_node (
+        // Interfaces
+        .cl_slv          (s_data_in_bus),
+        //.cl_mst          (cl_in_Mst),
+        .soc_mst         (soc_in_mst),
+        .c07_slv         (axi_c07_slv),
+        .c07_mst         (axi_c07_mst),
+        .nocr07_slv      (axi_nocr07_slv),
+        .nocr07_mst      (axi_nocr07_mst),
+        .sms_slv         (axi_sms_slv),
+        // Inputs
+        .clk_i           (clk_i),
+        .rst_ni          (rst_ni)
+    );
+
+    // TODO: assert axi id widths
+
 
     //********************************************************
     //********************* SOC L2 RAM ***********************
@@ -677,7 +781,7 @@ module pulp_soc
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
         .cluster_irq_o          ( cluster_irq_o          ),
 
-	.wdt_reset_o		( wdt_reset_o		 )
+        .wdt_reset_o		( wdt_reset_o		 )
     );
 
 
@@ -735,7 +839,7 @@ module pulp_soc
         .test_en_i           ( dft_test_mode_i     ),
 
         //wdt
-	.wdt_reset_i	     ( wdt_reset_o         ),
+        .wdt_reset_i	     ( wdt_reset_o         ),
 
         .boot_addr_i         ( s_fc_bootaddr       ),
 
@@ -831,7 +935,7 @@ module pulp_soc
         .lint_debug       ( s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
 
-        .axi_from_cluster ( s_data_in_bus       ),
+        .axi_from_cluster ( soc_in_mst          ),
         .axi_to_cluster   ( s_data_out_bus      ),
 
         .apb_periph_bus   ( s_apb_periph_bus    ),
@@ -876,12 +980,12 @@ module pulp_soc
                                        dataaddr: dm::DataAddr
                                        };
    endgenerate
-   
+
    generate
       for(dbg_var=0;dbg_var<NB_CORES;dbg_var=dbg_var+1)
         assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
    endgenerate
-   
+
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
@@ -1144,3 +1248,12 @@ module pulp_soc
     assign data_master_b_readpointer_o  = s_data_master.b_readpointer ;
 
 endmodule
+
+// Local Variables:
+// verilog-indent-level: 4
+// verilog-indent-level-module: 4
+// verilog-indent-level-declaration: 4
+// verilog-indent-level-behavioral: 4
+// verilog-case-indent: 4
+// verilog-cexp-indent: 4
+// End:
