@@ -1,8 +1,10 @@
 pulp_soc:
   incdirs: [
     ../../rtl/includes,
+    ../axi/axi/include,
   ]
   files: [
+    rtl/pulp_soc/soc_node.sv,
     rtl/pulp_soc/soc_interconnect.sv,
     rtl/pulp_soc/boot_rom.sv,
     rtl/pulp_soc/l2_ram_multi_bank.sv,

@@ -6,6 +6,7 @@ pulp_soc:
     ../includes,
   ]
   files: [
+    soc_node.sv,
     soc_interconnect.sv,
     boot_rom.sv,
     l2_ram_multi_bank.sv,

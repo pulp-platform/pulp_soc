@@ -293,7 +293,9 @@ module pulp_soc
     localparam int unsigned AXI_SOC_NODE_AW = 32;
     localparam int unsigned AXI_SOC_NODE_DW = 64;
     localparam int unsigned AXI_SOC_NODE_UW = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_INP =6;
+    localparam int unsigned AXI_SOC_NODE_IW_INP = 6;
+    localparam int unsigned AXI_SOC_NODE_IW_OUP = AXI_SOC_NODE_IW_INP
+                   + $clog2(soc_node_pkg::N_SLAVES);
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -593,6 +595,7 @@ module pulp_soc
         .AXI_DW          (AXI_SOC_NODE_DW),
         .AXI_UW          (AXI_SOC_NODE_UW),
         .AXI_IW_INP      (AXI_SOC_NODE_IW_INP),
+        .AXI_IW_OUP      (AXI_SOC_NODE_IW_OUP),
         .MST_SLICE_DEPTH (1),
         .SLV_SLICE_DEPTH (1)
     ) i_soc_node (
