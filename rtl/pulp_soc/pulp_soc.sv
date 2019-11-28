@@ -613,7 +613,19 @@ module pulp_soc
         .rst_ni          (rst_ni)
     );
 
-    // TODO: assert axi id widths
+    // assert input axi id widths
+    if (AXI_SOC_NODE_IW_INP != AXI_ID_IN_WIDTH)
+        $fatal(0, "AXI address id width mismatch soc_node: %0d, s_data_in_bus: %0d",
+            AXI_SOC_NODE_IW_INP, AXI_ID_IN_WIDTH);
+    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_C07)
+        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_c07_slv: %0d",
+            AXI_SOC_NODE_IW_INP, AXI_ID_WIDTH_C07);
+    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_NOCR07)
+        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_nocr07_slv: %0d",
+            AXI_SOC_NODE_IW_INP, AXI_ID_WIDTH_NOCR07);
+    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_SMS)
+        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_sms_slv, %0d",
+             AXI_SOC_NODE_IW_OUP, AXI_ID_WIDTH_SMS);
 
 
     //********************************************************
