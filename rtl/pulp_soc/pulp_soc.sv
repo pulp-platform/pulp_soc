@@ -34,13 +34,15 @@ module pulp_soc
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
 
-    parameter int unsigned AXI_ID_WIDTH_C07 = 6,
+    parameter int unsigned AXI_ID_INP_WIDTH_C07 = 6,
+    parameter int unsigned AXI_ID_OUP_WIDTH_C07 = 6,
     parameter int unsigned AXI_USER_WIDTH_C07 = 6,
     parameter int unsigned AXI_STRB_WIDTH_C07 = 64/8,
     parameter int unsigned AXI_ADDR_WIDTH_C07 = 32,
     parameter int unsigned AXI_DATA_WIDTH_C07 = 64,
 
-    parameter int unsigned AXI_ID_WIDTH_NOCR07 = 6,
+    parameter int unsigned AXI_ID_INP_WIDTH_NOCR07 = 6,
+    parameter int unsigned AXI_ID_OUP_WIDTH_NOCR07 = 6,
     parameter int unsigned AXI_USER_WIDTH_NOCR07 = 6,
     parameter int unsigned AXI_STRB_WIDTH_NOCR07 = 64/8,
     parameter int unsigned AXI_ADDR_WIDTH_NOCR07 = 32,
@@ -290,12 +292,12 @@ module pulp_soc
     localparam CL_Core7_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd7};
 
 
+    // TODO: this should be exposed somewhere, maybe configurable?
     localparam int unsigned AXI_SOC_NODE_AW = 32;
     localparam int unsigned AXI_SOC_NODE_DW = 64;
     localparam int unsigned AXI_SOC_NODE_UW = 6;
     localparam int unsigned AXI_SOC_NODE_IW_INP = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_OUP = AXI_SOC_NODE_IW_INP
-                   + $clog2(soc_node_pkg::N_SLAVES);
+    localparam int unsigned AXI_SOC_NODE_IW_OUP = soc_node_pkg::axi_iw_oup(AXI_SOC_NODE_IW_INP);
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -461,10 +463,10 @@ module pulp_soc
 
     // soc_node -> soc
     AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH      ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_SOC_NODE_IW_OUP ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
     ) soc_in_mst ();
 
     //assign s_data_out_bus.aw_atop = 6'b0;
@@ -584,20 +586,53 @@ module pulp_soc
         $fatal("AXI address width mismatch on sms");
 
     //
-    // AXI BUS
+    // AXI soc node
     //
     // We connect the axi bus from the cluster with all the external axi master
     // and slaves and route this to the tcdm interconnect
 
     soc_node #(
         // Parameters
-        .AXI_AW          (AXI_SOC_NODE_AW),
-        .AXI_DW          (AXI_SOC_NODE_DW),
-        .AXI_UW          (AXI_SOC_NODE_UW),
-        .AXI_IW_INP      (AXI_SOC_NODE_IW_INP),
-        .AXI_IW_OUP      (AXI_SOC_NODE_IW_OUP),
-        .MST_SLICE_DEPTH (1),
-        .SLV_SLICE_DEPTH (1)
+        .AXI_ID_OUP_WIDTH_SOC    (AXI_SOC_NODE_IW_OUP),
+        .AXI_USER_WIDTH_SOC      (AXI_USER_WIDTH),
+        .AXI_STRB_WIDTH_SOC      (AXI_DATA_IN_WIDTH/8),
+        .AXI_ADDR_WIDTH_SOC      (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH_SOC      (AXI_DATA_IN_WIDTH),
+
+        .AXI_ID_INP_WIDTH_CLUSTER(AXI_ID_IN_WIDTH),
+        .AXI_USER_WIDTH_CLUSTER  (AXI_USER_WIDTH),
+        .AXI_STRB_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH/8),
+        .AXI_ADDR_WIDTH_CLUSTER  (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH),
+
+        .AXI_ID_INP_WIDTH_C07    (AXI_ID_INP_WIDTH_C07),
+        .AXI_ID_OUP_WIDTH_C07    (AXI_ID_OUP_WIDTH_C07),
+        .AXI_USER_WIDTH_C07      (AXI_USER_WIDTH_C07),
+        .AXI_STRB_WIDTH_C07      (AXI_STRB_WIDTH_C07),
+        .AXI_ADDR_WIDTH_C07      (AXI_ADDR_WIDTH_C07),
+        .AXI_DATA_WIDTH_C07      (AXI_DATA_WIDTH_C07),
+
+        .AXI_ID_INP_WIDTH_NOCR07 (AXI_ID_INP_WIDTH_NOCR07),
+        .AXI_ID_OUP_WIDTH_NOCR07 (AXI_ID_OUP_WIDTH_NOCR07),
+        .AXI_USER_WIDTH_NOCR07   (AXI_USER_WIDTH_NOCR07),
+        .AXI_STRB_WIDTH_NOCR07   (AXI_STRB_WIDTH_NOCR07),
+        .AXI_ADDR_WIDTH_NOCR07   (AXI_ADDR_WIDTH_NOCR07),
+        .AXI_DATA_WIDTH_NOCR07   (AXI_DATA_WIDTH_NOCR07),
+
+        .AXI_ID_INP_WIDTH_SMS    (AXI_ID_WIDTH_SMS),
+        .AXI_USER_WIDTH_SMS      (AXI_USER_WIDTH_SMS),
+        .AXI_STRB_WIDTH_SMS      (AXI_STRB_WIDTH_SMS),
+        .AXI_ADDR_WIDTH_SMS      (AXI_ADDR_WIDTH_SMS),
+        .AXI_DATA_WIDTH_SMS      (AXI_DATA_WIDTH_SMS),
+
+        // this is the soc nodes axi config. All connections' parameters will be
+        // checked against this
+        .AXI_AW                  (AXI_SOC_NODE_AW),
+        .AXI_DW                  (AXI_SOC_NODE_DW),
+        .AXI_UW                  (AXI_SOC_NODE_UW),
+        .AXI_IW_INP              (AXI_SOC_NODE_IW_INP), // cluster -> soc id width
+        .MST_SLICE_DEPTH         (1),
+        .SLV_SLICE_DEPTH         (1)
     ) i_soc_node (
         // Interfaces
         .cl_slv          (s_data_in_bus),
@@ -612,20 +647,6 @@ module pulp_soc
         .clk_i           (clk_i),
         .rst_ni          (rst_ni)
     );
-
-    // assert input axi id widths
-    if (AXI_SOC_NODE_IW_INP != AXI_ID_IN_WIDTH)
-        $fatal(0, "AXI address id width mismatch soc_node: %0d, s_data_in_bus: %0d",
-            AXI_SOC_NODE_IW_INP, AXI_ID_IN_WIDTH);
-    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_C07)
-        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_c07_slv: %0d",
-            AXI_SOC_NODE_IW_INP, AXI_ID_WIDTH_C07);
-    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_NOCR07)
-        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_nocr07_slv: %0d",
-            AXI_SOC_NODE_IW_INP, AXI_ID_WIDTH_NOCR07);
-    if (AXI_SOC_NODE_IW_INP != AXI_ID_WIDTH_SMS)
-        $fatal(0, "AXI address id width mismatch soc_node: %0d, axi_sms_slv, %0d",
-             AXI_SOC_NODE_IW_OUP, AXI_ID_WIDTH_SMS);
 
 
     //********************************************************
@@ -938,7 +959,7 @@ module pulp_soc
         .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
         .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
         .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_ID_IN_WIDTH       )
+        .AXI_ID_WIDTH       ( AXI_SOC_NODE_IW_OUP   )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rstn_i           ( s_soc_rstn          ),
