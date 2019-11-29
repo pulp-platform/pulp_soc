@@ -14,23 +14,62 @@
 `include "axi/assign.svh"
 
 package automatic soc_node_pkg;
+
   localparam int unsigned N_SLAVES = 4;
   localparam int unsigned N_MASTERS = 3;
 
-  // function int unsigned axi_iw_oup(input int unsigned axi_iw);
-  //   return axi_iw + $clog2(N_SLAVES);
-  // endfunction // axi_iw_oup
+  // localparam int unsigned AXI_SOC_NODE_AW = 32;
+  // localparam int unsigned AXI_SOC_NODE_DW = 64;
+  // localparam int unsigned AXI_SOC_NODE_UW = 6;
+  // localparam int unsigned AXI_SOC_NODE_IW_INP = 6;
+  // localparam int unsigned AXI_SOC_NODE_IW_OUP = AXI_SOC_NODE_IW_INP + $clog2(N_SLAVES);
+
+  function int unsigned axi_iw_oup(input int unsigned axi_iw);
+    return axi_iw + $clog2(N_SLAVES);
+  endfunction // axi_iw_oup
 
 endpackage // soc_node_pkg
 
 module soc_node #(
-  parameter int unsigned  AXI_AW = 0,               // [bit]
-  parameter int unsigned  AXI_DW = 0,               // [bit]
-  parameter int unsigned  AXI_UW = 0,               // [bit]
-  parameter int unsigned  AXI_IW_INP = 0,            // [bit]
-  parameter int unsigned  AXI_IW_OUP = 0,            // [bit]
-  parameter int unsigned  MST_SLICE_DEPTH = 0,
-  parameter int unsigned  SLV_SLICE_DEPTH = 0
+  parameter int unsigned AXI_ID_OUP_WIDTH_SOC = 0,
+  parameter int unsigned AXI_USER_WIDTH_SOC = 0,
+  parameter int unsigned AXI_STRB_WIDTH_SOC = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_SOC = 0,
+  parameter int unsigned AXI_DATA_WIDTH_SOC = 0,
+
+  parameter int unsigned AXI_ID_INP_WIDTH_CLUSTER = 0,
+  parameter int unsigned AXI_USER_WIDTH_CLUSTER = 0,
+  parameter int unsigned AXI_STRB_WIDTH_CLUSTER = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_CLUSTER = 0,
+  parameter int unsigned AXI_DATA_WIDTH_CLUSTER = 0,
+
+  parameter int unsigned AXI_ID_INP_WIDTH_C07 = 0,
+  parameter int unsigned AXI_ID_OUP_WIDTH_C07 = 0,
+  parameter int unsigned AXI_USER_WIDTH_C07 = 0,
+  parameter int unsigned AXI_STRB_WIDTH_C07 = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_C07 = 0,
+  parameter int unsigned AXI_DATA_WIDTH_C07 = 0,
+
+  parameter int unsigned AXI_ID_INP_WIDTH_NOCR07 = 0,
+  parameter int unsigned AXI_ID_OUP_WIDTH_NOCR07 = 0,
+  parameter int unsigned AXI_USER_WIDTH_NOCR07 = 0,
+  parameter int unsigned AXI_STRB_WIDTH_NOCR07 = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_NOCR07 = 0,
+  parameter int unsigned AXI_DATA_WIDTH_NOCR07 = 0,
+
+  parameter int unsigned AXI_ID_INP_WIDTH_SMS = 0,
+  parameter int unsigned AXI_USER_WIDTH_SMS = 0,
+  parameter int unsigned AXI_STRB_WIDTH_SMS = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_SMS = 0,
+  parameter int unsigned AXI_DATA_WIDTH_SMS = 0,
+
+  parameter int unsigned AXI_AW = 0, // [bit]
+  parameter int unsigned AXI_DW = 0, // [bit]
+  parameter int unsigned AXI_UW = 0, // [bit]
+  parameter int unsigned AXI_IW_INP = 0, // [bit]
+  // parameter int unsigned AXI_IW_OUP = 0, // [bit]
+  parameter int unsigned MST_SLICE_DEPTH = 0,
+  parameter int unsigned SLV_SLICE_DEPTH = 0
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
@@ -51,13 +90,30 @@ module soc_node #(
   localparam int unsigned IDX_NOCR07 = 2;
   localparam int unsigned IDX_CLUSTER = 3;
 
-
   typedef logic [AXI_AW-1:0] addr_t;
 
   addr_t  [N_REGIONS-1:0][soc_node_pkg::N_MASTERS-1:0]  start_addr,
                                                         end_addr;
   // logic   [N_REGIONS-1:0][soc_node_pkg::N_MASTERS-1:0]  valid_rule;
 
+  localparam AXI_IW_OUP = soc_node_pkg::axi_iw_oup(AXI_IW_INP);
+
+  // sanity checks: assert axi id widths
+`define ELAB_ASSERT_AXI_ID(direction, name)                               \
+  if (AXI_IW_``direction`` != AXI_ID_``direction``_WIDTH_``name``)        \
+    $fatal(0, `"AXI address id width mismatch soc_node: %0d, name: %0d`", \
+            AXI_IW_``direction``, AXI_ID_``direction``_WIDTH_``name``);   \
+
+  `ELAB_ASSERT_AXI_ID(INP,CLUSTER)
+  `ELAB_ASSERT_AXI_ID(INP,C07)
+  `ELAB_ASSERT_AXI_ID(INP,NOCR07)
+  `ELAB_ASSERT_AXI_ID(INP,SMS)
+
+  `ELAB_ASSERT_AXI_ID(OUP,SOC)
+  `ELAB_ASSERT_AXI_ID(OUP,C07)
+  `ELAB_ASSERT_AXI_ID(OUP,NOCR07)
+
+  // master slave buses
   AXI_BUS #(
     .AXI_ADDR_WIDTH (AXI_AW),
     .AXI_DATA_WIDTH (AXI_DW),
