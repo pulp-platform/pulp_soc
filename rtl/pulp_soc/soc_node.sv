@@ -11,12 +11,24 @@
 
 // Author: Robert Balas (balasr@iis.ee.ethz.ch)
 
+`include "axi_soc_node_defines.sv"
+`include "cluster_bus_defines.sv"
 `include "axi/assign.svh"
 
 package automatic soc_node_pkg;
 
-  localparam int unsigned N_SLAVES = 4;
-  localparam int unsigned N_MASTERS = 3;
+  localparam int unsigned N_SLAVES = `AXI_SOC_NODE_SLAVES; // 4
+  localparam int unsigned N_MASTERS = `AXI_SOC_NODE_MASTERS; // 3
+
+  // SoC peripherals + l2 map from the point of view of outside and the cluster
+  localparam logic [31:0] SOC_START_ADDR = `MASTER_2_START_ADDR; // 32'h1A00_0000
+  localparam logic [31:0] SOC_END_ADDR = `MASTER_2_END_ADDR; // 32'h1FFF_FFFF
+
+  localparam logic [31:0] C07_START_ADDR = `AXI_SOC_NODE_C07_START_ADDR; // 32'h2000_0000
+  localparam logic [31:0] C07_END_ADDR = `AXI_SOC_NODE_C07_END_ADDR; // 32'h3FFF_FFFF
+
+  localparam logic [31:0] NOCR07_START_ADDR = `AXI_SOC_NODE_NOCR07_START_ADDR; // 32'h4000_0000
+  localparam logic [31:0] NOCR07_END_ADDR = `AXI_SOC_NODE_NOCR07_END_ADDR; // 32'hFFFF_FFFF
 
   // localparam int unsigned AXI_SOC_NODE_AW = 32;
   // localparam int unsigned AXI_SOC_NODE_DW = 64;
@@ -150,18 +162,18 @@ module soc_node #(
     // valid_rule[0][IDX_CLUSTER] = 1'b1;
 
     // SoC
-    start_addr[0][IDX_SOC] = 32'h1C00_0000;
-    end_addr[0][IDX_SOC]   = 32'h1FFF_FFFF; // NOTE: 0x1c091FFF is normally the upper limit
+    start_addr[0][IDX_SOC] = soc_node_pkg::SOC_START_ADDR;
+    end_addr[0][IDX_SOC]   = soc_node_pkg::SOC_END_ADDR;
     // valid_rule[0][IDX_SOC] = 1'b1;
 
     // c07
-    start_addr[0][IDX_C07] = 32'h2000_0000;
-    end_addr[0][IDX_C07]   = 32'h4000_0000; // NOTE: arbitrarily assigned this range
+    start_addr[0][IDX_C07] = soc_node_pkg::C07_START_ADDR;
+    end_addr[0][IDX_C07]   = soc_node_pkg::C07_END_ADDR; // NOTE: arbitrarily assigned this range
     // valid_rule[0][IDX_C07] = 1'b1;
 
     // NoCr07
-    start_addr[0][IDX_NOCR07] = 32'h4000_0000;
-    end_addr[0][IDX_NOCR07]   = 32'hFFFF_FFFF; // NOTE: map everything else to global memory
+    start_addr[0][IDX_NOCR07] = soc_node_pkg::NOCR07_START_ADDR;
+    end_addr[0][IDX_NOCR07]   = soc_node_pkg::NOCR07_END_ADDR; // NOTE: map everything else to global memory
     // valid_rule[0][IDX_NOCR07] = 1'b1;
 
   end
