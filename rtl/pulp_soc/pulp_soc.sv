@@ -12,9 +12,7 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
-module pulp_soc
-    import dm::*;
-#(
+module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
