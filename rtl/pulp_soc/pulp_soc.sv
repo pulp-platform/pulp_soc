@@ -644,8 +644,8 @@ module pulp_soc
         .nocr07_mst      (axi_nocr07_mst),
         .sms_slv         (axi_sms_slv),
         // Inputs
-        .clk_i           (clk_i),
-        .rst_ni          (rst_ni)
+        .clk_i           (s_soc_clk),
+        .rst_ni          (s_soc_rstn)
     );
 
 
