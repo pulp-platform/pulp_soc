@@ -12,9 +12,7 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
-module pulp_soc
-    import dm::*;
-#(
+module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
@@ -33,7 +31,10 @@ module pulp_soc
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
     parameter NBIT_PADCFG        = 4,
-    parameter NBIT_PADMUX        = 2
+    parameter NBIT_PADMUX        = 2,
+    parameter int unsigned NR_HARTS = 1024,  // highest hart id in the system, rouned up to power of two
+    parameter logic [5:0] FC_CORE_CLUSTER_ID = 6'd31,
+    parameter logic [3:0] FC_CORE_CORE_ID    = 4'd0
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -240,9 +241,9 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
-    localparam FC_Core_CLUSTER_ID    = 6'd31;
-    localparam FC_Core_CORE_ID       = 4'd0;
-    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+    localparam FC_Core_CLUSTER_ID    = FC_CORE_CLUSTER_ID;
+    localparam FC_Core_CORE_ID       = FC_CORE_CORE_ID;
+    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID, 1'b0, FC_Core_CORE_ID};
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -256,8 +257,9 @@ module pulp_soc
         will remove the other flip flops and related logic.
     */
 
-    localparam NrHarts                               = 1024;
+    localparam NrHarts                               = NR_HARTS;
     localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
+    // TODO: assert that we have no hart id collision
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
                                                 nscratch:      2, // Debug module needs at least two scratch regs
