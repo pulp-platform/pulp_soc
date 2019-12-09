@@ -252,14 +252,6 @@ module pulp_soc
    
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
-    localparam CL_Core0_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd0};
-    localparam CL_Core1_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd1};
-    localparam CL_Core2_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd2};
-    localparam CL_Core3_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd3};
-    localparam CL_Core4_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd4};
-    localparam CL_Core5_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd5};
-    localparam CL_Core6_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd6};
-    localparam CL_Core7_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd7};
 
     /*
         PULP RISC-V cores have not continguos MHARTID.
@@ -273,19 +265,28 @@ module pulp_soc
         will remove the other flip flops and related logic.
     */
 
+    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID  = CORE_CL_ID_FX();
+    function logic [NB_CORES-1:0][10:0] CORE_CL_ID_FX();
+        for (int ii=0; ii< NB_CORES; ii++) begin
+            CORE_CL_ID_FX[ii] = {CL_Core_CLUSTER_ID, 1'b0, ii[3:0]};
+        end
+    endfunction
+
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = (1 << FC_Core_MHARTID) | (1 << CL_Core0_MHARTID) | (1 << CL_Core1_MHARTID) | (1 << CL_Core2_MHARTID) | (1 << CL_Core3_MHARTID) | (1 << CL_Core4_MHARTID) | (1 << CL_Core5_MHARTID) | (1 << CL_Core6_MHARTID) | (1 << CL_Core7_MHARTID);
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
+    function logic [NrHarts-1:0] SEL_HARTS_FX();
+        SEL_HARTS_FX = (1 << FC_Core_MHARTID);
+        for (int ii=0; ii< NB_CORES; ii++) begin
+            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[ii]);
+        end
+    endfunction
 
     logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
 
-    assign CLUSTER_CORE_ID[0] = CL_Core0_MHARTID;
-    assign CLUSTER_CORE_ID[1] = CL_Core1_MHARTID;
-    assign CLUSTER_CORE_ID[2] = CL_Core2_MHARTID;
-    assign CLUSTER_CORE_ID[3] = CL_Core3_MHARTID;
-    assign CLUSTER_CORE_ID[4] = CL_Core4_MHARTID;
-    assign CLUSTER_CORE_ID[5] = CL_Core5_MHARTID;
-    assign CLUSTER_CORE_ID[6] = CL_Core6_MHARTID;
-    assign CLUSTER_CORE_ID[7] = CL_Core7_MHARTID;
+    genvar x_i;
+    for (x_i = 0; x_i < NB_CORES; x_i++) begin
+        assign CLUSTER_CORE_ID[x_i] = {CL_Core_CLUSTER_ID, 1'b0, x_i[3:0]};
+    end
 
     
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
