@@ -32,7 +32,12 @@ module pulp_soc import dm::*; #(
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
     parameter NBIT_PADCFG        = 4,
-    parameter NBIT_PADMUX        = 2
+    parameter NBIT_PADMUX        = 2,
+
+    parameter int unsigned N_UART = 1,
+    parameter int unsigned N_SPI  = 1,
+    parameter int unsigned N_I2C  = 2
+
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -177,18 +182,14 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    timer_ch1_o,
     output logic [3:0]                    timer_ch2_o,
     output logic [3:0]                    timer_ch3_o,
-    input  logic                          i2c0_scl_i,
-    output logic                          i2c0_scl_o,
-    output logic                          i2c0_scl_oe_o,
-    input  logic                          i2c0_sda_i,
-    output logic                          i2c0_sda_o,
-    output logic                          i2c0_sda_oe_o,
-    input  logic                          i2c1_scl_i,
-    output logic                          i2c1_scl_o,
-    output logic                          i2c1_scl_oe_o,
-    input  logic                          i2c1_sda_i,
-    output logic                          i2c1_sda_o,
-    output logic                          i2c1_sda_oe_o,
+
+    input  logic [N_I2C-1:0]              i2c_scl_i,
+    output logic [N_I2C-1:0]              i2c_scl_o,
+    output logic [N_I2C-1:0]              i2c_scl_oe_o,
+    input  logic [N_I2C-1:0]              i2c_sda_i,
+    output logic [N_I2C-1:0]              i2c_sda_o,
+    output logic [N_I2C-1:0]              i2c_sda_oe_o,
+
     input  logic                          i2s_slave_sd0_i,
     input  logic                          i2s_slave_sd1_i,
     input  logic                          i2s_slave_ws_i,
@@ -553,7 +554,10 @@ module pulp_soc import dm::*; #(
         .NGPIO              ( NGPIO                                 ),
         .NPAD               ( NPAD                                  ),
         .NBIT_PADCFG        ( NBIT_PADCFG                           ),
-        .NBIT_PADMUX        ( NBIT_PADMUX                           )
+        .NBIT_PADMUX        ( NBIT_PADMUX                           ),
+        .N_UART             ( N_UART                                ),
+        .N_SPI              ( N_SPI                                 ),
+        .N_I2C              ( N_I2C                                 )
     ) soc_peripherals_i (
 
         .clk_i                  ( s_soc_clk              ),
@@ -614,12 +618,12 @@ module pulp_soc import dm::*; #(
         .uart_rx                ( uart_rx_i              ),
 
         //I2C
-        .i2c_scl_i    ( { i2c1_scl_i,    i2c0_scl_i    } ),
-        .i2c_scl_o    ( { i2c1_scl_o,    i2c0_scl_o    } ),
-        .i2c_scl_oe   ( { i2c1_scl_oe_o, i2c0_scl_oe_o } ),
-        .i2c_sda_i    ( { i2c1_sda_i,    i2c0_sda_i    } ),
-        .i2c_sda_o    ( { i2c1_sda_o,    i2c0_sda_o    } ),
-        .i2c_sda_oe   ( { i2c1_sda_oe_o, i2c0_sda_oe_o } ),
+        .i2c_scl_i              ( i2c_scl_i              ),
+        .i2c_scl_o              ( i2c_scl_o              ),
+        .i2c_scl_oe_o           ( i2c_scl_oe_o           ),
+        .i2c_sda_i              ( i2c_sda_i              ),
+        .i2c_sda_o              ( i2c_sda_o              ),
+        .i2c_sda_oe_o           ( i2c_sda_oe_o           ),
 
         //I2S
         .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),

@@ -20,7 +20,10 @@ module soc_peripherals #(
     parameter NGPIO          = 64,
     parameter NPAD           = 64,
     parameter NBIT_PADCFG    = 4,
-    parameter NBIT_PADMUX    = 2
+    parameter NBIT_PADMUX    = 2,
+    parameter N_UART         = 1,
+    parameter N_SPI          = 1,
+    parameter N_I2C          = 2
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
@@ -92,16 +95,19 @@ module soc_peripherals #(
     input  logic                       cam_vsync_i,
 
     //UART
-    output logic                       uart_tx,
-    input  logic                       uart_rx,
+    // output logic [N_UART-1:0]          uart_tx,
+    // input  logic [N_UART-1:0]          uart_rx,
+    output logic           uart_tx,
+    input  logic           uart_rx,
+
 
     //I2C
-    input  logic                 [1:0] i2c_scl_i,
-    output logic                 [1:0] i2c_scl_o,
-    output logic                 [1:0] i2c_scl_oe,
-    input  logic                 [1:0] i2c_sda_i,
-    output logic                 [1:0] i2c_sda_o,
-    output logic                 [1:0] i2c_sda_oe,
+    input  logic [N_I2C-1:0]           i2c_scl_i,
+    output logic [N_I2C-1:0]           i2c_scl_o,
+    output logic [N_I2C-1:0]           i2c_scl_oe_o,
+    input  logic [N_I2C-1:0]           i2c_sda_i,
+    output logic [N_I2C-1:0]           i2c_sda_o,
+    output logic [N_I2C-1:0]           i2c_sda_oe_o,
 
     //I2S
     input  logic                       i2s_slave_sd0_i,
@@ -114,11 +120,11 @@ module soc_peripherals #(
     output logic                       i2s_slave_sck_oe,
 
     //SPI
-    output logic                       spi_clk,
-    output logic                 [3:0] spi_csn,
-    output logic                 [3:0] spi_oen,
-    output logic                 [3:0] spi_sdo,
-    input  logic                 [3:0] spi_sdi,
+    output logic [N_SPI-1:0]           spi_clk,
+    output logic [N_SPI-1:0][3:0]      spi_csn,
+    output logic [N_SPI-1:0][3:0]      spi_oen,
+    output logic [N_SPI-1:0][3:0]      spi_sdo,
+    input  logic [N_SPI-1:0][3:0]      spi_sdi,
 
     //SDIO
     output logic                       sdclk_o,
@@ -364,9 +370,9 @@ module soc_peripherals #(
     udma_subsystem #(
         .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
         .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
-        .N_SPI (1),
-        .N_UART(1),
-        .N_I2C (2)
+        .N_SPI (N_SPI),
+        .N_UART(N_UART),
+        .N_I2C (N_I2C)
     ) i_udma (
         .L2_ro_req_o      ( l2_tx_master.req     ),
         .L2_ro_gnt_i      ( l2_tx_master.gnt     ),
@@ -441,10 +447,10 @@ module soc_peripherals #(
 
         .i2c_scl_i        ( i2c_scl_i            ),
         .i2c_scl_o        ( i2c_scl_o            ),
-        .i2c_scl_oe       ( i2c_scl_oe           ),
+        .i2c_scl_oe       ( i2c_scl_oe_o         ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe           )
+        .i2c_sda_oe       ( i2c_sda_oe_o         )
 
     );
 
