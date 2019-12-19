@@ -228,10 +228,10 @@ module pulp_soc import dm::*; #(
 
     input  logic [N_I2C-1:0]              i2c_scl_i,
     output logic [N_I2C-1:0]              i2c_scl_o,
-    output logic [N_I2C-1:0]              i2c_scl_oe,
+    output logic [N_I2C-1:0]              i2c_scl_oe_o,
     input  logic [N_I2C-1:0]              i2c_sda_i,
     output logic [N_I2C-1:0]              i2c_sda_o,
-    output logic [N_I2C-1:0]              i2c_sda_oe,
+    output logic [N_I2C-1:0]              i2c_sda_oe_o,
 
     input  logic                          i2s_slave_sd0_i,
     input  logic                          i2s_slave_sd1_i,
@@ -781,10 +781,10 @@ module pulp_soc import dm::*; #(
         //I2C
         .i2c_scl_i              ( i2c_scl_i              ),
         .i2c_scl_o              ( i2c_scl_o              ),
-        .i2c_scl_oe             ( i2c_scl_oe             ),
+        .i2c_scl_oe_o           ( i2c_scl_oe_o           ),
         .i2c_sda_i              ( i2c_sda_i              ),
         .i2c_sda_o              ( i2c_sda_o              ),
-        .i2c_sda_oe             ( i2c_sda_oe             ),
+        .i2c_sda_oe_o           ( i2c_sda_oe_o           ),
 
         //I2S
         .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),

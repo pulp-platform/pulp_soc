@@ -105,10 +105,10 @@ module soc_peripherals #(
     //I2C
     input  logic [N_I2C-1:0]           i2c_scl_i,
     output logic [N_I2C-1:0]           i2c_scl_o,
-    output logic [N_I2C-1:0]           i2c_scl_oe,
+    output logic [N_I2C-1:0]           i2c_scl_oe_o,
     input  logic [N_I2C-1:0]           i2c_sda_i,
     output logic [N_I2C-1:0]           i2c_sda_o,
-    output logic [N_I2C-1:0]           i2c_sda_oe,
+    output logic [N_I2C-1:0]           i2c_sda_oe_o,
 
     //I2S
     input  logic                       i2s_slave_sd0_i,
@@ -479,10 +479,10 @@ module soc_peripherals #(
 
         .i2c_scl_i        ( i2c_scl_i            ),
         .i2c_scl_o        ( i2c_scl_o            ),
-        .i2c_scl_oe       ( i2c_scl_oe           ),
+        .i2c_scl_oe       ( i2c_scl_oe_o         ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe           )
+        .i2c_sda_oe       ( i2c_sda_oe_o         )
 
     );
 
