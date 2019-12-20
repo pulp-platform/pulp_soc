@@ -231,11 +231,9 @@ module pulp_soc
     input  logic                          jtag_tms_i,
     input  logic                          jtag_tdi_i,
     output logic                          jtag_tdo_o,
-    output logic [NB_CORES-1:0]          cluster_dbg_irq_valid_o
+    output logic [NB_CORES-1:0]           cluster_dbg_irq_valid_o
     ///////////////////////////////////////////////////
 );
-
-    genvar dbg_var, nhart_var;
 
     localparam FLL_ADDR_WIDTH        = 32;
     localparam FLL_DATA_WIDTH        = 32;
@@ -265,10 +263,10 @@ module pulp_soc
         will remove the other flip flops and related logic.
     */
 
-    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID  = CORE_CL_ID_FX();
+    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID = CORE_CL_ID_FX();
     function logic [NB_CORES-1:0][10:0] CORE_CL_ID_FX();
-        for (int ii=0; ii< NB_CORES; ii++) begin
-            CORE_CL_ID_FX[ii] = {CL_Core_CLUSTER_ID, 1'b0, ii[3:0]};
+        for (int i = 0; i < NB_CORES; i++) begin
+            CORE_CL_ID_FX[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
         end
     endfunction
 
@@ -276,16 +274,15 @@ module pulp_soc
     localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
     function logic [NrHarts-1:0] SEL_HARTS_FX();
         SEL_HARTS_FX = (1 << FC_Core_MHARTID);
-        for (int ii=0; ii< NB_CORES; ii++) begin
-            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[ii]);
+        for (int i = 0; i < NB_CORES; i++) begin
+            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[i]);
         end
     endfunction
 
     logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
 
-    genvar x_i;
-    for (x_i = 0; x_i < NB_CORES; x_i++) begin
-        assign CLUSTER_CORE_ID[x_i] = {CL_Core_CLUSTER_ID, 1'b0, x_i[3:0]};
+    for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
+        assign CLUSTER_CORE_ID[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
     end
 
     
@@ -376,8 +373,6 @@ module pulp_soc
 
 
     logic                  spi_master0_csn3, spi_master0_csn2;
-
-    genvar                 i,j;
 
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
@@ -857,9 +852,8 @@ module pulp_soc
         .tdo_oe_o             (                     )
     );
 
-   // assign hartinfo
-   generate
-      for(nhart_var=0;nhart_var<NrHarts;nhart_var=nhart_var+1)
+    // assign hartinfo
+    for (genvar nhart_var = 0; nhart_var < NrHarts; nhart_var = nhart_var + 1) begin : gen_hartinfo
         assign hartinfo[nhart_var] = '{
                                        zero1:        '0,
                                        nscratch:      2, // Debug module needs at least two scratch regs
@@ -868,12 +862,11 @@ module pulp_soc
                                        datasize: dm::DataCount,
                                        dataaddr: dm::DataAddr
                                        };
-   endgenerate
+    end
    
-   generate
-      for(dbg_var=0;dbg_var<NB_CORES;dbg_var=dbg_var+1)
+    for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
         assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
-   endgenerate
+    end
    
     dm_top #(
        .NrHarts           ( NrHarts                   ),
@@ -1003,29 +996,23 @@ module pulp_soc
     //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
     //********************************************************
 
-    generate
-        for (i=0; i<32; i++) begin
-            for (j=0; j<6; j++) begin
-                assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
-            end
+    for (genvar i = 0; i < 32; i++) begin : gen_gpio_cfg_outer
+        for (genvar j = 0; j < 6; j++) begin : gen_gpip_cfg_inner
+            assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
         end
-    endgenerate
+    end
 
-    generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<2; j++) begin
-                assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
-            end
+    for (genvar i = 0; i < 64; i++) begin : gen_pad_mux_outer
+        for (genvar j = 0; j < 2; j++) begin : gen_pad_mux_innter
+            assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
         end
-    endgenerate
+    end
 
-    generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<6; j++) begin
-                assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
-            end
+    for (genvar i = 0; i < 64; i++) begin : gen_pad_cfg_outer
+        for (genvar j = 0; j < 6; j++) begin : gen_pad_cfg_inner
+            assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
         end
-    endgenerate
+    end
 
     //********************************************************
     //*** AXI DATA SLAVE INTERFACE UNPACK ********************
