@@ -198,21 +198,13 @@ module pulp_soc import dm::*; #(
     input  logic                          i2s_slave_sck_i,
     output logic                          i2s_slave_sck_o,
     output logic                          i2s_slave_sck_oe,
-    output logic                          spi_master0_clk_o,
-    output logic                          spi_master0_csn0_o,
-    output logic                          spi_master0_csn1_o,
-    output logic                          spi_master0_oen0_o,
-    output logic                          spi_master0_oen1_o,
-    output logic                          spi_master0_oen2_o,
-    output logic                          spi_master0_oen3_o,
-    output logic                          spi_master0_sdo0_o,
-    output logic                          spi_master0_sdo1_o,
-    output logic                          spi_master0_sdo2_o,
-    output logic                          spi_master0_sdo3_o,
-    input  logic                          spi_master0_sdi0_i,
-    input  logic                          spi_master0_sdi1_i,
-    input  logic                          spi_master0_sdi2_i,
-    input  logic                          spi_master0_sdi3_i,
+
+    output logic [N_SPI-1:0]              spi_clk_o,
+    output logic [N_SPI-1:0][3:0]         spi_csn_o,
+    output logic [N_SPI-1:0][3:0]         spi_oen_o,
+    output logic [N_SPI-1:0][3:0]         spi_sdo_o,
+    input  logic [N_SPI-1:0][3:0]         spi_sdi_i,
+
     output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
@@ -636,11 +628,11 @@ module pulp_soc import dm::*; #(
         .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
 
          //SPI
-        .spi_clk     ( spi_master0_clk_o      ),
-        .spi_csn     ( {spi_master0_csn3, spi_master0_csn2, spi_master0_csn1_o, spi_master0_csn0_o}     ), //csn3 and csn2 unconnected
-        .spi_oen     ( {spi_master0_oen3_o, spi_master0_oen2_o, spi_master0_oen1_o, spi_master0_oen0_o} ),
-        .spi_sdo     ( {spi_master0_sdo3_o, spi_master0_sdo2_o, spi_master0_sdo1_o, spi_master0_sdo0_o} ),
-        .spi_sdi     ( {spi_master0_sdi3_i, spi_master0_sdi2_i, spi_master0_sdi1_i, spi_master0_sdi0_i} ),
+        .spi_clk_o              ( spi_clk_o              ),
+        .spi_csn_o              ( spi_csn_o              ), //csn3 and csn2 unconnected
+        .spi_oen_o              ( spi_oen_o              ),
+        .spi_sdo_o              ( spi_sdo_o              ),
+        .spi_sdi_i              ( spi_sdi_i              ),
 
         //SDIO
         .sdclk_o                ( sdio_clk_o             ),
