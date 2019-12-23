@@ -121,11 +121,11 @@ module soc_peripherals #(
     output logic                       i2s_slave_sck_oe,
 
     //SPI
-    output logic [N_SPI-1:0]           spi_clk,
-    output logic [N_SPI-1:0][3:0]      spi_csn,
-    output logic [N_SPI-1:0][3:0]      spi_oen,
-    output logic [N_SPI-1:0][3:0]      spi_sdo,
-    input  logic [N_SPI-1:0][3:0]      spi_sdi,
+    output logic [N_SPI-1:0]           spi_clk_o,
+    output logic [N_SPI-1:0][3:0]      spi_csn_o,
+    output logic [N_SPI-1:0][3:0]      spi_oen_o,
+    output logic [N_SPI-1:0][3:0]      spi_sdo_o,
+    input  logic [N_SPI-1:0][3:0]      spi_sdi_i,
 
     //SDIO
     output logic                       sdclk_o,
@@ -446,11 +446,11 @@ module soc_peripherals #(
         .event_data_i     ( s_pr_event_data      ),
         .event_ready_o    ( s_pr_event_ready     ),
 
-        .spi_clk          ( spi_clk              ),
-        .spi_csn          ( spi_csn              ),
-        .spi_oen          ( spi_oen              ),
-        .spi_sdo          ( spi_sdo              ),
-        .spi_sdi          ( spi_sdi              ),
+        .spi_clk          ( spi_clk_o            ),
+        .spi_csn          ( spi_csn_o            ),
+        .spi_oen          ( spi_oen_o            ),
+        .spi_sdo          ( spi_sdo_o            ),
+        .spi_sdi          ( spi_sdi_i            ),
 
         .sdio_clk_o       ( sdclk_o              ),
         .sdio_cmd_o       ( sdcmd_o              ),
