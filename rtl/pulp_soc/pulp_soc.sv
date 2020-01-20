@@ -244,10 +244,10 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
-   
+
     localparam FC_Core_CLUSTER_ID    = 6'd31;
     localparam CL_Core_CLUSTER_ID    = 6'd0;
-   
+
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
 
@@ -285,7 +285,7 @@ module pulp_soc
         assign CLUSTER_CORE_ID[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
     end
 
-    
+
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
                                                 nscratch:      2, // Debug module needs at least two scratch regs
@@ -863,11 +863,11 @@ module pulp_soc
                                        dataaddr: dm::DataAddr
                                        };
     end
-   
+
     for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
         assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
     end
-   
+
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
