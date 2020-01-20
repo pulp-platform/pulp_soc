@@ -29,6 +29,7 @@ module pulp_soc
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
     parameter BUFFER_WIDTH       = 8,
     parameter EVNT_WIDTH         = 8,
+    parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
@@ -61,6 +62,7 @@ module pulp_soc
     input  logic [3:0]                    data_slave_aw_region_i,
     input  logic [7:0]                    data_slave_aw_len_i,
     input  logic [2:0]                    data_slave_aw_size_i,
+    //input  logic [5:0]                    data_slave_aw_atop_i,
     input  logic [1:0]                    data_slave_aw_burst_i,
     input  logic                          data_slave_aw_lock_i,
     input  logic [3:0]                    data_slave_aw_cache_i,
@@ -107,6 +109,7 @@ module pulp_soc
     output logic [3:0]                    data_master_aw_region_o,
     output logic [7:0]                    data_master_aw_len_o,
     output logic [2:0]                    data_master_aw_size_o,
+    // output logic [5:0]                    data_master_aw_atop_o,
     output logic [1:0]                    data_master_aw_burst_o,
     output logic                          data_master_aw_lock_o,
     output logic [3:0]                    data_master_aw_cache_o,
@@ -227,7 +230,8 @@ module pulp_soc
     input  logic                          jtag_trst_ni,
     input  logic                          jtag_tms_i,
     input  logic                          jtag_tdi_i,
-    output logic                          jtag_tdo_o
+    output logic                          jtag_tdo_o,
+    output logic [NB_CORES-1:0]           cluster_dbg_irq_valid_o
     ///////////////////////////////////////////////////
 );
 
@@ -240,7 +244,10 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
+   
     localparam FC_Core_CLUSTER_ID    = 6'd31;
+    localparam CL_Core_CLUSTER_ID    = 6'd0;
+   
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
 
@@ -256,8 +263,29 @@ module pulp_soc
         will remove the other flip flops and related logic.
     */
 
+    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID = CORE_CL_ID_FX();
+    function logic [NB_CORES-1:0][10:0] CORE_CL_ID_FX();
+        for (int i = 0; i < NB_CORES; i++) begin
+            CORE_CL_ID_FX[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
+        end
+    endfunction
+
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
+    function logic [NrHarts-1:0] SEL_HARTS_FX();
+        SEL_HARTS_FX = (1 << FC_Core_MHARTID);
+        for (int i = 0; i < NB_CORES; i++) begin
+            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[i]);
+        end
+    endfunction
+
+    logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
+
+    for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
+        assign CLUSTER_CORE_ID[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
+    end
+
+    
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
                                                 nscratch:      2, // Debug module needs at least two scratch regs
@@ -346,8 +374,6 @@ module pulp_soc
 
     logic                  spi_master0_csn3, spi_master0_csn2;
 
-    genvar                 i,j;
-
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
@@ -356,14 +382,16 @@ module pulp_soc
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_master ();
 
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_slave ();
 
     AXI_BUS #(
@@ -373,12 +401,15 @@ module pulp_soc
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
 
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus ();
+
+    //assign s_data_out_bus.aw_atop = 6'b0;
 
     FLL_BUS #(
         .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
@@ -465,7 +496,7 @@ module pulp_soc
     ) dc_fifo_datain_bus_i (
         .clk_i            ( s_soc_clk               ),
         .rst_ni           ( s_rstn_cluster_sync_soc ),
-        // .test_cgbypass_i  ( 1'b0                    ),
+        .test_cgbypass_i  ( 1'b0                    ),
         .isolate_i        ( s_cluster_isolate_dc    ),
         .axi_slave        ( s_data_out_bus          ),
         .axi_master_async ( s_data_master           )
@@ -519,7 +550,7 @@ module pulp_soc
         .MEM_ADDR_WIDTH     ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
         .APB_ADDR_WIDTH     ( 32                                    ),
         .APB_DATA_WIDTH     ( 32                                    ),
-        .NB_CORES           ( `NB_CORES                             ),
+        .NB_CORES           ( NB_CORES                              ),
         .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
         .EVNT_WIDTH         ( EVNT_WIDTH                            ),
         .NGPIO              ( NGPIO                                 ),
@@ -672,7 +703,7 @@ module pulp_soc
         .ack_o   ( dma_pe_irq_ack_o        ),
         .valid_i ( dma_pe_irq_valid_i      )
     );
-
+`ifndef PULP_FPGA_EMUL
     edge_propagator_rx ep_pf_evt_i (
         .clk_i   ( s_soc_clk               ),
         .rstn_i  ( s_rstn_cluster_sync_soc ),
@@ -680,7 +711,7 @@ module pulp_soc
         .ack_o   ( pf_evt_ack_o            ),
         .valid_i ( pf_evt_valid_i          )
     );
-
+`endif
 
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
@@ -822,11 +853,21 @@ module pulp_soc
     );
 
     // assign hartinfo
-    always_comb begin
-        hartinfo = '{default: '0};
-        hartinfo[FC_Core_MHARTID] = RI5CY_HARTINFO;
+    for (genvar nhart_var = 0; nhart_var < NrHarts; nhart_var = nhart_var + 1) begin : gen_hartinfo
+        assign hartinfo[nhart_var] = '{
+                                       zero1:        '0,
+                                       nscratch:      2, // Debug module needs at least two scratch regs
+                                       zero0:        '0,
+                                       dataaccess: 1'b1, // data registers are memory mapped in the debugger
+                                       datasize: dm::DataCount,
+                                       dataaddr: dm::DataAddr
+                                       };
     end
-
+   
+    for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
+        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
+    end
+   
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
@@ -955,29 +996,23 @@ module pulp_soc
     //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
     //********************************************************
 
-    generate
-        for (i=0; i<32; i++) begin
-            for (j=0; j<6; j++) begin
-                assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
-            end
+    for (genvar i = 0; i < 32; i++) begin : gen_gpio_cfg_outer
+        for (genvar j = 0; j < 6; j++) begin : gen_gpip_cfg_inner
+            assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
         end
-    endgenerate
+    end
 
-    generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<2; j++) begin
-                assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
-            end
+    for (genvar i = 0; i < 64; i++) begin : gen_pad_mux_outer
+        for (genvar j = 0; j < 2; j++) begin : gen_pad_mux_innter
+            assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
         end
-    endgenerate
+    end
 
-    generate
-        for (i=0; i<64; i++) begin
-            for (j=0; j<6; j++) begin
-                assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
-            end
+    for (genvar i = 0; i < 64; i++) begin : gen_pad_cfg_outer
+        for (genvar j = 0; j < 6; j++) begin : gen_pad_cfg_inner
+            assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
         end
-    endgenerate
+    end
 
     //********************************************************
     //*** AXI DATA SLAVE INTERFACE UNPACK ********************
@@ -991,6 +1026,7 @@ module pulp_soc
     assign s_data_slave.aw_len         = data_slave_aw_len_i         ;
     assign s_data_slave.aw_size        = data_slave_aw_size_i        ;
     assign s_data_slave.aw_burst       = data_slave_aw_burst_i       ;
+     //assign s_data_slave.aw_atop        = data_slave_aw_atop_i        ;
     assign s_data_slave.aw_lock        = data_slave_aw_lock_i        ;
     assign s_data_slave.aw_cache       = data_slave_aw_cache_i       ;
     assign s_data_slave.aw_qos         = data_slave_aw_qos_i         ;
@@ -1043,6 +1079,7 @@ module pulp_soc
     assign data_master_aw_region_o      = s_data_master.aw_region     ;
     assign data_master_aw_len_o         = s_data_master.aw_len        ;
     assign data_master_aw_size_o        = s_data_master.aw_size       ;
+    //assign data_master_aw_atop_o        = s_data_master.aw_atop       ;
     assign data_master_aw_burst_o       = s_data_master.aw_burst      ;
     assign data_master_aw_lock_o        = s_data_master.aw_lock       ;
     assign data_master_aw_cache_o       = s_data_master.aw_cache      ;
