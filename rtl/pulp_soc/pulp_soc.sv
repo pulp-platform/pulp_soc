@@ -256,8 +256,6 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
 );
 
-    genvar dbg_var, nhart_var;
-
     localparam FLL_ADDR_WIDTH        = 32;
     localparam FLL_DATA_WIDTH        = 32;
     localparam NB_L2_BANKS           = `NB_L2_CHANNELS;
@@ -273,14 +271,6 @@ module pulp_soc import dm::*; #(
 
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
-    localparam CL_Core0_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd0};
-    localparam CL_Core1_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd1};
-    localparam CL_Core2_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd2};
-    localparam CL_Core3_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd3};
-    localparam CL_Core4_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd4};
-    localparam CL_Core5_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd5};
-    localparam CL_Core6_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd6};
-    localparam CL_Core7_MHARTID      = {CL_Core_CLUSTER_ID,1'b0,4'd7};
 
 
     // TODO: this should be exposed somewhere, maybe configurable?
@@ -817,7 +807,7 @@ module pulp_soc import dm::*; #(
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
         .cluster_irq_o          ( cluster_irq_o          ),
 
-        .wdt_reset_o		( wdt_reset_o		 )
+        .wdt_reset_o            ( wdt_reset_o            )
     );
 
 
@@ -875,7 +865,7 @@ module pulp_soc import dm::*; #(
         .test_en_i           ( dft_test_mode_i     ),
 
         //wdt
-        .wdt_reset_i	     ( wdt_reset_o         ),
+        .wdt_reset_i         ( wdt_reset_o         ),
 
         .boot_addr_i         ( s_fc_bootaddr       ),
 
