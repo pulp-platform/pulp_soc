@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.1.1] - 2020-01-24
+### Fixed
+- Fix wrong ID WIDTH in soc/cluster AXI bus
+
+## [1.1.0] - 2020-01-20
+
+### Changed
+- Propagate cluster debug signals
+- Make selectable harts/hartinfo/cluster debug signals parametrizable according
+  to NB_CORES
+- Rewrite generate blocks to for-genvar loops
+- Annotate ips in `ips_list.yml` with usage domain
+
+### Removed
+- `axi_mem_if`
+
 ## [1.0.1] - 2019-11-21
 
 ### Changed
