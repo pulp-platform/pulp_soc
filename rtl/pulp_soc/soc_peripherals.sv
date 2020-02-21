@@ -11,7 +11,6 @@
 `include "pulp_soc_defines.sv"
 
 module soc_peripherals #(
-    parameter CORE_TYPE      = 0,
     parameter MEM_ADDR_WIDTH = 13,
     parameter APB_ADDR_WIDTH = 32,
     parameter APB_DATA_WIDTH = 32,
@@ -146,8 +145,6 @@ module soc_peripherals #(
     output logic                       cluster_irq_o
 );
 
-    localparam USE_IBEX = CORE_TYPE == 1 || CORE_TYPE == 2;
-
     APB_BUS s_fll_bus ();
 
     APB_BUS s_gpio_bus ();
@@ -198,8 +195,6 @@ module soc_peripherals #(
     assign s_events[141]              = fc_hwpe_events_i[1];
     assign s_events[159:142]          = '0;
 
-    generate
-    if ( USE_IBEX == 0) begin: FC_EVENTS
     assign fc_events_o[7:0] = 8'h0; //RESERVED for sw events
     assign fc_events_o[8]   = dma_pe_evt_i;
     assign fc_events_o[9]   = dma_pe_irq_i;
@@ -229,25 +224,6 @@ module soc_peripherals #(
     assign fc_events_o[29]  = s_fc_err_events;
     assign fc_events_o[30]  = s_fc_hp_events[0];
     assign fc_events_o[31]  = s_fc_hp_events[1];
-    end else begin : FC_EVENTS
-    assign fc_events_o[0]     = s_timer_lo_event;
-    assign fc_events_o[1]     = s_timer_hi_event;
-    assign fc_events_o[2]     = s_ref_rise_event | s_ref_fall_event;
-    assign fc_events_o[3]     = s_gpio_event;
-    assign fc_events_o[4]     = s_adv_timer_events[0];
-    assign fc_events_o[5]     = s_adv_timer_events[1];
-    assign fc_events_o[6]     = s_adv_timer_events[2];
-    assign fc_events_o[7]     = s_adv_timer_events[3];
-    assign fc_events_o[8]     = 1'b0; // not used
-    assign fc_events_o[9]     = 1'b0; // not used
-    assign fc_events_o[10]    = 1'b0; //RESERVED for soc event FIFO
-    assign fc_events_o[11]    = s_fc_err_events;
-    assign fc_events_o[12]    = s_fc_hp_events[0];
-    assign fc_events_o[13]    = s_fc_hp_events[1];
-    assign fc_events_o[14]    = 1'b0; // not used
-    assign fc_events_o[31:15] = 17'b0; // not supported by Ibex
-    end
-    endgenerate
 
     pulp_sync_wedge i_ref_clk_sync (
         .clk_i    ( clk_i            ),
