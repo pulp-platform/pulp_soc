@@ -50,6 +50,9 @@ module pulp_soc import dm::*; #(
     input  logic                          boot_l2_i,
     input  logic                          bootsel_i,
 
+    input  logic                          fc_fetch_en_valid_i,
+    input  logic                          fc_fetch_en_i,
+
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
     output logic [63:0]                   cluster_boot_addr_o,
@@ -564,6 +567,9 @@ module pulp_soc import dm::*; #(
 
         .boot_l2_i              ( boot_l2_i              ),
         .bootsel_i              ( bootsel_i              ),
+
+        .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
+        .fc_fetch_en_i          ( fc_fetch_en_i          ),
 
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),

@@ -42,6 +42,10 @@ module soc_peripherals #(
 
     input  logic                       boot_l2_i,
     input  logic                       bootsel_i,
+    // fc fetch enable can be controlled through this signal or through an APB
+    // write to the fc fetch enable register
+    input  logic                       fc_fetch_en_valid_i,
+    input  logic                       fc_fetch_en_i,
 
     // SLAVE PORTS
     // APB SLAVE PORT
@@ -467,32 +471,34 @@ module soc_peripherals #(
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
     ) apb_soc_ctrl_i (
-        .HCLK           ( clk_i                  ),
-        .HRESETn        ( rst_ni                 ),
+        .HCLK                ( clk_i                  ),
+        .HRESETn             ( rst_ni                 ),
 
-        .PADDR          ( s_soc_ctrl_bus.paddr   ),
-        .PWDATA         ( s_soc_ctrl_bus.pwdata  ),
-        .PWRITE         ( s_soc_ctrl_bus.pwrite  ),
-        .PSEL           ( s_soc_ctrl_bus.psel    ),
-        .PENABLE        ( s_soc_ctrl_bus.penable ),
-        .PRDATA         ( s_soc_ctrl_bus.prdata  ),
-        .PREADY         ( s_soc_ctrl_bus.pready  ),
-        .PSLVERR        ( s_soc_ctrl_bus.pslverr ),
+        .PADDR               ( s_soc_ctrl_bus.paddr   ),
+        .PWDATA              ( s_soc_ctrl_bus.pwdata  ),
+        .PWRITE              ( s_soc_ctrl_bus.pwrite  ),
+        .PSEL                ( s_soc_ctrl_bus.psel    ),
+        .PENABLE             ( s_soc_ctrl_bus.penable ),
+        .PRDATA              ( s_soc_ctrl_bus.prdata  ),
+        .PREADY              ( s_soc_ctrl_bus.pready  ),
+        .PSLVERR             ( s_soc_ctrl_bus.pslverr ),
 
-        .sel_fll_clk_i  ( sel_fll_clk_i          ),
-        .boot_l2_i      ( boot_l2_i              ),
-        .bootsel_i      ( bootsel_i              ),
+        .sel_fll_clk_i       ( sel_fll_clk_i          ),
+        .boot_l2_i           ( boot_l2_i              ),
+        .bootsel_i           ( bootsel_i              ),
+        .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
+        .fc_fetch_en_i       ( fc_fetch_en_i          ),
 
-        .fc_bootaddr_o  ( fc_bootaddr_o          ),
-        .fc_fetchen_o   ( fc_fetchen_o           ),
+        .fc_bootaddr_o       ( fc_bootaddr_o          ),
+        .fc_fetchen_o        ( fc_fetchen_o           ),
 
-        .soc_jtag_reg_i ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o ( soc_jtag_reg_o         ),
+        .soc_jtag_reg_i      ( soc_jtag_reg_i         ),
+        .soc_jtag_reg_o      ( soc_jtag_reg_o         ),
 
-        .pad_mux        ( pad_mux_o              ),
-        .pad_cfg        ( pad_cfg_o              ),
-        .cluster_pow_o  ( cluster_pow_o          ),
-        .sel_hyper_axi_o ( s_sel_hyper_axi        ),
+        .pad_mux             ( pad_mux_o              ),
+        .pad_cfg             ( pad_cfg_o              ),
+        .cluster_pow_o       ( cluster_pow_o          ),
+        .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
 
         .cluster_byp_o            ( cluster_byp_o          ),
         .cluster_boot_addr_o      ( cluster_boot_addr_o    ),
