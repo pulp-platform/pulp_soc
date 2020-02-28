@@ -71,6 +71,9 @@ module pulp_soc import dm::*; #(
     input  logic                          boot_l2_i,
     input  logic                          bootsel_i,
 
+    input  logic                          fc_fetch_en_valid_i,
+    input  logic                          fc_fetch_en_i,
+
     // AXI interfaces to outside of control pulp
     AXI_BUS.Slave                         axi_c07_slv,  // from c07
     AXI_BUS.Master                        axi_c07_mst,
@@ -708,6 +711,9 @@ module pulp_soc import dm::*; #(
 
         .boot_l2_i              ( boot_l2_i              ),
         .bootsel_i              ( bootsel_i              ),
+
+        .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
+        .fc_fetch_en_i          ( fc_fetch_en_i          ),
 
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),

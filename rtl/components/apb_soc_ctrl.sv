@@ -81,6 +81,8 @@ module apb_soc_ctrl
     input  logic                      sel_fll_clk_i,
     input  logic                      boot_l2_i,
     input  logic                      bootsel_i,
+    input  logic                      fc_fetch_en_valid_i,
+    input  logic                      fc_fetch_en_i,
 
     output logic         [63:0] [5:0] pad_cfg,
     output logic         [63:0] [1:0] pad_mux,
@@ -170,7 +172,7 @@ module apb_soc_ctrl
         r_jtag_regi_sync[1]    <= 'h0;
         r_jtag_rego            <= 'h0;
         r_bootaddr             <= 32'h1A000080;
-        r_fetchen              <= 'h1;
+        r_fetchen              <= 1'h0; // on reset, fc doesn't do anything
         r_cluster_pow          <= 1'b0;
         r_cluster_byp          <= 1'b1;
         pad_cfg                <= '{default: 6'b111111};
@@ -184,6 +186,11 @@ module apb_soc_ctrl
       begin
         r_jtag_regi_sync[1] <= soc_jtag_reg_i;
         r_jtag_regi_sync[0] <= r_jtag_regi_sync[1];
+
+        // allow fc fetch enable to be controlled through a signal
+        if (fc_fetch_en_valid_i)
+            r_fetchen <= fc_fetch_en_i;
+
         if (PSEL && PENABLE && PWRITE)
         begin
           case (s_apb_addr)
@@ -193,6 +200,7 @@ module apb_soc_ctrl
                  end
                 `REG_FCFETCH:
                  begin
+                   // allow fc fetch enable to be controlled through JTAG
                    r_fetchen <= PWDATA[0];
                  end
                 `REG_PADFUN0:
