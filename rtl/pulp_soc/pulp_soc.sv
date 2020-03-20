@@ -222,6 +222,18 @@ module pulp_soc
     input  logic                    [3:0] sdio_data_i,
     output logic                    [3:0] sdio_data_oen_o,
 
+    output logic [1:0]                    hyper_cs_no,
+    output logic                          hyper_ck_o,
+    output logic                          hyper_ck_no,
+    output logic                          hyper_rwds_o,
+    input  logic                          hyper_rwds_i,
+    output logic                          hyper_rwds_oe_o,
+    input  logic [7:0]                    hyper_dq_i,
+    output logic [7:0]                    hyper_dq_o,
+    output logic                          hyper_dq_oe_o,
+    output logic                          hyper_reset_no,
+
+
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
@@ -561,6 +573,7 @@ module pulp_soc
 
         .clk_i                  ( s_soc_clk              ),
         .periph_clk_i           ( s_periph_clk           ),
+        .hyper_phy_clk_i        ( s_cluster_clk          ),
         .rst_ni                 ( s_soc_rstn             ),
         .sel_fll_clk_i          ( s_sel_fll_clk          ),
         .ref_clk_i              ( ref_clk_i              ),
@@ -649,6 +662,19 @@ module pulp_soc
         .sddata_o               ( sdio_data_o            ),
         .sddata_i               ( sdio_data_i            ),
         .sddata_oen_o           ( sdio_data_oen_o        ),
+
+        //Hyper Bus
+        .hyper_cs_no            ( hyper_cs_no            ),
+        .hyper_ck_o             ( hyper_ck_o             ),
+        .hyper_ck_no            ( hyper_ck_no            ),
+        .hyper_rwds_o           ( hyper_rwds_o           ),
+        .hyper_rwds_i           ( hyper_rwds_i           ),
+        .hyper_rwds_oe_o        ( hyper_rwds_oe_o        ),
+        .hyper_dq_i             ( hyper_dq_i             ),
+        .hyper_dq_o             ( hyper_dq_o             ),
+        .hyper_dq_oe_o          ( hyper_dq_oe_o          ),
+        .hyper_reset_no         ( hyper_reset_no         ),
+
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),

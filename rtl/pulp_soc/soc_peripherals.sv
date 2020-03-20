@@ -25,6 +25,7 @@ module soc_peripherals #(
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
+    input  logic                       hyper_phy_clk_i,
     input  logic                       rst_ni,
     //check the reset
     input  logic                       ref_clk_i,
@@ -130,6 +131,17 @@ module soc_peripherals #(
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
 
+    //HYPER-BUS
+    output logic [1:0]                 hyper_cs_no,
+    output logic                       hyper_ck_o,
+    output logic                       hyper_ck_no,
+    output logic                       hyper_rwds_o,
+    input  logic                       hyper_rwds_i,
+    output logic                       hyper_rwds_oe_o,
+    input  logic [7:0]                 hyper_dq_i,
+    output logic [7:0]                 hyper_dq_o,
+    output logic                       hyper_dq_oe_o,
+    output logic                       hyper_reset_no,
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -468,7 +480,19 @@ module soc_peripherals #(
         .i2c_scl_oe       ( i2c_scl_oe           ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe           )
+        .i2c_sda_oe       ( i2c_sda_oe           ),
+
+        .hyper_phy_clk_i  ( hyper_phy_clk_i      ),
+        .hyper_cs_no      ( hyper_cs_no          ),
+        .hyper_ck_o       ( hyper_ck_o           ),
+        .hyper_ck_no      ( hyper_ck_no          ),
+        .hyper_rwds_o     ( hyper_rwds_o         ),
+        .hyper_rwds_i     ( hyper_rwds_i         ),
+        .hyper_rwds_oe_o  ( hyper_rwds_oe_o      ),
+        .hyper_dq_i       ( hyper_dq_i           ),
+        .hyper_dq_o       ( hyper_dq_o           ),
+        .hyper_dq_oe_o    ( hyper_dq_oe_o        ),
+        .hyper_reset_no   ( hyper_reset_no       )
 
     );
 
