@@ -243,13 +243,20 @@ module fc_subsystem #(
 `else
     ibex_core #(
 `endif
-        .PMPEnable           ( 0            ),
-        .MHPMCounterNum      ( 8            ),
-        .MHPMCounterWidth    ( 40           ),
-        .RV32E               ( IBEX_RV32E   ),
-        .RV32M               ( IBEX_RV32M   ),
-        .DmHaltAddr          ( 32'h1A110800 ),
-        .DmExceptionAddr     ( 32'h1A110808 )
+        .PMPEnable                ( 1'b0         ),
+        .MHPMCounterNum           ( 10           ),
+        .MHPMCounterWidth         ( 40           ),
+        .RV32E                    ( IBEX_RV32E   ),
+        .RV32M                    ( IBEX_RV32M   ),
+        .RV32B                    ( 1'b0         ),
+        .BranchTargetALU          ( 1'b0         ),
+        .WritebackStage           ( 1'b0         ),
+        .MultiplierImplementation ( "fast"       ),
+        .ICache                   ( 1'b0         ),
+        .DbgTriggerEn             ( 1'b1         ),
+        .SecureIbex               ( 1'b0         ),
+        .DmHaltAddr               ( 32'h1A110800 ),
+        .DmExceptionAddr          ( 32'h1A110808 )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
