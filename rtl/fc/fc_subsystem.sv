@@ -62,9 +62,7 @@ module fc_subsystem #(
     logic [4:0]  core_irq_id    ;
     logic [4:0]  core_irq_ack_id;
     logic        core_irq_ack   ;
-    logic [14:0] core_irq_fast  ;
-
-    logic [3:0]  irq_ack_id;
+    logic [31:0] core_irq_x;
 
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
@@ -245,13 +243,20 @@ module fc_subsystem #(
 `else
     ibex_core #(
 `endif
-        .PMPEnable           ( 0            ),
-        .MHPMCounterNum      ( 8            ),
-        .MHPMCounterWidth    ( 40           ),
-        .RV32E               ( IBEX_RV32E   ),
-        .RV32M               ( IBEX_RV32M   ),
-        .DmHaltAddr          ( 32'h1A110800 ),
-        .DmExceptionAddr     ( 32'h1A110808 )
+        .PMPEnable                ( 1'b0         ),
+        .MHPMCounterNum           ( 10           ),
+        .MHPMCounterWidth         ( 40           ),
+        .RV32E                    ( IBEX_RV32E   ),
+        .RV32M                    ( IBEX_RV32M   ),
+        .RV32B                    ( 1'b0         ),
+        .BranchTargetALU          ( 1'b0         ),
+        .WritebackStage           ( 1'b0         ),
+        .MultiplierImplementation ( "fast"       ),
+        .ICache                   ( 1'b0         ),
+        .DbgTriggerEn             ( 1'b1         ),
+        .SecureIbex               ( 1'b0         ),
+        .DmHaltAddr               ( 32'h1A110800 ),
+        .DmExceptionAddr          ( 32'h1A110808 )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
@@ -283,11 +288,12 @@ module fc_subsystem #(
         .irq_software_i        ( 1'b0              ),
         .irq_timer_i           ( 1'b0              ),
         .irq_external_i        ( 1'b0              ),
-        .irq_fast_i            ( core_irq_fast     ),
+        .irq_fast_i            ( 15'b0             ),
         .irq_nm_i              ( 1'b0              ),
 
-        .irq_ack_o             ( core_irq_ack      ),
-        .irq_ack_id_o          ( irq_ack_id        ),
+        .irq_x_i               ( core_irq_x        ),
+        .irq_x_ack_o           ( core_irq_ack      ),
+        .irq_x_ack_id_o        ( core_irq_ack_id   ),
 
         .debug_req_i           ( debug_req_i       ),
 
@@ -301,24 +307,12 @@ module fc_subsystem #(
 
     generate
     if ( USE_IBEX == 1) begin : convert_irqs
-    // Ibex supports 15 fast interrupts and reads the interrupt lines directly
+    // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
     // Convert ID back to interrupt lines
-    always_comb begin : gen_core_irq_fast
-        core_irq_fast = '0;
-        if (core_irq_req && (core_irq_id == 26)) begin
-            // remap SoC Event FIFO
-            core_irq_fast[10] = 1'b1;
-        end else if (core_irq_req && (core_irq_id < 15)) begin
-            core_irq_fast[core_irq_id] = 1'b1;
-        end
-    end
-
-    // remap ack ID for SoC Event FIFO
-    always_comb begin : gen_core_irq_ack_id
-        if (irq_ack_id == 10) begin
-            core_irq_ack_id = 26;
-        end else begin
-            core_irq_ack_id = {1'b0, irq_ack_id};
+    always_comb begin : gen_core_irq_x
+        core_irq_x = '0;
+        if (core_irq_req) begin
+            core_irq_x[core_irq_id] = 1'b1;
         end
     end
 
