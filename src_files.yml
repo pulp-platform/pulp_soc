@@ -49,8 +49,6 @@ components:
     rtl/components/apb_soc_ctrl.sv,
     rtl/components/memory_models.sv,
     rtl/components/pulp_interfaces.sv,
-    rtl/components/axi_slice_dc_master_wrap.sv,
-    rtl/components/axi_slice_dc_slave_wrap.sv,
     rtl/components/glitch_free_clk_mux.sv,
     rtl/components/scm_2048x32.sv,
     rtl/components/scm_512x32.sv,
