@@ -5,7 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Make number of I2C and SPI parametrizable
+- Allow external fc_fetch signal to control booting
 
+### Fixed
+- Elaboration issue when using constant function before declaration
 
 ## [1.1.1] - 2020-01-24
 ### Fixed
