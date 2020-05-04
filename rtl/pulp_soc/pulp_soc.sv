@@ -408,6 +408,14 @@ module pulp_soc import dm::*; #(
 
     logic                  wdt_reset_o;
 
+    // tap to lint wrap
+    logic                  s_jtag_shift_dr;
+    logic                  s_jtag_update_dr;
+    logic                  s_jtag_capture_dr;
+    logic                  s_jtag_axireg_sel;
+    logic                  s_jtag_axireg_tdi;
+    logic                  s_jtag_axireg_tdo;
+
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
