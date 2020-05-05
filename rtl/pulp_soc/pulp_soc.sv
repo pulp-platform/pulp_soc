@@ -69,7 +69,7 @@ module pulp_soc import dm::*; #(
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
     input  logic                          boot_l2_i,
-    input  logic                          bootsel_i,
+    input  logic [1:0]                    bootsel_i,
 
     input  logic                          fc_fetch_en_valid_i,
     input  logic                          fc_fetch_en_i,
