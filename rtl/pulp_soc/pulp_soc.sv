@@ -856,18 +856,14 @@ module pulp_soc import dm::*; #(
         .tdo_oe_o             (                     )
     );
 
-    // assign hartinfo
-    for (genvar nhart_var = 0; nhart_var < NrHarts; nhart_var = nhart_var + 1) begin : gen_hartinfo
-        assign hartinfo[nhart_var] = '{
-                                       zero1:        '0,
-                                       nscratch:      2, // Debug module needs at least two scratch regs
-                                       zero0:        '0,
-                                       dataaccess: 1'b1, // data registers are memory mapped in the debugger
-                                       datasize: dm::DataCount,
-                                       dataaddr: dm::DataAddr
-                                       };
+    // set hartinfo
+    always_comb begin: set_hartinfo
+        for (int hartid = 0; hartid < NrHarts; hartid = hartid + 1) begin
+            hartinfo[hartid] = RI5CY_HARTINFO;
+        end
     end
 
+    // redirect debug request from dm to correct cluster core
     for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
         assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[cluster_core_id[dbg_var]];
     end
