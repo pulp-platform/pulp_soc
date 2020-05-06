@@ -273,7 +273,7 @@ module pulp_soc import dm::*; #(
     localparam CL_Core_CLUSTER_ID    = 6'd0;
 
     localparam FC_Core_CORE_ID       = 4'd0;
-    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID, 1'b0, FC_Core_CORE_ID};
 
 
     // TODO: this should be exposed somewhere, maybe configurable?
@@ -295,26 +295,24 @@ module pulp_soc import dm::*; #(
         will remove the other flip flops and related logic.
     */
 
-    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID = CORE_CL_ID_FX();
-    function logic [NB_CORES-1:0][10:0] CORE_CL_ID_FX();
-        for (int i = 0; i < NB_CORES; i++) begin
-            CORE_CL_ID_FX[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
-        end
-    endfunction
 
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
+
+    // this is a constant expression
     function logic [NrHarts-1:0] SEL_HARTS_FX();
         SEL_HARTS_FX = (1 << FC_Core_MHARTID);
         for (int i = 0; i < NB_CORES; i++) begin
-            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[i]);
+            SEL_HARTS_FX |= (1 << {CL_Core_CLUSTER_ID, 1'b0, i[3:0]});
         end
     endfunction
 
-    logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
+    // Each hart with hartid=x sets the x'th bit in SELECTABLE_HARTS
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
 
+    // cluster core ids gathere as vector for convenience
+    logic [NB_CORES-1:0][10:0] cluster_core_id;
     for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
-        assign CLUSTER_CORE_ID[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
+        assign cluster_core_id[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
     end
 
 
@@ -1021,7 +1019,7 @@ module pulp_soc import dm::*; #(
     end
 
     for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
-        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
+        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[cluster_core_id[dbg_var]];
     end
 
     dm_top #(
