@@ -269,12 +269,11 @@ module pulp_soc import dm::*; #(
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
 
-    localparam FC_Core_CLUSTER_ID    = 6'd31;
-    localparam CL_Core_CLUSTER_ID    = 6'd0;
+    localparam FC_CORE_CLUSTER_ID    = 6'd31;
+    localparam CL_CORE_CLUSTER_ID    = 6'd0;
 
-    localparam FC_Core_CORE_ID       = 4'd0;
-    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID, 1'b0, FC_Core_CORE_ID};
-
+    localparam FC_CORE_CORE_ID       = 4'd0;
+    localparam FC_CORE_MHARTID       = {FC_CORE_CLUSTER_ID, 1'b0, FC_CORE_CORE_ID};
 
     // TODO: this should be exposed somewhere, maybe configurable?
     localparam int unsigned AXI_SOC_NODE_AW = 32;
@@ -283,26 +282,23 @@ module pulp_soc import dm::*; #(
     localparam int unsigned AXI_SOC_NODE_IW_INP = 6;
     localparam int unsigned AXI_SOC_NODE_IW_OUP = soc_node_pkg::axi_iw_oup(AXI_SOC_NODE_IW_INP);
 
-    /*
-        PULP RISC-V cores have not continguos MHARTID.
-        This leads to set the number of HARTS >= the maximum value of the MHARTID.
-        In this case, the MHARD ID is {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID} --> 996 (1024 chosen as power of 2)
-        To avoid paying 1024 flip flop for each number of harts's related register, we implemented
-        the masking parameter, aka SELECTABLE_HARTS.
-        In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
-        e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
-        This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
-        will remove the other flip flops and related logic.
-    */
-
+    //  PULP RISC-V cores have not continguos MHARTID.
+    //  This leads to set the number of HARTS >= the maximum value of the MHARTID.
+    //  In this case, the MHARD ID is {FC_CORE_CLUSTER_ID,1'b0,FC_CORE_CORE_ID} --> 996 (1024 chosen as power of 2)
+    //  To avoid paying 1024 flip flop for each number of harts's related register, we implemented
+    //  the masking parameter, aka SELECTABLE_HARTS.
+    //  In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
+    //  e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
+    //  This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
+    //  will remove the other flip flops and related logic.
 
     localparam NrHarts                               = 1024;
 
     // this is a constant expression
     function logic [NrHarts-1:0] SEL_HARTS_FX();
-        SEL_HARTS_FX = (1 << FC_Core_MHARTID);
+        SEL_HARTS_FX = (1 << FC_CORE_MHARTID);
         for (int i = 0; i < NB_CORES; i++) begin
-            SEL_HARTS_FX |= (1 << {CL_Core_CLUSTER_ID, 1'b0, i[3:0]});
+            SEL_HARTS_FX |= (1 << {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]});
         end
     endfunction
 
@@ -312,18 +308,18 @@ module pulp_soc import dm::*; #(
     // cluster core ids gathere as vector for convenience
     logic [NB_CORES-1:0][10:0] cluster_core_id;
     for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
-        assign cluster_core_id[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
+        assign cluster_core_id[i] = {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]};
     end
 
 
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
-                                                zero1:        '0,
-                                                nscratch:      2, // Debug module needs at least two scratch regs
-                                                zero0:        '0,
-                                                dataaccess: 1'b1, // data registers are memory mapped in the debugger
-                                                datasize: dm::DataCount,
-                                                dataaddr: dm::DataAddr
-                                               };
+       zero1:        '0,
+       nscratch:      2, // Debug module needs at least two scratch regs
+       zero0:        '0,
+       dataaccess: 1'b1, // data registers are memory mapped in the debugger
+       datasize: dm::DataCount,
+       dataaddr: dm::DataAddr
+    };
 
     dm::hartinfo_t [NrHarts-1:0] hartinfo;
 
@@ -867,8 +863,8 @@ module pulp_soc import dm::*; #(
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
-        .CORE_ID    ( FC_Core_CORE_ID    ),
-        .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
+        .CORE_ID    ( FC_CORE_CORE_ID    ),
+        .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
@@ -892,7 +888,7 @@ module pulp_soc import dm::*; #(
 `endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req[FC_Core_MHARTID] ),
+        .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
