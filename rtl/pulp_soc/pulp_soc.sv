@@ -640,7 +640,7 @@ module pulp_soc import dm::*; #(
 
          //SPI
         .spi_clk_o              ( spi_clk_o              ),
-        .spi_csn_o              ( spi_csn_o              ), //csn3 and csn2 unconnected
+        .spi_csn_o              ( spi_csn_o              ),
         .spi_oen_o              ( spi_oen_o              ),
         .spi_sdo_o              ( spi_sdo_o              ),
         .spi_sdi_i              ( spi_sdi_i              ),
