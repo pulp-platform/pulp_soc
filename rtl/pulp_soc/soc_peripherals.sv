@@ -338,7 +338,16 @@ module soc_peripherals #(
     // ╚═╝  ╚═╝╚═╝     ╚═════╝      ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  //
     ///////////////////////////////////////////////////////////////
 
-    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO), .NBIT_PADCFG(NBIT_PADCFG)) apb_gpio_i (
+    if (NBIT_PADCFG != 4)
+        $error("apb_gpio doesn't support a NBIT_PADCFG bitwidth other than 4");
+
+    if (NBIT_PADMUX != 2)
+        $error("apb_gpio doesn't support a NBIT_PADMUX bitwidth other than 2");
+
+    apb_gpio #(
+        .APB_ADDR_WIDTH (APB_ADDR_WIDTH),
+        .PAD_NUM        (NGPIO)
+    ) i_apb_gpio (
         .HCLK            ( clk_i              ),
         .HRESETn         ( rst_ni             ),
 
