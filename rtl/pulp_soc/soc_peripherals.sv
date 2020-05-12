@@ -513,8 +513,8 @@ module soc_peripherals #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .NBIT_PADCFG  ( NBIT_PADCFG  )
-    ) apb_soc_ctrl_i (
+        .NBIT_PADCFG    ( NBIT_PADCFG    )
+    ) i_apb_soc_ctrl (
         .HCLK                ( clk_i                  ),
         .HRESETn             ( rst_ni                 ),
 
