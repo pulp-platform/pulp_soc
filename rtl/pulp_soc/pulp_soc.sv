@@ -30,8 +30,10 @@ module pulp_soc import dm::*; #(
     parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
-    parameter NPAD               = 64,
-    parameter NBIT_PADCFG        = 4,
+    parameter NPAD               = 64, //Must not be changed as other parts
+                                       //downstreams are not parametrci
+    parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
+                                      //downstreams are not parametrci
     parameter NBIT_PADMUX        = 2,
 
     parameter int unsigned AXI_ID_INP_WIDTH_C07 = 6,
