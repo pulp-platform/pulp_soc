@@ -118,5 +118,5 @@ riscv-dbg:
 wdt:
   server: git@iis-git.ee.ethz.ch
   group: balasr
-  commit: v0.1
+  commit: v0.2
   domain: [soc]
