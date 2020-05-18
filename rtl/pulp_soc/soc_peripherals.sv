@@ -676,7 +676,9 @@ module soc_peripherals #(
     ////////////////////////////////////////////////////////////////
     logic resetwdt_out;
 
-    wdt i_wdt_dut (
+    wdt #(
+        .APB_ADDR_WIDTH(APB_ADDR_WIDTH)
+    ) i_wdt (
         .clk1_i    ( clk_i                 ),
         .clk2_i    ( clk_i                 ),
         .rst_ni    ( rst_ni                ),
