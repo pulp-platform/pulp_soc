@@ -12,9 +12,7 @@
 `include "pulp_soc_defines.sv"
 `include "soc_bus_defines.sv"
 
-module pulp_soc
-    import dm::*;
-#(
+module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
@@ -32,9 +30,15 @@ module pulp_soc
     parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 43,
-    parameter NPAD               = 64,
-    parameter NBIT_PADCFG        = 4,
-    parameter NBIT_PADMUX        = 2
+    parameter NPAD               = 64, //Must not be changed as other parts
+                                       //downstreams are not parametrci
+    parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
+                                      //downstreams are not parametrci
+    parameter NBIT_PADMUX        = 2,
+
+    parameter int unsigned N_UART = 1,
+    parameter int unsigned N_SPI  = 1,
+    parameter int unsigned N_I2C  = 2
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -46,6 +50,9 @@ module pulp_soc
     input  logic                          mode_select_i,
     input  logic                          boot_l2_i,
     input  logic                          bootsel_i,
+
+    input  logic                          fc_fetch_en_valid_i,
+    input  logic                          fc_fetch_en_i,
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -165,9 +172,9 @@ module pulp_soc
     ///////////////////////////////////////////////////
     output logic [127:0]                  pad_mux_o,
     output logic [383:0]                  pad_cfg_o,
-    input  logic [31:0]                   gpio_in_i,
-    output logic [31:0]                   gpio_out_o,
-    output logic [31:0]                   gpio_dir_o,
+    input  logic [NGPIO-1:0]              gpio_in_i,
+    output logic [NGPIO-1:0]              gpio_out_o,
+    output logic [NGPIO-1:0]              gpio_dir_o,
     output logic [191:0]                  gpio_cfg_o,
     output logic                          uart_tx_o,
     input  logic                          uart_rx_i,
@@ -179,18 +186,14 @@ module pulp_soc
     output logic [3:0]                    timer_ch1_o,
     output logic [3:0]                    timer_ch2_o,
     output logic [3:0]                    timer_ch3_o,
-    input  logic                          i2c0_scl_i,
-    output logic                          i2c0_scl_o,
-    output logic                          i2c0_scl_oe_o,
-    input  logic                          i2c0_sda_i,
-    output logic                          i2c0_sda_o,
-    output logic                          i2c0_sda_oe_o,
-    input  logic                          i2c1_scl_i,
-    output logic                          i2c1_scl_o,
-    output logic                          i2c1_scl_oe_o,
-    input  logic                          i2c1_sda_i,
-    output logic                          i2c1_sda_o,
-    output logic                          i2c1_sda_oe_o,
+
+    input  logic [N_I2C-1:0]              i2c_scl_i,
+    output logic [N_I2C-1:0]              i2c_scl_o,
+    output logic [N_I2C-1:0]              i2c_scl_oe_o,
+    input  logic [N_I2C-1:0]              i2c_sda_i,
+    output logic [N_I2C-1:0]              i2c_sda_o,
+    output logic [N_I2C-1:0]              i2c_sda_oe_o,
+
     input  logic                          i2s_slave_sd0_i,
     input  logic                          i2s_slave_sd1_i,
     input  logic                          i2s_slave_ws_i,
@@ -199,21 +202,13 @@ module pulp_soc
     input  logic                          i2s_slave_sck_i,
     output logic                          i2s_slave_sck_o,
     output logic                          i2s_slave_sck_oe,
-    output logic                          spi_master0_clk_o,
-    output logic                          spi_master0_csn0_o,
-    output logic                          spi_master0_csn1_o,
-    output logic                          spi_master0_oen0_o,
-    output logic                          spi_master0_oen1_o,
-    output logic                          spi_master0_oen2_o,
-    output logic                          spi_master0_oen3_o,
-    output logic                          spi_master0_sdo0_o,
-    output logic                          spi_master0_sdo1_o,
-    output logic                          spi_master0_sdo2_o,
-    output logic                          spi_master0_sdo3_o,
-    input  logic                          spi_master0_sdi0_i,
-    input  logic                          spi_master0_sdi1_i,
-    input  logic                          spi_master0_sdi2_i,
-    input  logic                          spi_master0_sdi3_i,
+
+    output logic [N_SPI-1:0]              spi_clk_o,
+    output logic [N_SPI-1:0][3:0]         spi_csn_o,
+    output logic [N_SPI-1:0][3:0]         spi_oen_o,
+    output logic [N_SPI-1:0][3:0]         spi_sdo_o,
+    input  logic [N_SPI-1:0][3:0]         spi_sdi_i,
+
     output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
@@ -245,55 +240,51 @@ module pulp_soc
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
 
-    localparam FC_Core_CLUSTER_ID    = 6'd31;
-    localparam CL_Core_CLUSTER_ID    = 6'd0;
+    localparam FC_CORE_CLUSTER_ID    = 6'd31;
+    localparam CL_CORE_CLUSTER_ID    = 6'd0;
 
-    localparam FC_Core_CORE_ID       = 4'd0;
-    localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
+    localparam FC_CORE_CORE_ID       = 4'd0;
+    localparam FC_CORE_MHARTID       = {FC_CORE_CLUSTER_ID, 1'b0, FC_CORE_CORE_ID};
 
-    /*
-        PULP RISC-V cores have not continguos MHARTID.
-        This leads to set the number of HARTS >= the maximum value of the MHARTID.
-        In this case, the MHARD ID is {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID} --> 996 (1024 chosen as power of 2)
-        To avoid paying 1024 flip flop for each number of harts's related register, we implemented
-        the masking parameter, aka SELECTABLE_HARTS.
-        In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
-        e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
-        This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
-        will remove the other flip flops and related logic.
-    */
 
-    localparam logic [NB_CORES-1:0][10:0] CL_CORE_MHARTID = CORE_CL_ID_FX();
-    function logic [NB_CORES-1:0][10:0] CORE_CL_ID_FX();
-        for (int i = 0; i < NB_CORES; i++) begin
-            CORE_CL_ID_FX[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
-        end
-    endfunction
+    //  PULP RISC-V cores have not continguos MHARTID.
+    //  This leads to set the number of HARTS >= the maximum value of the MHARTID.
+    //  In this case, the MHARD ID is {FC_CORE_CLUSTER_ID,1'b0,FC_CORE_CORE_ID} --> 996 (1024 chosen as power of 2)
+    //  To avoid paying 1024 flip flop for each number of harts's related register, we implemented
+    //  the masking parameter, aka SELECTABLE_HARTS.
+    //  In One-Hot-Encoding way, you select 1 when that MHARTID-related HART can actally be selected.
+    //  e.g. if you have 2 core with MHART 10 and 5, you select NrHarts=16 and SELECTABLE_HARTS = (1<<10) | (1<<5).
+    //  This mask will be used to generated only the flip flop needed and the constant-propagator engine of the synthesizer
+    //  will remove the other flip flops and related logic.
 
     localparam NrHarts                               = 1024;
-    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
+
+    // this is a constant expression
     function logic [NrHarts-1:0] SEL_HARTS_FX();
-        SEL_HARTS_FX = (1 << FC_Core_MHARTID);
+        SEL_HARTS_FX = (1 << FC_CORE_MHARTID);
         for (int i = 0; i < NB_CORES; i++) begin
-            SEL_HARTS_FX |= (1 << CL_CORE_MHARTID[i]);
+            SEL_HARTS_FX |= (1 << {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]});
         end
     endfunction
 
-    logic [NB_CORES-1:0][10:0]   CLUSTER_CORE_ID;
+    // Each hart with hartid=x sets the x'th bit in SELECTABLE_HARTS
+    localparam logic [NrHarts-1:0] SELECTABLE_HARTS = SEL_HARTS_FX();
 
+    // cluster core ids gathere as vector for convenience
+    logic [NB_CORES-1:0][10:0] cluster_core_id;
     for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
-        assign CLUSTER_CORE_ID[i] = {CL_Core_CLUSTER_ID, 1'b0, i[3:0]};
+        assign cluster_core_id[i] = {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]};
     end
 
 
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
-                                                zero1:        '0,
-                                                nscratch:      2, // Debug module needs at least two scratch regs
-                                                zero0:        '0,
-                                                dataaccess: 1'b1, // data registers are memory mapped in the debugger
-                                                datasize: dm::DataCount,
-                                                dataaddr: dm::DataAddr
-                                               };
+       zero1:        '0,
+       nscratch:      2, // Debug module needs at least two scratch regs
+       zero0:        '0,
+       dataaccess: 1'b1, // data registers are memory mapped in the debugger
+       datasize: dm::DataCount,
+       dataaddr: dm::DataAddr
+    };
 
     dm::hartinfo_t [NrHarts-1:0] hartinfo;
 
@@ -326,7 +317,7 @@ module pulp_soc
 
     logic [31:0]           s_fc_bootaddr;
 
-    logic [31:0][5:0]      s_gpio_cfg;
+    logic [NGPIO-1:0][NBIT_PADCFG-1:0] s_gpio_cfg;
     logic [63:0][1:0]      s_pad_mux;
     logic [63:0][5:0]      s_pad_cfg;
 
@@ -373,6 +364,15 @@ module pulp_soc
 
 
     logic                  spi_master0_csn3, spi_master0_csn2;
+
+    // tap to lint wrap
+    logic                  s_jtag_shift_dr;
+    logic                  s_jtag_update_dr;
+    logic                  s_jtag_capture_dr;
+    logic                  s_jtag_axireg_sel;
+    logic                  s_jtag_axireg_tdi;
+    logic                  s_jtag_axireg_tdo;
+
 
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
@@ -432,10 +432,6 @@ module pulp_soc
 
     UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
     UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-`ifdef QUENTIN_SCM
-    UNICAD_MEM_BUS_32 s_scm_l2_data_bus ();
-    UNICAD_MEM_BUS_32 s_scm_l2_instr_bus ();
-`endif
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
@@ -519,11 +515,6 @@ module pulp_soc
         .test_mode_i     ( dft_test_mode_i    ),
         .mem_slave       ( s_mem_l2_bus       ),
         .mem_pri_slave   ( s_mem_l2_pri_bus   )
-`ifdef QUENTIN_SCM
-        ,
-        .scm_data_slave  ( s_scm_l2_data_bus  ),
-        .scm_instr_slave ( s_scm_l2_instr_bus )
-`endif
     );
 
 
@@ -555,7 +546,10 @@ module pulp_soc
         .NGPIO              ( NGPIO                                 ),
         .NPAD               ( NPAD                                  ),
         .NBIT_PADCFG        ( NBIT_PADCFG                           ),
-        .NBIT_PADMUX        ( NBIT_PADMUX                           )
+        .NBIT_PADMUX        ( NBIT_PADMUX                           ),
+        .N_UART             ( N_UART                                ),
+        .N_SPI              ( N_SPI                                 ),
+        .N_I2C              ( N_I2C                                 )
     ) soc_peripherals_i (
 
         .clk_i                  ( s_soc_clk              ),
@@ -570,6 +564,9 @@ module pulp_soc
 
         .boot_l2_i              ( boot_l2_i              ),
         .bootsel_i              ( bootsel_i              ),
+
+        .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
+        .fc_fetch_en_i          ( fc_fetch_en_i          ),
 
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),
@@ -616,12 +613,12 @@ module pulp_soc
         .uart_rx                ( uart_rx_i              ),
 
         //I2C
-        .i2c_scl_i    ( { i2c1_scl_i,    i2c0_scl_i    } ),
-        .i2c_scl_o    ( { i2c1_scl_o,    i2c0_scl_o    } ),
-        .i2c_scl_oe   ( { i2c1_scl_oe_o, i2c0_scl_oe_o } ),
-        .i2c_sda_i    ( { i2c1_sda_i,    i2c0_sda_i    } ),
-        .i2c_sda_o    ( { i2c1_sda_o,    i2c0_sda_o    } ),
-        .i2c_sda_oe   ( { i2c1_sda_oe_o, i2c0_sda_oe_o } ),
+        .i2c_scl_i              ( i2c_scl_i              ),
+        .i2c_scl_o              ( i2c_scl_o              ),
+        .i2c_scl_oe_o           ( i2c_scl_oe_o           ),
+        .i2c_sda_i              ( i2c_sda_i              ),
+        .i2c_sda_o              ( i2c_sda_o              ),
+        .i2c_sda_oe_o           ( i2c_sda_oe_o           ),
 
         //I2S
         .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),
@@ -634,11 +631,11 @@ module pulp_soc
         .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
 
          //SPI
-        .spi_clk     ( spi_master0_clk_o      ),
-        .spi_csn     ( {spi_master0_csn3, spi_master0_csn2, spi_master0_csn1_o, spi_master0_csn0_o}     ), //csn3 and csn2 unconnected
-        .spi_oen     ( {spi_master0_oen3_o, spi_master0_oen2_o, spi_master0_oen1_o, spi_master0_oen0_o} ),
-        .spi_sdo     ( {spi_master0_sdo3_o, spi_master0_sdo2_o, spi_master0_sdo1_o, spi_master0_sdo0_o} ),
-        .spi_sdi     ( {spi_master0_sdi3_i, spi_master0_sdi2_i, spi_master0_sdi1_i, spi_master0_sdi0_i} ),
+        .spi_clk_o              ( spi_clk_o              ),
+        .spi_csn_o              ( spi_csn_o              ),
+        .spi_oen_o              ( spi_oen_o              ),
+        .spi_sdo_o              ( spi_sdo_o              ),
+        .spi_sdi_i              ( spi_sdi_i              ),
 
         //SDIO
         .sdclk_o                ( sdio_clk_o             ),
@@ -715,8 +712,8 @@ module pulp_soc
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
-        .CORE_ID    ( FC_Core_CORE_ID    ),
-        .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
+        .CORE_ID    ( FC_CORE_CORE_ID    ),
+        .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
@@ -731,13 +728,9 @@ module pulp_soc
         .l2_data_master      ( s_lint_fc_data_bus  ),
         .l2_instr_master     ( s_lint_fc_instr_bus ),
         .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-`ifdef QUENTIN_SCM
-        .scm_l2_data_master  ( s_scm_l2_data_bus   ),
-        .scm_l2_instr_master ( s_scm_l2_instr_bus  ),
-`endif
         .apb_slave_eu        ( s_apb_eu_bus        ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req[FC_Core_MHARTID] ),
+        .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
 
         .event_fifo_valid_i  ( s_fc_event_valid    ),
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
@@ -851,20 +844,16 @@ module pulp_soc
         .tdo_oe_o             (                     )
     );
 
-    // assign hartinfo
-    for (genvar nhart_var = 0; nhart_var < NrHarts; nhart_var = nhart_var + 1) begin : gen_hartinfo
-        assign hartinfo[nhart_var] = '{
-                                       zero1:        '0,
-                                       nscratch:      2, // Debug module needs at least two scratch regs
-                                       zero0:        '0,
-                                       dataaccess: 1'b1, // data registers are memory mapped in the debugger
-                                       datasize: dm::DataCount,
-                                       dataaddr: dm::DataAddr
-                                       };
+    // set hartinfo
+    always_comb begin: set_hartinfo
+        for (int hartid = 0; hartid < NrHarts; hartid = hartid + 1) begin
+            hartinfo[hartid] = RI5CY_HARTINFO;
+        end
     end
 
+    // redirect debug request from dm to correct cluster core
     for (genvar dbg_var = 0; dbg_var < NB_CORES; dbg_var = dbg_var + 1) begin : gen_debug_valid
-        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[CLUSTER_CORE_ID[dbg_var]];
+        assign cluster_dbg_irq_valid_o[dbg_var] = dm_debug_req[cluster_core_id[dbg_var]];
     end
 
     dm_top #(

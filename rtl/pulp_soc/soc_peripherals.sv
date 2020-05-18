@@ -20,7 +20,10 @@ module soc_peripherals #(
     parameter NGPIO          = 64,
     parameter NPAD           = 64,
     parameter NBIT_PADCFG    = 4,
-    parameter NBIT_PADMUX    = 2
+    parameter NBIT_PADMUX    = 2,
+    parameter N_UART         = 1,
+    parameter N_SPI          = 1,
+    parameter N_I2C          = 2
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
@@ -39,6 +42,10 @@ module soc_peripherals #(
 
     input  logic                       boot_l2_i,
     input  logic                       bootsel_i,
+    // fc fetch enable can be controlled through this signal or through an APB
+    // write to the fc fetch enable register
+    input  logic                       fc_fetch_en_valid_i,
+    input  logic                       fc_fetch_en_i,
 
     // SLAVE PORTS
     // APB SLAVE PORT
@@ -92,16 +99,19 @@ module soc_peripherals #(
     input  logic                       cam_vsync_i,
 
     //UART
-    output logic                       uart_tx,
-    input  logic                       uart_rx,
+    // output logic [N_UART-1:0]          uart_tx,
+    // input  logic [N_UART-1:0]          uart_rx,
+    output logic           uart_tx,
+    input  logic           uart_rx,
+
 
     //I2C
-    input  logic                 [1:0] i2c_scl_i,
-    output logic                 [1:0] i2c_scl_o,
-    output logic                 [1:0] i2c_scl_oe,
-    input  logic                 [1:0] i2c_sda_i,
-    output logic                 [1:0] i2c_sda_o,
-    output logic                 [1:0] i2c_sda_oe,
+    input  logic [N_I2C-1:0]           i2c_scl_i,
+    output logic [N_I2C-1:0]           i2c_scl_o,
+    output logic [N_I2C-1:0]           i2c_scl_oe_o,
+    input  logic [N_I2C-1:0]           i2c_sda_i,
+    output logic [N_I2C-1:0]           i2c_sda_o,
+    output logic [N_I2C-1:0]           i2c_sda_oe_o,
 
     //I2S
     input  logic                       i2s_slave_sd0_i,
@@ -114,11 +124,11 @@ module soc_peripherals #(
     output logic                       i2s_slave_sck_oe,
 
     //SPI
-    output logic                       spi_clk,
-    output logic                 [3:0] spi_csn,
-    output logic                 [3:0] spi_oen,
-    output logic                 [3:0] spi_sdo,
-    input  logic                 [3:0] spi_sdi,
+    output logic [N_SPI-1:0]           spi_clk_o,
+    output logic [N_SPI-1:0][3:0]      spi_csn_o,
+    output logic [N_SPI-1:0][3:0]      spi_oen_o,
+    output logic [N_SPI-1:0][3:0]      spi_sdo_o,
+    input  logic [N_SPI-1:0][3:0]      spi_sdi_i,
 
     //SDIO
     output logic                       sdclk_o,
@@ -328,7 +338,16 @@ module soc_peripherals #(
     // ╚═╝  ╚═╝╚═╝     ╚═════╝      ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  //
     ///////////////////////////////////////////////////////////////
 
-    apb_gpio #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)) apb_gpio_i (
+    if (NBIT_PADCFG != 4)
+        $error("apb_gpio doesn't support a NBIT_PADCFG bitwidth other than 4");
+
+    if (NBIT_PADMUX != 2)
+        $error("apb_gpio doesn't support a NBIT_PADMUX bitwidth other than 2");
+
+    apb_gpio #(
+        .APB_ADDR_WIDTH (APB_ADDR_WIDTH),
+        .PAD_NUM        (NGPIO)
+    ) i_apb_gpio (
         .HCLK            ( clk_i              ),
         .HRESETn         ( rst_ni             ),
 
@@ -364,9 +383,9 @@ module soc_peripherals #(
     udma_subsystem #(
         .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
         .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
-        .N_SPI (1),
-        .N_UART(1),
-        .N_I2C (2)
+        .N_SPI (N_SPI),
+        .N_UART(N_UART),
+        .N_I2C (N_I2C)
     ) i_udma (
         .L2_ro_req_o      ( l2_tx_master.req     ),
         .L2_ro_gnt_i      ( l2_tx_master.gnt     ),
@@ -408,11 +427,11 @@ module soc_peripherals #(
         .event_data_i     ( s_pr_event_data      ),
         .event_ready_o    ( s_pr_event_ready     ),
 
-        .spi_clk          ( spi_clk              ),
-        .spi_csn          ( spi_csn              ),
-        .spi_oen          ( spi_oen              ),
-        .spi_sdo          ( spi_sdo              ),
-        .spi_sdi          ( spi_sdi              ),
+        .spi_clk          ( spi_clk_o            ),
+        .spi_csn          ( spi_csn_o            ),
+        .spi_oen          ( spi_oen_o            ),
+        .spi_sdo          ( spi_sdo_o            ),
+        .spi_sdi          ( spi_sdi_i            ),
 
         .sdio_clk_o       ( sdclk_o              ),
         .sdio_cmd_o       ( sdcmd_o              ),
@@ -441,10 +460,10 @@ module soc_peripherals #(
 
         .i2c_scl_i        ( i2c_scl_i            ),
         .i2c_scl_o        ( i2c_scl_o            ),
-        .i2c_scl_oe       ( i2c_scl_oe           ),
+        .i2c_scl_oe       ( i2c_scl_oe_o         ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe           )
+        .i2c_sda_oe       ( i2c_sda_oe_o         )
 
     );
 
@@ -456,37 +475,43 @@ module soc_peripherals #(
     // ██║  ██║██║     ██████╔╝    ███████║╚██████╔╝╚██████╗    ╚██████╗   ██║   ██║  ██║███████╗ //
     // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    if (NPAD != 64)
+        $error("apb_soc_ctrl doesn't support any other value than NPAD=64");
+
     apb_soc_ctrl #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
-        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
-    ) apb_soc_ctrl_i (
-        .HCLK           ( clk_i                  ),
-        .HRESETn        ( rst_ni                 ),
+        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
+        .NBIT_PADCFG    ( NBIT_PADCFG    )
+    ) i_apb_soc_ctrl (
+        .HCLK                ( clk_i                  ),
+        .HRESETn             ( rst_ni                 ),
 
-        .PADDR          ( s_soc_ctrl_bus.paddr   ),
-        .PWDATA         ( s_soc_ctrl_bus.pwdata  ),
-        .PWRITE         ( s_soc_ctrl_bus.pwrite  ),
-        .PSEL           ( s_soc_ctrl_bus.psel    ),
-        .PENABLE        ( s_soc_ctrl_bus.penable ),
-        .PRDATA         ( s_soc_ctrl_bus.prdata  ),
-        .PREADY         ( s_soc_ctrl_bus.pready  ),
-        .PSLVERR        ( s_soc_ctrl_bus.pslverr ),
+        .PADDR               ( s_soc_ctrl_bus.paddr   ),
+        .PWDATA              ( s_soc_ctrl_bus.pwdata  ),
+        .PWRITE              ( s_soc_ctrl_bus.pwrite  ),
+        .PSEL                ( s_soc_ctrl_bus.psel    ),
+        .PENABLE             ( s_soc_ctrl_bus.penable ),
+        .PRDATA              ( s_soc_ctrl_bus.prdata  ),
+        .PREADY              ( s_soc_ctrl_bus.pready  ),
+        .PSLVERR             ( s_soc_ctrl_bus.pslverr ),
 
-        .sel_fll_clk_i  ( sel_fll_clk_i          ),
-        .boot_l2_i      ( boot_l2_i              ),
-        .bootsel_i      ( bootsel_i              ),
+        .sel_fll_clk_i       ( sel_fll_clk_i          ),
+        .boot_l2_i           ( boot_l2_i              ),
+        .bootsel_i           ( bootsel_i              ),
+        .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
+        .fc_fetch_en_i       ( fc_fetch_en_i          ),
 
-        .fc_bootaddr_o  ( fc_bootaddr_o          ),
-        .fc_fetchen_o   ( fc_fetchen_o           ),
+        .fc_bootaddr_o       ( fc_bootaddr_o          ),
+        .fc_fetchen_o        ( fc_fetchen_o           ),
 
-        .soc_jtag_reg_i ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o ( soc_jtag_reg_o         ),
+        .soc_jtag_reg_i      ( soc_jtag_reg_i         ),
+        .soc_jtag_reg_o      ( soc_jtag_reg_o         ),
 
-        .pad_mux        ( pad_mux_o              ),
-        .pad_cfg        ( pad_cfg_o              ),
-        .cluster_pow_o  ( cluster_pow_o          ),
-        .sel_hyper_axi_o ( s_sel_hyper_axi        ),
+        .pad_mux             ( pad_mux_o              ),
+        .pad_cfg             ( pad_cfg_o              ),
+        .cluster_pow_o       ( cluster_pow_o          ),
+        .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
 
         .cluster_byp_o            ( cluster_byp_o          ),
         .cluster_boot_addr_o      ( cluster_boot_addr_o    ),
@@ -498,7 +523,7 @@ module soc_peripherals #(
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .EXTSIG_NUM     ( 32             )
-    ) apb_adv_timer_i (
+    ) i_apb_adv_timer (
         .HCLK            ( clk_i                   ),
         .HRESETn         ( rst_ni                  ),
 
