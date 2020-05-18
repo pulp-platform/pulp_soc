@@ -553,11 +553,11 @@ module pulp_soc import dm::*; #(
     // data width conversions of AXI to 32-bit. Currently we fail here if we have
     // a mismatch.
     if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_C07)
-        $fatal("AXI data width mismatch on c07");
+        $fatal(1, "AXI data width mismatch on c07");
     if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_NOCR07)
-        $fatal("AXI data width mismatch on nocr07");
+        $fatal(1, "AXI data width mismatch on nocr07");
     if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_SMS)
-        $fatal("AXI data width mismatch on sms");
+        $fatal(1, "AXI data width mismatch on sms");
     /* axi_data_width_converter AUTO_TEMPLATE "_\([a-z]+\)" (
      .slv (axi_in[]),
      .mst (axi[]),
@@ -566,11 +566,11 @@ module pulp_soc import dm::*; #(
 
     // Addr width conversion of AXI. Currently we fail here if we have a mismatch.
     if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_C07)
-        $fatal("AXI address width mismatch on c07");
+        $fatal(1, "AXI address width mismatch on c07");
     if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_NOCR07)
-        $fatal("AXI address width mismatch on nocr07");
+        $fatal(1, "AXI address width mismatch on nocr07");
     if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_SMS)
-        $fatal("AXI address width mismatch on sms");
+        $fatal(1, "AXI address width mismatch on sms");
 
     //
     // AXI soc node
