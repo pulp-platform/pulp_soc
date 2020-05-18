@@ -73,9 +73,6 @@ module pulp_soc import dm::*; #(
     input  logic                          fc_fetch_en_valid_i,
     input  logic                          fc_fetch_en_i,
 
-    input  logic                          fc_fetch_en_valid_i,
-    input  logic                          fc_fetch_en_i,
-
     // AXI interfaces to outside of control pulp
     AXI_BUS.Slave                         axi_c07_slv,  // from c07
     AXI_BUS.Master                        axi_c07_mst,
