@@ -34,7 +34,8 @@ module boot_rom #(
             .Q              (  mem_slave.rdata      )
         );
 
-        assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
+        // TODO: why the is this even here? breaks dc analysis
+        //assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
 
     `else // !`ifndef PULP_FPGA_EMUL
 
