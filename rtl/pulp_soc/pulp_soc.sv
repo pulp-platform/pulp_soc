@@ -17,6 +17,7 @@ module pulp_soc import dm::*; #(
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
     parameter USE_CLUSTER_EVENT  = 1,
+    parameter ZFINX              = 0,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
@@ -850,6 +851,7 @@ module pulp_soc import dm::*; #(
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
         .USE_FPU    ( USE_FPU            ),
+        .ZFINX      ( ZFINX              ),
         .CORE_ID    ( FC_CORE_CORE_ID    ),
         .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           )

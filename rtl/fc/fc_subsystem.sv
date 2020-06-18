@@ -14,6 +14,7 @@
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
+    parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
@@ -23,8 +24,7 @@ module fc_subsystem #(
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F
-)
-(
+) (
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
@@ -136,7 +136,7 @@ module fc_subsystem #(
         .USE_PMP             ( 1                   ),
         .PULP_CLUSTER        ( 0                   ),
         .FPU                 ( USE_FPU             ),
-        .Zfinx               ( 0                   ), // 1: shared gp and fp register
+        .Zfinx               ( ZFINX               ), // 1: shared gp and fp register
         .FP_DIVSQRT          ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
         .SHARED_DSP_MULT     ( 0                   ),
