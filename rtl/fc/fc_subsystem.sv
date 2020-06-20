@@ -14,6 +14,7 @@
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
+    parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
@@ -23,8 +24,7 @@ module fc_subsystem #(
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F
-)
-(
+) (
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
@@ -129,13 +129,26 @@ module fc_subsystem #(
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
     riscv_core #(
+        .INSTR_RDATA_WIDTH   ( 32                  ),
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
         .PULP_SECURE         ( 1                   ),
+        .N_PMP_ENTRIES       ( 16                  ),
+        .USE_PMP             ( 1                   ),
         .PULP_CLUSTER        ( 0                   ),
         .FPU                 ( USE_FPU             ),
+        .Zfinx               ( ZFINX               ), // 1: shared gp and fp register
         .FP_DIVSQRT          ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   )
+        .SHARED_DSP_MULT     ( 0                   ),
+        .SHARED_INT_MULT     ( 0                   ),
+        .SHARED_INT_DIV      ( 0                   ),
+        .SHARED_FP_DIVSQRT   ( 2                   ),
+        .WAPUTYPE            ( 0                   ),
+        .APU_NARGS_CPU       ( 3                   ),
+        .APU_WOP_CPU         ( 6                   ),
+        .APU_NDSFLAGS_CPU    ( 15                  ),
+        .APU_NUSFLAGS_CPU    ( 5                   ),
+        .DM_HaltAddress      ( 32'h1A110800        )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( core_rst          ),
