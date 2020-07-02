@@ -97,7 +97,7 @@ module soc_interconnect_wrap #(
         for(i=0; i<N_L2_BANKS_PRI; i++)
         begin : L2_BUS_PRI_BINDING
             assign mem_l2_pri_bus[i].csn                     =  mem_pri_csn[i];
-            assign mem_l2_pri_bus[i].add[ADDR_MEM_WIDTH-1:0] =  mem_pri_add[i];
+            assign mem_l2_pri_bus[i].add[ADDR_MEM_PRI_WIDTH-1:0] =  mem_pri_add[i];
             assign mem_l2_pri_bus[i].wen                     =  mem_pri_wen[i];
             assign mem_l2_pri_bus[i].wdata                   =  mem_pri_wdata[i];
             assign mem_l2_pri_bus[i].be                      =  mem_pri_be[i];
