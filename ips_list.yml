@@ -92,7 +92,7 @@ udma/udma_i2c:
   commit: vega_v1.0.0
   domain: [soc]
 udma/udma_i2s:
-  commit: v1.0.0
+  commit: v1.1.0
   domain: [soc]
 udma/udma_qspi:
   commit: v1.0.0
