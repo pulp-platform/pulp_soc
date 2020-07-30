@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Bump `udma_i2s` to `v1.1.0`
+
+### Removed
 - `axi_slice_dc_master_wrap` and `axi_slice_dc_slave_wrap`. These are already
   provided by the `axi_slice_dc` ip.
 
