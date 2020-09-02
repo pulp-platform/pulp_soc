@@ -47,6 +47,8 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o
 );
 
+    import cv32e40p_apu_core_pkg::*;
+
     localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
     localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
     localparam IBEX_RV32E = CORE_TYPE == 2;
@@ -119,23 +121,23 @@ module fc_subsystem #(
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
-    riscv_core #(
-        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .PULP_SECURE         ( 1                   ),
-        .PULP_CLUSTER        ( 0                   ),
-        .FPU                 ( USE_FPU             ),
-        .FP_DIVSQRT          ( USE_FPU             ),
-        .SHARED_FP           ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   ),
-        .Zfinx               ( USE_ZFINX           )
+
+    cv32e40p_core #(
+        .PULP_XPULP       (1),
+        .PULP_CLUSTER     (0),
+        .FPU              (USE_FPU),
+        .PULP_ZFINX       (USE_ZFINX),
+        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS)
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
-        .clock_en_i            ( core_clock_en     ),
-        .test_en_i             ( test_en_i         ),
+        .pulp_clock_en_i       ( core_clock_en     ),
+        .scan_cg_en_i          ( test_en_i         ),
         .boot_addr_i           ( boot_addr         ),
-        .core_id_i             ( CORE_ID           ),
-        .cluster_id_i          ( CLUSTER_ID        ),
+        .mtvec_addr_i          ( '0                ),
+        .dm_halt_addr_i        ( 32'h1A110800      ),
+        .hart_id_i             ( hart_id           ),
+        .dm_exception_addr_i   ( '0                ),
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
         .instr_addr_o          ( core_instr_addr   ),
@@ -156,32 +158,25 @@ module fc_subsystem #(
 
         // apu-interconnect
         // handshake signals
-        .apu_master_req_o      (                   ),
-        .apu_master_ready_o    (                   ),
-        .apu_master_gnt_i      ( 1'b1              ),
+        .apu_req_o             (                   ),
+        .apu_gnt_i             ( 1'b1              ),
         // request channel
-        .apu_master_operands_o (                   ),
-        .apu_master_op_o       (                   ),
-        .apu_master_type_o     (                   ),
-        .apu_master_flags_o    (                   ),
+        .apu_operands_o        (                   ),
+        .apu_op_o              (                   ),
+        .apu_flags_o           (                   ),
         // response channel
-        .apu_master_valid_i    ( '0                ),
-        .apu_master_result_i   ( '0                ),
-        .apu_master_flags_i    ( '0                ),
+        .apu_rvalid_i          ( '0                ),
+        .apu_result_i          ( '0                ),
+        .apu_flags_i           ( '0                ),
 
-        .irq_i                 ( core_irq_req      ),
-        .irq_id_i              ( core_irq_id       ),
+        .irq_i                 ( core_irq_x        ),
         .irq_ack_o             ( core_irq_ack      ),
         .irq_id_o              ( core_irq_ack_id   ),
-        .irq_sec_i             ( 1'b0              ),
-        .sec_lvl_o             (                   ),
 
         .debug_req_i           ( debug_req_i       ),
 
         .fetch_enable_i        ( fetch_en_int      ),
-        .core_busy_o           (                   ),
-        .ext_perf_counters_i   ( perf_counters_int ),
-        .fregfile_disable_i    ( 1'b0              ) // try me!
+        .core_sleep_o          (                   )
     );
     end else begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
@@ -263,19 +258,12 @@ module fc_subsystem #(
 
     assign supervisor_mode_o = 1'b1;
 
-    generate
-    if ( USE_IBEX == 1) begin : convert_irqs
-    // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
-    // Convert ID back to interrupt lines
     always_comb begin : gen_core_irq_x
         core_irq_x = '0;
         if (core_irq_req) begin
             core_irq_x[core_irq_id] = 1'b1;
         end
     end
-
-    end
-    endgenerate
 
     apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
         .clk_i              ( clk_i              ),

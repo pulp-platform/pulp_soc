@@ -7,4 +7,5 @@ fc:
     fc_demux.sv,
     fc_subsystem.sv,
     fc_hwpe.sv,
+    fpnew_wrapper.sv,
   ]

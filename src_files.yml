@@ -2,9 +2,13 @@ pulp_soc:
   incdirs: [
     ../../rtl/includes,
     rtl/include,
-    ../axi/axi/include
+    ../axi/axi/include,
+    ../cv32e40p/rtl/include,
   ]
   files: [
+    ../cv32e40p/rtl/include/cv32e40p_apu_core_pkg.sv,
+    ../cv32e40p/rtl/include/cv32e40p_pkg.sv,
+    ../fpnew/src/fpnew_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
@@ -43,10 +47,15 @@ fc:
     ../../rtl/includes,
     .,
   ]
+  vlog_opts : [
+    -L fpnew_lib,
+    -L cv32e40p_lib,
+  ]
   files: [
     rtl/fc/fc_demux.sv,
     rtl/fc/fc_subsystem.sv,
     rtl/fc/fc_hwpe.sv,
+    rtl/fc/fpnew_wrapper.sv,
   ]
   vlog_opts : [
     -L ibex_lib,
