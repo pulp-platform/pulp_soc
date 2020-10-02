@@ -61,7 +61,7 @@ common_cells:
   commit: v1.13.1
   domain: [cluster, soc]
 fpnew:
-  commit: v0.6.1
+  commit: v0.6.3
   domain: [cluster, soc]
 jtag_pulp:
   commit: v0.1
