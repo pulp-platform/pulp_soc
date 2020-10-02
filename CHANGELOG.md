@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.4.0] - 2020-10-02
+### Changed
+- Bump `fpnew` to `v0.6.3`
+
+### Fixed
+- Fix drive input address in bootrom
+
+## [1.3.0] - 2020-07-30
 ### Changed
 - Bump `udma_i2s` to `v1.1.0`
 
