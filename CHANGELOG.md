@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+## [1.4.1] - 2020-10-28
+### Changed
+- Bump `fpnew` to `v0.6.4`
+
+### Fixed
+- Fix bad dependency of fpnew
+
 ## [1.4.0] - 2020-10-02
 ### Changed
 - Bump `fpnew` to `v0.6.3`
