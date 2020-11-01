@@ -1,6 +1,6 @@
 pulp_soc:
   incdirs: [
-    ../../rtl/include,
+    ../../rtl/includes,
   ]
   files: [
     rtl/pulp_soc/pkg_soc_interconnect.sv,
@@ -8,8 +8,6 @@ pulp_soc:
     rtl/pulp_soc/lint_2_axi_wrap.sv,
     rtl/pulp_soc/contiguous_crossbar.sv,
     rtl/pulp_soc/interleaved_crossbar.sv,
-    rtl/pulp_soc/soc_interconnect_v2.sv,
-    rtl/pulp_soc/soc_interconnect_wrap_v2.sv,
     rtl/pulp_soc/tcdm_demux.sv,
     rtl/pulp_soc/soc_interconnect_v2.sv,
     rtl/pulp_soc/boot_rom.sv,

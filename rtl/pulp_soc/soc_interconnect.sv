@@ -244,7 +244,6 @@ module soc_interconnect #(
     output logic [N_L2_BANKS_PRI-1:0] [BE_WIDTH-1:0]            L2_pri_BE_o,
     input  logic [N_L2_BANKS_PRI-1:0] [DATA_WIDTH-1:0]          L2_pri_Q_i
 );
-
     localparam N_CH0 = N_MASTER_32      ;
     localparam N_CH1 = N_MASTER_AXI_64*4;
 
@@ -261,7 +260,7 @@ module soc_interconnect #(
     localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A40_0000};
 
     localparam logic [ADDR_WIDTH-1:0] TCDM_START_ADDR = {32'h1C01_0000}; // Start of L2 interleaved
-    localparam logic [ADDR_WIDTH-1:0] TCDM_END_ADDR   = {32'h1C08_2000}; // END of L2 interleaved
+    localparam logic [ADDR_WIDTH-1:0] TCDM_END_ADDR   = {32'h1C09_0000}; // END of L2 interleaved
 
     logic [N_MASTER_32-1:0]                           FC_data_req_INT_32;
     logic [N_MASTER_32-1:0] [ADDR_WIDTH - 1:0]        FC_data_add_INT_32;
