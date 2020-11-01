@@ -21,6 +21,9 @@
 L2_tcdm_hybrid_interco:
   commit: pulpissimo-v1.0
   domain: [soc]
+cluster_interconnect:
+  commit: master
+  domain: [soc]
 adv_dbg_if:
   commit: v0.0.1
   domain: [cluster, soc]
@@ -43,7 +46,7 @@ apb_interrupt_cntrl:
   commit: v0.0.1
   domain: [soc]
 axi/axi:
-  commit: v0.7.1
+  commit: v0.24.0
   domain: [cluster, soc]
 axi/axi_node:
   commit: v1.1.4

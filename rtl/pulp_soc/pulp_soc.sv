@@ -232,12 +232,13 @@ module pulp_soc import dm::*; #(
 
     localparam FLL_ADDR_WIDTH        = 32;
     localparam FLL_DATA_WIDTH        = 32;
-    localparam NB_L2_BANKS           = `NB_L2_CHANNELS;
+    localparam NB_L2_BANKS = `NB_L2_CHANNELS;
+    //The L2 parameter do not influence the size of the memories. Change them in the l2_ram_multibank. This parameters
+    //are only here to save area in the uDMA by only storing relevant bits.
     localparam L2_BANK_SIZE          = 29184;            // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
     localparam NB_L2_BANKS_PRI       = 2;
-    localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
-    localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
+
     localparam ROM_ADDR_WIDTH        = 13;
 
     localparam FC_CORE_CLUSTER_ID    = 6'd31;
@@ -343,9 +344,9 @@ module pulp_soc import dm::*; #(
     logic                  jtag_resp_valid;
     dm::dmi_req_t          jtag_dmi_req;
     dm::dmi_resp_t         debug_resp;
-    logic                  slave_grant, slave_valid, slave_req , slave_we;
-    logic                  [31:0] slave_addr, slave_wdata, slave_rdata;
-    logic                  [3:0]  slave_be;
+    logic                  slave_grant, slave_valid, dm_slave_req , dm_slave_we;
+    logic                  [31:0] dm_slave_addr, dm_slave_wdata, dm_slave_rdata;
+    logic                  [3:0]  dm_slave_be;
     logic                  lint_riscv_jtag_bus_master_we;
     logic                  int_td;
 
@@ -428,10 +429,10 @@ module pulp_soc import dm::*; #(
 
     APB_BUS s_apb_periph_bus ();
 
-    UNICAD_MEM_BUS_32 s_mem_rom_bus ();
+    XBAR_TCDM_BUS s_mem_rom_bus ();
 
-    UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
-    UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
+    XBAR_TCDM_BUS  s_mem_l2_bus[NB_L2_BANKS-1:0]();
+    XBAR_TCDM_BUS  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
@@ -503,11 +504,7 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     l2_ram_multi_bank #(
-        .MEM_ADDR_WIDTH        ( L2_MEM_ADDR_WIDTH     ),
-        .NB_BANKS              ( NB_L2_BANKS           ),
-        .BANK_SIZE             ( L2_BANK_SIZE          ),
-        .MEM_ADDR_WIDTH_PRI    ( L2_MEM_ADDR_WIDTH_PRI ),
-        .NB_BANKS_PRI          ( NB_L2_BANKS_PRI       )
+        .NB_BANKS              ( NB_L2_BANKS )
     ) l2_ram_i (
         .clk_i           ( s_soc_clk          ),
         .rst_ni          ( s_soc_rstn         ),
@@ -783,6 +780,32 @@ module pulp_soc import dm::*; #(
     );
 
     soc_interconnect_wrap #(
+      .NR_HWPE_PORTS(NB_HWPE_PORTS),
+      .NR_L2_PORTS(NB_L2_BANKS),
+      .NR_L2_PRIVATE_PORTS(NB_L2_BANKS_PRI),
+      .AXI_IN_ID_WIDTH(AXI_ID_IN_WIDTH),
+      .AXI_IN_USER_WIDTH(AXI_USER_WIDTH),
+      .AXI_OUT_ID_WIDTH(AXI_ID_OUT_WIDTH),
+      .AXI_OUT_USER_WIDTH(AXI_USER_WIDTH)
+    ) i_soc_interconnect_wrap (
+        .clk_i                 ( s_soc_clk           ),
+        .rst_ni                ( s_soc_rstn          ),
+        .test_en_i             ( dft_test_mode_i     ),
+        .tcdm_fc_data          ( s_lint_fc_data_bus  ),
+        .tcdm_fc_instr         ( s_lint_fc_instr_bus ),
+        .tcdm_udma_rx          ( s_lint_udma_rx_bus  ),
+        .tcdm_udma_tx          ( s_lint_udma_tx_bus  ),
+        .tcdm_debug            ( s_lint_debug_bus    ),
+        .tcdm_hwpe             ( s_lint_hwpe_bus     ),
+        .axi_master_plug       ( s_data_in_bus       ),
+        .axi_slave_plug        ( s_data_out_bus      ),
+        .apb_peripheral_bus    ( s_apb_periph_bus    ),
+        .l2_interleaved_slaves ( s_mem_l2_bus        ),
+        .l2_private_slaves     ( s_mem_l2_pri_bus    ),
+        .boot_rom_slave        ( s_mem_rom_bus       )
+        );
+
+    soc_interconnect_wrap #(
         .N_L2_BANKS         ( NB_L2_BANKS           ),
         .ADDR_MEM_WIDTH     ( L2_MEM_ADDR_WIDTH     ),
         .N_HWPE_PORTS       ( NB_HWPE_PORTS         ),
@@ -871,12 +894,12 @@ module pulp_soc import dm::*; #(
        .unavailable_i     ( ~SELECTABLE_HARTS         ),
        .hartinfo_i        ( hartinfo                  ),
 
-       .slave_req_i       ( slave_req                 ),
-       .slave_we_i        ( slave_we                  ),
-       .slave_addr_i      ( slave_addr                ),
-       .slave_be_i        ( slave_be                  ),
-       .slave_wdata_i     ( slave_wdata               ),
-       .slave_rdata_o     ( slave_rdata               ),
+       .slave_req_i       ( dm_slave_req                 ),
+       .slave_we_i        ( dm_slave_we                  ),
+       .slave_addr_i      ( dm_slave_addr                ),
+       .slave_be_i        ( dm_slave_be                  ),
+       .slave_wdata_i     ( dm_slave_wdata               ),
+       .slave_rdata_o     ( dm_slave_rdata               ),
 
        .master_req_o      ( s_lint_riscv_jtag_bus.req      ),
        .master_add_o      ( s_lint_riscv_jtag_bus.add      ),
@@ -960,18 +983,18 @@ module pulp_soc import dm::*; #(
         .PREADY               ( s_apb_debug_bus.pready  ),
         .PSLVERR              ( s_apb_debug_bus.pslverr ),
 
-        .per_master_req_o     ( slave_req               ),
-        .per_master_add_o     ( slave_addr              ),
-        .per_master_we_o      ( slave_we                ),
-        .per_master_wdata_o   ( slave_wdata             ),
-        .per_master_be_o      ( slave_be                ),
+        .per_master_req_o     ( dm_slave_req               ),
+        .per_master_add_o     ( dm_slave_addr              ),
+        .per_master_we_o      ( dm_slave_we                ),
+        .per_master_wdata_o   ( dm_slave_wdata             ),
+        .per_master_be_o      ( dm_slave_be                ),
         .per_master_gnt_i     ( slave_grant             ),
         .per_master_r_valid_i ( slave_valid             ),
         .per_master_r_opc_i   ( '0                      ),
-        .per_master_r_rdata_i ( slave_rdata             )
+        .per_master_r_rdata_i ( dm_slave_rdata             )
      );
 
-     assign slave_grant = slave_req;
+     assign slave_grant = dm_slave_req;
      always_ff @(posedge s_soc_clk or negedge s_soc_rstn) begin : apb2per_valid
          if(~s_soc_rstn) begin
              slave_valid <= 0;
