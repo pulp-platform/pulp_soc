@@ -27,8 +27,8 @@ module soc_interconnect
       // TCDM Bus Master Config
       parameter int unsigned  NR_MASTER_PORTS, //Master Ports to the SoC interconnect with access to all memory regions
       parameter int unsigned  NR_MASTER_PORTS_INTERLEAVED_ONLY, //Master ports with access restricted to only the interleaved
-                                                       //ports (no axes to APB, AXI, or contiguous slaves) TCDM Bus
-                                                       //Slave Config
+                                                                //ports (no axes to APB, AXI, or contiguous slaves) TCDM Bus
+                                                                //Slave Config
       // L2 Demux Addr rules
       parameter int unsigned  NR_ADDR_RULES_L2_DEMUX,
       // Interleaved TCDM slave
@@ -43,9 +43,9 @@ module soc_interconnect
       parameter int unsigned  NR_AXI_SLAVE_PORTS,
       parameter int unsigned  NR_ADDR_RULES_AXI_SLAVE_PORTS,
       localparam int unsigned AXI_SLAVE_ID_WIDTH = AXI_MASTER_ID_WIDTH + $clog2(NR_MASTER_PORTS),   //The actual ID
-                                                                                                     //width of the AXI slaves is clog2(NR_AXI_MASTERS) larger than the master id width since the
-                                                                                                     //axi_mux in the XBAR will append an identificatoin tag to the outgoing transactions
-                                                                                                     //towards the axi slaves so it can backroute the responses
+                                                                                                    //width of the AXI slaves is clog2(NR_AXI_MASTERS) larger than the master id width since the
+                                                                                                    //axi_mux in the XBAR will append an identificatoin tag to the outgoing transactions
+                                                                                                    //towards the axi slaves so it can backroute the responses
       parameter int unsigned  AXI_USER_WIDTH
       )
     (
@@ -69,8 +69,8 @@ module soc_interconnect
 
     // Internal Parameters
     // Do **NOT** change
-    localparam int         BUS_DATA_WIDTH = 32;
-    localparam int         BUS_ADDR_WIDTH = 32;
+    localparam int unsigned BUS_DATA_WIDTH = 32;
+    localparam int unsigned BUS_ADDR_WIDTH = 32;
 
     // Internal Wiring Signals
     XBAR_TCDM_BUS l2_demux_2_interleaved_xbar[NR_MASTER_PORTS]();
