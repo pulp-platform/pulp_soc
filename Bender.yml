@@ -1,0 +1,78 @@
+package: 
+  name: pulp_soc
+
+dependencies:
+  L2_tcdm_hybrid_interco: {path: "../L2_tcdm_hybrid_interco"}
+  adv_dbg_if: {path: "../adv_dbg_if"}
+  apb2per: {path: "../apb/apb2per"}
+  apb_adv_timer: {path: "../apb/apb_adv_timer"}
+  apb_fll_if: { git: "git@github.com:pulp-platform/apb_fll_if.git", rev: "7f43fd6bee698b6c608433d402f0b504313490e6"}
+  apb_gpio: {git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0}
+  apb_node: {git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1}
+  apb_interrupt_cntrl: {path: "../apb_interrupt_cntrl"}
+  axi: { git: "git@github.com:pulp-platform/axi.git", version: 0.7.1 } # really old (now 0.24?)
+  axi_node: { git: "git@github.com:pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
+  axi_slice: { git: "git@github.com:pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
+  axi_slice_dc: {git: "git@github.com:pulp-platform/axi_slice_dc.git", version: 1.1.3 } # deprecated, replaced by axi_cdc (in axi repo)
+  timer_unit: {git: "git@github.com:pulp-platform/timer_unit.git", version: 1.0.2 }
+  common_cells: { git: "git@github.com:pulp-platform/common_cells.git", version: 1.13.1 }  # may only be a subrepo dependency?
+  fpnew: { git: "git@github.com:pulp-platform/fpnew.git", version: 0.6.3 }
+  jtag_pulp: { git: "git@github.com:pulp-platform/jtag_pulp.git", rev: "v0.1" }
+  riscv: {path: "../riscv"} # { git: "git@github.com:pulp-platform/riscv.git", rev: "pulpissimo-v3.4.0" } # To be updated to CV32E40P?
+  ibex: { path: "../ibex"}
+  scm: {git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}  # may only be a subrepo dependency?
+  generic_FLL: {path: "../generic_FLL"}
+  tech_cells_generic: { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.1.6 }
+  udma_core: {path: "../udma/udma_core"}
+  udma_uart: {path: "../udma/udma_uart"}
+  udma_i2c: {path: "../udma/udma_i2c"}
+  udma_i2s: {path: "../udma/udma_i2s"}
+  udma_qspi: {path: "../udma/udma_qspi"}
+  udma_sdio: {path: "../udma/udma_sdio"}
+  udma_camera: {path: "../udma/udma_camera"}
+  udma_filter: {path: "../udma/udma_filter"}
+  udma_external_per: {path: "../udma/udma_external_per"}
+  hwpe-mac-engine: {path: "../hwpe-mac-engine"}
+  riscv-dbg: { git: "git@github.com:pulp-platform/riscv-dbg.git", rev: "v0.2" }
+  # apb for interface?
+
+sources:
+  - rtl/pulp_soc/soc_interconnect.sv
+  - rtl/pulp_soc/boot_rom.sv
+  - rtl/pulp_soc/l2_ram_multi_bank.sv
+  - rtl/pulp_soc/lint_jtag_wrap.sv
+  - rtl/pulp_soc/periph_bus_wrap.sv
+  - rtl/pulp_soc/soc_clk_rst_gen.sv
+  - rtl/pulp_soc/soc_event_arbiter.sv
+  - rtl/pulp_soc/soc_event_generator.sv
+  - rtl/pulp_soc/soc_event_queue.sv
+  - rtl/pulp_soc/soc_interconnect_wrap.sv
+  - rtl/pulp_soc/soc_peripherals.sv
+  - rtl/pulp_soc/pulp_soc.sv
+  - files: # udma_subsystem
+      - rtl/udma_subsystem/udma_subsystem.sv
+    include_dirs:
+      - .
+  - files: # fc
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/fc_hwpe.sv
+    include_dirs:
+      - .
+  - files: # components
+      - rtl/components/apb_clkdiv.sv
+      - rtl/components/apb_timer_unit.sv
+      - rtl/components/apb_soc_ctrl.sv
+      - rtl/components/memory_models.sv
+      - rtl/components/pulp_interfaces.sv
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/scm_2048x32.sv
+      - rtl/components/scm_512x32.sv
+      - rtl/components/tcdm_arbiter_2x1.sv
+  - files: # components_rtl
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/apb_dummy.sv
+    target: rtl
+  - files: # components_behav
+      - rtl/components/freq_meter.sv
+    target: all(rtl, not(synthesis))
