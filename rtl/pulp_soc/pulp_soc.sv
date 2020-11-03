@@ -34,7 +34,8 @@ module pulp_soc
     parameter NGPIO              = 43,
     parameter NPAD               = 64,
     parameter NBIT_PADCFG        = 4,
-    parameter NBIT_PADMUX        = 2
+    parameter NBIT_PADMUX        = 2,
+    parameter USE_Zfinx		 = 1
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -718,7 +719,8 @@ module pulp_soc
         .USE_FPU    ( USE_FPU            ),
         .CORE_ID    ( FC_Core_CORE_ID    ),
         .CLUSTER_ID ( FC_Core_CLUSTER_ID ),
-        .USE_HWPE   ( USE_HWPE           )
+        .USE_HWPE   ( USE_HWPE           ),
+	.USE_Zfinx  ( USE_Zfinx		 )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),

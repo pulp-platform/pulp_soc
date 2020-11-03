@@ -22,7 +22,8 @@ module fc_subsystem #(
     parameter PULP_SECURE         = 1,
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
-    parameter CLUSTER_ID          = 6'h1F
+    parameter CLUSTER_ID          = 6'h1F,
+    parameter USE_Zfinx		  = 1
 )
 (
     input  logic                      clk_i,
@@ -180,7 +181,8 @@ module fc_subsystem #(
         .FPU                 ( USE_FPU             ),
         .FP_DIVSQRT          ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   )
+        .SHARED_FP_DIVSQRT   ( 2                   ),
+	.Zfinx		     ( USE_Zfinx	   ) // 0 -> the fprf is isntantiated, 1 is not
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
