@@ -112,7 +112,7 @@ module l2_ram_multi_bank #(
       .Q     ( mem_pri_slave[0].r_rdata              )
    );
    `else // !`ifndef PULP_FPGA_EMUL
-   fpga_private_ram #(.ADDR_WIDTH(MEM_ADDR_WIDTH_PRI)) bank_sram_pri0_i
+   fpga_private_ram #(.ADDR_WIDTH(PRI0_MEM_ADDR_WIDTH)) bank_sram_pri0_i
        (
         .clk_i,
         .rst_ni,
@@ -154,7 +154,7 @@ module l2_ram_multi_bank #(
       .Q     ( mem_pri_slave[1].r_rdata              )
    );
    `else // !`ifndef PULP_FPGA_EMUL
-   fpga_private_ram #(.ADDR_WIDTH(MEM_ADDR_WIDTH_PRI)) bank_sram_pri1_i
+   fpga_private_ram #(.ADDR_WIDTH(PRI1_MEM_ADDR_WIDTH)) bank_sram_pri1_i
        (
         .clk_i,
         .rst_ni,

@@ -177,6 +177,7 @@ module soc_interconnect
     assign error_valid_d = error_slave.req;
     assign error_slave.r_opc = error_slave.req;
     assign error_slave.r_rdata = 32'hBADACCE5;
+    assign error_slave.r_valid = error_valid_q;
 
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (!rst_ni) begin
