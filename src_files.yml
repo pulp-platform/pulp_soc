@@ -1,10 +1,13 @@
 pulp_soc:
   incdirs: [
     ../../rtl/includes,
+    rtl/include,
+    ../axi/axi/include
   ]
   files: [
+    ../axi/axi/src/axi_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
-    rtl/pulp_soc/axi64_to_lint32_wrap.sv,
+    rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
     rtl/pulp_soc/contiguous_crossbar.sv,
     rtl/pulp_soc/interleaved_crossbar.sv,

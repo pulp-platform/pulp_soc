@@ -46,6 +46,17 @@ assign exploded_prefix``_be postfix = iface.be; \
 assign iface.gnt = exploded_prefix``_gnt postfix; \
 assign iface.r_opc = exploded_prefix``_r_opc postfix; \
 assign iface.r_rdata = exploded_prefix``_r_rdata postfix; \
-assign iface.r_val = exploded_prefix``_r_valid postfix;
+assign iface.r_valid = exploded_prefix``_r_valid postfix;
+
+  `define TCDM_MASTER_ASSIGN(b, a) \
+assign b.req  = a.req; \
+assign b.add  = a.add; \
+assign b.wen  = a.wen; \
+assign b.wdata  = a.wdata; \
+assign b.be  = a.be; \
+assign a.gnt = b.gnt ; \
+assign a.r_opc = b.r_opc ; \
+assign a.r_rdata= b.r_rdata ; \
+assign a.r_valid = b.r_valid ;
 
 `endif

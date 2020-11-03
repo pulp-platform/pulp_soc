@@ -20,7 +20,7 @@
 // specific language governing permissions and limitations under the License.
 //-----------------------------------------------------------------------------
 
-`include "tcdm_explode_macros.svh"
+`include "tcdm_macros.svh"
 
 module axi64_2_lint32_wrap
     #(
@@ -31,7 +31,7 @@ module axi64_2_lint32_wrap
      input logic     rst_ni,
      input logic     test_en_i,
      AXI_BUS.Slave   axi_master,
-     TCDM_BUS.Master tcdm_slaves[4]
+     XBAR_TCDM_BUS.Master tcdm_slaves[4]
      );
 
     // *Do not change* The legacy wrapper was never tested for other bitwidths.
@@ -43,9 +43,9 @@ module axi64_2_lint32_wrap
     localparam TCDM_BE_WIDTH = TCDM_DATA_WIDTH/8;
 
     //Explode the output TCDM interface into arrays of individual signals
-    `TCDM_EXPLODE_DECLARE_ARRAY(tcdm_slaves, 4)
+    `TCDM_EXPLODE_ARRAY_DECLARE(tcdm_slaves, 4)
     for (genvar i = 0; i < 4; i++) begin
-        `TCDM_SLAVE_EXPLODE(tcdm_slaves, tcdm_slaves)
+        `TCDM_SLAVE_EXPLODE(tcdm_slaves[i], tcdm_slaves, [i])
     end
 
 
@@ -59,7 +59,7 @@ module axi64_2_lint32_wrap
         .BUFF_DEPTH_SLICES ( 4               ), //= 4,
         .DATA_WIDTH        ( TCDM_DATA_WIDTH ), //= 64,
         .BE_WIDTH          ( TCDM_BE_WIDTH   ), //= DATA_WIDTH/8,
-        .ADDR_WIDTH        ( TCDM_ADDR_WIDTH ), //= 10
+        .ADDR_WIDTH        ( TCDM_ADDR_WIDTH ) //= 10
         ) axi64_2_lint32_i (
         // AXI GLOBAL SIGNALS
         .clk              ( clk_i                          ),
@@ -146,4 +146,4 @@ module axi64_2_lint32_wrap
         .data_R_r_aux_i   ( '0 ) // We don't need this signal
     );
 
-endmodule : axi64_2_lint_wrap
+endmodule

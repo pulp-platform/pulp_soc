@@ -19,7 +19,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //-----------------------------------------------------------------------------
-`include "tcdm_explode_macros.svh"
+`include "tcdm_macros.svh"
 
 module tcdm_demux
     import pkg_soc_interconnect::addr_map_rule_t;
@@ -29,12 +29,12 @@ module tcdm_demux
       localparam int unsigned SLAVE_SEL_WIDTH = $clog2(NR_OUTPUTS)
       )
     (
-     input logic          clk_i,
-     input logic          rst_ni,
-     input logic          test_en_i,
-     input                addr_map_rule_t addr_map_rules[NR_ADDR_MAP_RULES],
-     XBAR_TCDM_BUS.Slave  master_port,
-     XBAR_TCDM_BUS.Master slave_ports[NR_OUTPUTS]
+     input logic                                  clk_i,
+     input logic                                  rst_ni,
+     input logic                                  test_en_i,
+     input addr_map_rule_t[NR_ADDR_MAP_RULES-1:0] addr_map_rules,
+     XBAR_TCDM_BUS.Slave                          master_port,
+     XBAR_TCDM_BUS.Master                         slave_ports[NR_OUTPUTS]
      );
     // Do **not** change. The TCDM interface uses hardcoded bus widths so we cannot just change them here.
     localparam int unsigned BE_WIDTH = 2;
@@ -42,28 +42,28 @@ module tcdm_demux
     localparam int unsigned DATA_WIDTH = 32;
 
     // Explode the output interfaces to  individual signals
-    `TCDM_EXPLODE_DECLARE_ARRAY(slave_ports, NR_OUTPUTS)
+    `TCDM_EXPLODE_ARRAY_DECLARE(slave_ports, NR_OUTPUTS)
     for (genvar i = 0; i < NR_OUTPUTS; i++) begin
-        `TCDM_SLAVE_EXPLODE(slave_ports, slave_ports)
+        `TCDM_SLAVE_EXPLODE(slave_ports[i], slave_ports, [i])
     end
 
     //The Address Decoder module generates the select signal for the demux. If there is no match in the input rules, the
     //address decoder will select port 0 by default.
 
-    logic port_sel;
+    logic[SLAVE_SEL_WIDTH-1:0] port_sel;
     addr_decode #(
-                  .NoIndices(NR_SLAVE_PORTS_INTERNAL),
-                  .NoRules(NR_ADDR_RULES),
+                  .NoIndices(NR_OUTPUTS),
+                  .NoRules(NR_ADDR_MAP_RULES),
                   .addr_t(logic[31:0]),
                   .rule_t(pkg_soc_interconnect::addr_map_rule_t)
                   ) i_addr_decode (
-                                   .addr_i(master_ports_add[i]),
-                                   .addr_map_i(addr_rules),
-                                   .idx_o(port_sel[i]),
+                                   .addr_i(master_port.add),
+                                   .addr_map_i(addr_map_rules),
+                                   .idx_o(port_sel),
                                    .dec_valid_o(),
                                    .dec_error_o(),
                                    .en_default_idx_i(1'b1),
-                                   .default_idx_i(0) //If no rule matches we route to the first slave
+                                   .default_idx_i('0) //If no rule matches we route to the first slave
                                    //port
                                    );
 
@@ -84,13 +84,14 @@ module tcdm_demux
     end
 
     //Broadcast to all slaves. Only the request is actualy demultiplexed
-    assign slave_ports_add[port_sel]   = master_port.add;
-    assign slave_ports_wen[port_sel]   = master_port.wen;
-    assign slave_ports_wdata[port_sel] = master_port.wdata;
-    assign slave_ports_be[port_sel]    = master_port.be;
 
     //Transaction FSM
     always_comb begin
+        slave_ports_add[port_sel]   = master_port.add;
+        slave_ports_wen[port_sel]   = master_port.wen;
+        slave_ports_wdata[port_sel] = master_port.wdata;
+        slave_ports_be[port_sel]    = master_port.be;
+
         master_port.r_opc   = 1'b0;
         master_port.r_rdata = '0;
         master_port.r_valid = 1'b0;
@@ -100,15 +101,16 @@ module tcdm_demux
         active_slave_d      = active_slave_q;
         case (state_q)
             IDLE: begin
-                if (master_port_req) begin
+                if (master_port.req) begin
                     //Issue the request to the right port and change the state
                     slave_ports_req[port_sel] = master_port.req;
-                    master_port.gnt           = slave_ports_gnt[port_sel];
                     active_slave_d            = port_sel;
                     //Wait until we receive the grant signal from the slave
                     if (slave_ports_gnt[port_sel]) begin
+                        master_port.gnt = 1'b1;
                         state_d = PENDING;
                     end else begin
+                        master_port.gnt = 1'b0;
                         state_d = IDLE;
                     end
                 end else begin
@@ -125,12 +127,13 @@ module tcdm_demux
                     //Check if we receive another request back to back
                     if (master_port.req) begin
                         slave_ports_req[port_sel] = master_port.req;
-                        master_port.gnt           = slave_ports_sel[port_sel];
                         active_slave_d            = port_sel;
                         //If we receive the grant we remain in the pending state. Otherwise we switch to IDLE state
                         if (slave_ports_gnt[port_sel]) begin
+                            master_port.gnt = 1'b1;
                             state_d = PENDING;
                         end else begin
+                            master_port.gnt = 1'b0;
                             state_d = IDLE;
                         end
                     end else begin

@@ -47,7 +47,7 @@ module l2_ram_multi_bank #(
             end
         end
        //Remove Address offset
-       assign interleaved_addresses[i] = mem_slave[i].add - SOC_MEM_MAP_TCDM_START_ADDR;
+       assign interleaved_addresses[i] = mem_slave[i].add - `SOC_MEM_MAP_TCDM_START_ADDR;
 
       `ifndef PULP_FPGA_EMUL
           /*
@@ -55,9 +55,9 @@ module l2_ram_multi_bank #(
            that has been tape-out.
            */
           generic_memory #(
-                           .ADDR_WIDTH ( BANK_SIZE_INTL_SRAM ),
+                           .ADDR_WIDTH ( INTL_MEM_ADDR_WIDTH ),
                            .DATA_WIDTH ( 32                  )
-                           ) bank_sram_pri1_i (
+                           ) bank_i (
                                                .CLK   ( clk_i                                             ),
                                                .INITN ( 1'b1                                              ),
                                                .CEN   ( ~mem_slave[i].req                                 ),
@@ -96,7 +96,7 @@ module l2_ram_multi_bank #(
     end
     //Remove Address offset
     logic [31:0] pri0_address;
-    assign pri0_address = mem_pri_slave[0].add - SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR;
+    assign pri0_address = mem_pri_slave[0].add - `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR;
    `ifndef PULP_FPGA_EMUL
     generic_memory #(
       .ADDR_WIDTH ( PRI0_MEM_ADDR_WIDTH  ),
@@ -138,7 +138,7 @@ module l2_ram_multi_bank #(
     end
     //Remove Address offset
     logic [31:0] pri1_address;
-    assign pri0_address = mem_pri_slave[1].add - SOC_MEM_MAP_PRIVATE_BANK1_START_ADDR;
+    assign pri1_address = mem_pri_slave[1].add - `SOC_MEM_MAP_PRIVATE_BANK1_START_ADDR;
    `ifndef PULP_FPGA_EMUL
     generic_memory #(
       .ADDR_WIDTH ( PRI1_MEM_ADDR_WIDTH  ),

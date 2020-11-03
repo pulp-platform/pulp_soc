@@ -21,7 +21,9 @@ module pulp_soc import dm::*; #(
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
     parameter AXI_ID_IN_WIDTH    = 6,
-    parameter AXI_ID_OUT_WIDTH   = 6,
+    localparam AXI_ID_OUT_WIDTH   = AXI_ID_IN_WIDTH+$clog2(2), //Account for additional bits needed by AXI_XBAR to
+                                                               //backroute responses. At the moment we have 3 xbar
+                                                               //slaves (SoC2Cluster plug and APB peripherals plug)
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
@@ -461,7 +463,7 @@ module pulp_soc import dm::*; #(
     assign cluster_rtc_o     = ref_clk_i;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
-   assign s_cluster_isolate_dc = 1'b0;
+   assign s_cluster_isolate_dc = 1'b1;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
@@ -782,11 +784,8 @@ module pulp_soc import dm::*; #(
     soc_interconnect_wrap #(
       .NR_HWPE_PORTS(NB_HWPE_PORTS),
       .NR_L2_PORTS(NB_L2_BANKS),
-      .NR_L2_PRIVATE_PORTS(NB_L2_BANKS_PRI),
       .AXI_IN_ID_WIDTH(AXI_ID_IN_WIDTH),
-      .AXI_IN_USER_WIDTH(AXI_USER_WIDTH),
-      .AXI_OUT_ID_WIDTH(AXI_ID_OUT_WIDTH),
-      .AXI_OUT_USER_WIDTH(AXI_USER_WIDTH)
+      .AXI_USER_WIDTH(AXI_USER_WIDTH)
     ) i_soc_interconnect_wrap (
         .clk_i                 ( s_soc_clk           ),
         .rst_ni                ( s_soc_rstn          ),
@@ -804,45 +803,6 @@ module pulp_soc import dm::*; #(
         .l2_private_slaves     ( s_mem_l2_pri_bus    ),
         .boot_rom_slave        ( s_mem_rom_bus       )
         );
-
-    soc_interconnect_wrap #(
-        .N_L2_BANKS         ( NB_L2_BANKS           ),
-        .ADDR_MEM_WIDTH     ( L2_MEM_ADDR_WIDTH     ),
-        .N_HWPE_PORTS       ( NB_HWPE_PORTS         ),
-
-        .N_L2_BANKS_PRI     ( NB_L2_BANKS_PRI       ),
-        .ADDR_MEM_PRI_WIDTH ( L2_MEM_ADDR_WIDTH_PRI ),
-
-        .ROM_ADDR_WIDTH     ( ROM_ADDR_WIDTH        ),
-
-        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH      ),
-        .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH        ),
-
-        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH        ),
-        .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
-        .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
-        .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_ID_IN_WIDTH       )
-    ) i_soc_interconnect_wrap (
-        .clk_i            ( s_soc_clk           ),
-        .rstn_i           ( s_soc_rstn          ),
-        .test_en_i        ( dft_test_mode_i     ),
-        .lint_fc_data     ( s_lint_fc_data_bus  ),
-        .lint_fc_instr    ( s_lint_fc_instr_bus ),
-        .lint_udma_tx     ( s_lint_udma_tx_bus  ),
-        .lint_udma_rx     ( s_lint_udma_rx_bus  ),
-        .lint_debug       ( s_lint_debug_bus    ),
-        .lint_hwpe        ( s_lint_hwpe_bus     ),
-
-        .axi_from_cluster ( s_data_in_bus       ),
-        .axi_to_cluster   ( s_data_out_bus      ),
-
-        .apb_periph_bus   ( s_apb_periph_bus    ),
-        .mem_l2_bus       ( s_mem_l2_bus        ),
-        .mem_l2_pri_bus   ( s_mem_l2_pri_bus    ),
-        .mem_rom_bus      ( s_mem_rom_bus       )
-    );
-
 
     /* Debug Subsystem */
 

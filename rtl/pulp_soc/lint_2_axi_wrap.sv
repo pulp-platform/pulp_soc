@@ -31,7 +31,7 @@ module lint2axi_wrap
     (
      input logic clk_i,
      input logic rst_ni,
-     TCDM_BUS.Slave master,
+     XBAR_TCDM_BUS.Slave master,
      AXI_BUS.Master slave
      );
 
@@ -39,6 +39,10 @@ module lint2axi_wrap
     localparam int unsigned ADDR_WIDTH = 32;
     localparam int unsigned DATA_WIDTH = 32;
     localparam int unsigned BE_WIDTH = DATA_WIDTH/8;
+
+    //Assign atomic attributes to zero. Otherwise the axi to axi_lite atop_filter will not work properly since it
+    //receives X on the atop signal
+    assign slave.aw_atop = '0;
 
     lint_2_axi #(
         .ADDR_WIDTH       ( ADDR_WIDTH        ),

@@ -23,7 +23,7 @@
 // specific language governing permissions and limitations under the License.
 //-----------------------------------------------------------------------------
 
-`include "tcdm_explode_macros.svh"
+`include "tcdm_macros.svh"
 
 module interleaved_crossbar
     #(
@@ -37,7 +37,7 @@ module interleaved_crossbar
         XBAR_TCDM_BUS.Master slave_ports[NR_SLAVE_PORTS]
         );
     // Do **not** change. The TCDM interface uses hardcoded bus widths so we cannot just change them here.
-    localparam int unsigned BE_WIDTH = 2;
+    localparam int unsigned BE_WIDTH = 4;
     localparam int unsigned ADDR_WIDTH = 32;
     localparam int unsigned DATA_WIDTH = 32;
     localparam int unsigned PORT_SEL_WIDTH = $clog2(NR_SLAVE_PORTS);
@@ -72,11 +72,11 @@ module interleaved_crossbar
     logic [NR_SLAVE_PORTS-1:0][REQ_AGG_DATA_WIDTH-1:0] req_data_agg_out;
     //Aggreagate the input data
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
-        assign req_data_agg_in[i] = {master_ports_wen[i], master_ports_add[i], master_ports_wdata[i]};
+        assign req_data_agg_in[i] = {master_ports_wen[i], master_ports_be[i], master_ports_add[i], master_ports_wdata[i]};
     end
     //Disaggregate the output data
     for (genvar i = 0; i < NR_SLAVE_PORTS; i++) begin : disaggregate_outputs
-        assign {slave_ports_wen[i], slave_ports_add[i], slave_ports_wdata[i]} = req_data_agg_out[i];
+        assign {slave_ports_wen[i], slave_ports_be[i], slave_ports_add[i], slave_ports_wdata[i]} = req_data_agg_out[i];
     end
 
     //Aggregated response data (from Slaves -> Master)
@@ -98,10 +98,10 @@ module interleaved_crossbar
 
     //Crossbar instantiation
     xbar #(
-           .numin(NR_MASTER_PORTS),
-           .numout(NR_SLAVE_PORTS),
-           .reqdatawidth(REQ_AGG_DATA_WIDTH),
-           .respdatawidth(RESP_AGG_DATA_WIDTH),
+           .NumIn(NR_MASTER_PORTS),
+           .NumOut(NR_SLAVE_PORTS),
+           .ReqDataWidth(REQ_AGG_DATA_WIDTH),
+           .RespDataWidth(RESP_AGG_DATA_WIDTH),
            .RespLat(1),
            .WriteRespOn(1)
         ) i_xbar (
