@@ -86,11 +86,11 @@ module soc_interconnect
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+    XBAR_TCDM_BUS demux_slaves[NR_MASTER_PORTS][3]();
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
-        XBAR_TCDM_BUS demux_slaves[3]();
-        `TCDM_MASTER_ASSIGN(l2_demux_2_axi_bridge[i], demux_slaves[0]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
+        `TCDM_MASTER_ASSIGN(l2_demux_2_axi_bridge[i], demux_slaves[i][0]);
+        `TCDM_MASTER_ASSIGN(l2_demux_2_contiguous_xbar[i], demux_slaves[i][1]);
+        `TCDM_MASTER_ASSIGN(l2_demux_2_interleaved_xbar[i], demux_slaves[i][2]);
 
 
         tcdm_demux #(
@@ -102,7 +102,7 @@ module soc_interconnect
                                   .test_en_i,
                                   .addr_map_rules(addr_space_l2_demux),
                                   .master_port(master_ports[i]),
-                                  .slave_ports(demux_slaves)
+                                  .slave_ports(demux_slaves[i])
                                   );
     end
 
@@ -126,8 +126,22 @@ module soc_interconnect
         `TCDM_MASTER_ASSIGN(interleaved_masters[i], l2_demux_2_interleaved_xbar[i])
     end
 
+
+    //Synopsys is to stupid to handle expressions for array indices on the left-hand side of assignments. This is a
+    // verbose workaround for it.
+    for (genvar i = NR_MASTER_PORTS; i < NR_MASTER_PORTS_INTERLEAVED_ONLY+NR_MASTER_PORTS; i++) begin
+        // `TCDM_MASTER_ASSIGN(interleaved_masters[NR_MASTER_PORTS+i], master_ports_interleaved_only[i])
+        assign interleaved_masters[i].req  = master_ports_interleaved_only[i-NR_MASTER_PORTS].req;
+        assign interleaved_masters[i].add  = master_ports_interleaved_only[i-NR_MASTER_PORTS].add;
+        assign interleaved_masters[i].wen  = master_ports_interleaved_only[i-NR_MASTER_PORTS].wen;
+        assign interleaved_masters[i].wdata  = master_ports_interleaved_only[i-NR_MASTER_PORTS].wdata;
+        assign interleaved_masters[i].be  = master_ports_interleaved_only[i-NR_MASTER_PORTS].be;
+    end // for (genvar i = NR_MASTER_PORTS; i < NR_MASTER_PORTS_INTERLEAVED_ONLY+NR_MASTER_PORTS; i++)
     for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
-        `TCDM_MASTER_ASSIGN(interleaved_masters[NR_MASTER_PORTS+i], master_ports_interleaved_only[i])
+        assign master_ports_interleaved_only[i].gnt = interleaved_masters[NR_MASTER_PORTS+i].gnt ;
+        assign master_ports_interleaved_only[i].r_opc = interleaved_masters[NR_MASTER_PORTS+i].r_opc ;
+        assign master_ports_interleaved_only[i].r_rdata= interleaved_masters[NR_MASTER_PORTS+i].r_rdata ;
+        assign master_ports_interleaved_only[i].r_valid = interleaved_masters[NR_MASTER_PORTS+i].r_valid ;
     end
 
     interleaved_crossbar #(

@@ -21,9 +21,10 @@ module pulp_soc import dm::*; #(
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
     parameter AXI_ID_IN_WIDTH    = 6,
-    localparam AXI_ID_OUT_WIDTH   = AXI_ID_IN_WIDTH+$clog2(2), //Account for additional bits needed by AXI_XBAR to
-                                                               //backroute responses. At the moment we have 3 xbar
-                                                               //slaves (SoC2Cluster plug and APB peripherals plug)
+    localparam AXI_ID_OUT_WIDTH   = AXI_ID_IN_WIDTH+$clog2(5+4), //Account for additional bits needed by AXI_XBAR to
+                                                                 //backroute responses. At the moment we have 9 masters 5 for fc_data, fc_instr, udma_rx,
+                                                                 //udma_tx, debug_access and 4 for the 64-bit
+                                                                 //cluster2soc axi plug
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,

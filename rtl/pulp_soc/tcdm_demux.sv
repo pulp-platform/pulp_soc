@@ -87,18 +87,23 @@ module tcdm_demux
 
     //Transaction FSM
     always_comb begin
+        slave_ports_add             = '0;
+        slave_ports_wen             = '1;
+        slave_ports_wdata           = '0;
+        slave_ports_be              = '0;
+
         slave_ports_add[port_sel]   = master_port.add;
         slave_ports_wen[port_sel]   = master_port.wen;
         slave_ports_wdata[port_sel] = master_port.wdata;
         slave_ports_be[port_sel]    = master_port.be;
 
-        master_port.r_opc   = 1'b0;
-        master_port.r_rdata = '0;
-        master_port.r_valid = 1'b0;
-        master_port.gnt     = 1'b0;
-        slave_ports_req     = '0;
-        state_d             = state_q;
-        active_slave_d      = active_slave_q;
+        master_port.r_opc           = 1'b0;
+        master_port.r_rdata         = '0;
+        master_port.r_valid         = 1'b0;
+        master_port.gnt             = 1'b0;
+        slave_ports_req             = '0;
+        state_d                     = state_q;
+        active_slave_d              = active_slave_q;
         case (state_q)
             IDLE: begin
                 if (master_port.req) begin
