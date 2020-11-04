@@ -23,7 +23,7 @@ module fc_subsystem #(
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F,
-    parameter USE_ZFINX		  = 1
+    parameter USE_ZFINX           = 1
 )
 (
     input  logic                      clk_i,
@@ -129,7 +129,7 @@ module fc_subsystem #(
         .FP_DIVSQRT          ( USE_FPU             ),
         .SHARED_FP           ( 0                   ),
         .SHARED_FP_DIVSQRT   ( 2                   ),
-        .Zfinx	     	     ( USE_ZFINX	   )
+        .Zfinx               ( USE_ZFINX           )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
