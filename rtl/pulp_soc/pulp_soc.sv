@@ -38,7 +38,9 @@ module pulp_soc import dm::*; #(
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
-    parameter int unsigned N_I2C  = 2
+    parameter int unsigned N_I2C  = 2,
+
+    parameter USE_Zfinx 	  = 1
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -714,7 +716,8 @@ module pulp_soc import dm::*; #(
         .USE_FPU    ( USE_FPU            ),
         .CORE_ID    ( FC_CORE_CORE_ID    ),
         .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
-        .USE_HWPE   ( USE_HWPE           )
+        .USE_HWPE   ( USE_HWPE           ),
+	.USE_Zfinx  ( USE_Zfinx		 )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
