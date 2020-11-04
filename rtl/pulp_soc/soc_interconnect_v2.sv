@@ -23,6 +23,7 @@
 
 module soc_interconnect
     import pkg_soc_interconnect::addr_map_rule_t;
+    import axi_pkg::xbar_cfg_t;
     #(
       // TCDM Bus Master Config
       parameter int unsigned  NR_MASTER_PORTS, //Master Ports to the SoC interconnect with access to all memory regions
@@ -86,11 +87,12 @@ module soc_interconnect
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    XBAR_TCDM_BUS demux_slaves[NR_MASTER_PORTS][3]();
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
-        `TCDM_MASTER_ASSIGN(l2_demux_2_axi_bridge[i], demux_slaves[i][0]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_contiguous_xbar[i], demux_slaves[i][1]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_interleaved_xbar[i], demux_slaves[i][2]);
+        XBAR_TCDM_BUS demux_slaves[3]();
+
+        `TCDM_MASTER_ASSIGN(l2_demux_2_axi_bridge[i], demux_slaves[0]);
+        `TCDM_MASTER_ASSIGN(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
+        `TCDM_MASTER_ASSIGN(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
 
 
         tcdm_demux #(
@@ -102,7 +104,7 @@ module soc_interconnect
                                   .test_en_i,
                                   .addr_map_rules(addr_space_l2_demux),
                                   .master_port(master_ports[i]),
-                                  .slave_ports(demux_slaves[i])
+                                  .slave_ports(demux_slaves)
                                   );
     end
 
@@ -235,7 +237,7 @@ module soc_interconnect
     // information.                                                                                                   //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    localparam axi_pkg::xbar_cfg_t AXI_XBAR_CFG = '{
+    localparam xbar_cfg_t AXI_XBAR_CFG = '{
                                                     NoSlvPorts: NR_MASTER_PORTS,
                                                     NoMstPorts: NR_AXI_SLAVE_PORTS,
                                                     MaxMstTrans: 1,       //The TCDM ports do not support
