@@ -91,6 +91,8 @@ module contiguous_crossbar
 
     //Address Decoder
     logic [NR_MASTER_PORTS-1:0] [PORT_SEL_WIDTH-1:0] port_sel;
+    localparam logic [PORT_SEL_WIDTH-1:0]            DEFAULT_IDX = NR_SLAVE_PORTS_INTERNAL - 1; //If no rule matches we route to the
+                                                                                                //error port
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_addr_decoders
         addr_decode #(
                       .NoIndices(NR_SLAVE_PORTS_INTERNAL),
@@ -104,8 +106,7 @@ module contiguous_crossbar
                                        .dec_valid_o(),
                                        .dec_error_o(),
                                        .en_default_idx_i(1'b1),
-                                       .default_idx_i(NR_SLAVE_PORTS_INTERNAL-1) //If no rule matches we route to the
-                                                                                 //error port
+                                       .default_idx_i(DEFAULT_IDX)
                                        );
     end
 

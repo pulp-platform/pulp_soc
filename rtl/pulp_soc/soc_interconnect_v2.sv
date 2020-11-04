@@ -90,9 +90,9 @@ module soc_interconnect
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
         XBAR_TCDM_BUS demux_slaves[3]();
 
-        `TCDM_MASTER_ASSIGN(l2_demux_2_axi_bridge[i], demux_slaves[0]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
-        `TCDM_MASTER_ASSIGN(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], demux_slaves[0]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
 
 
         tcdm_demux #(
@@ -124,26 +124,22 @@ module soc_interconnect
 
     //Concatenate the l2 demux master port array and the interleaved only port array
     XBAR_TCDM_BUS interleaved_masters[NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY]();
-    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
-        `TCDM_MASTER_ASSIGN(interleaved_masters[i], l2_demux_2_interleaved_xbar[i])
-    end
-
-
     //Synopsys is to stupid to handle expressions for array indices on the left-hand side of assignments. This is a
-    // verbose workaround for it.
-    for (genvar i = NR_MASTER_PORTS; i < NR_MASTER_PORTS_INTERLEAVED_ONLY+NR_MASTER_PORTS; i++) begin
-        // `TCDM_MASTER_ASSIGN(interleaved_masters[NR_MASTER_PORTS+i], master_ports_interleaved_only[i])
-        assign interleaved_masters[i].req  = master_ports_interleaved_only[i-NR_MASTER_PORTS].req;
-        assign interleaved_masters[i].add  = master_ports_interleaved_only[i-NR_MASTER_PORTS].add;
-        assign interleaved_masters[i].wen  = master_ports_interleaved_only[i-NR_MASTER_PORTS].wen;
-        assign interleaved_masters[i].wdata  = master_ports_interleaved_only[i-NR_MASTER_PORTS].wdata;
-        assign interleaved_masters[i].be  = master_ports_interleaved_only[i-NR_MASTER_PORTS].be;
-    end // for (genvar i = NR_MASTER_PORTS; i < NR_MASTER_PORTS_INTERLEAVED_ONLY+NR_MASTER_PORTS; i++)
+    // verbose workaround for it. The next couple of ugly macro magic unpacks each interface into individual signal arrays,
+    // performs the assignments to the interface and packs the signal back to an array of interfaces.
+    `TCDM_EXPLODE_ARRAY_DECLARE(interleaved_masters, NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY)
+    for (genvar i = 0; i < NR_MASTER_PORTS + NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
+        `TCDM_SLAVE_EXPLODE(interleaved_masters[i], interleaved_masters, [i])
+    end
+    `TCDM_EXPLODE_ARRAY_DECLARE(l2_demux_2_interleaved_xbar, NR_MASTER_PORTS)
+    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
+        `TCDM_MASTER_EXPLODE(l2_demux_2_interleaved_xbar[i], l2_demux_2_interleaved_xbar, [i])
+        `TCDM_ASSIGN(interleaved_masters, [i], l2_demux_2_interleaved_xbar, [i])
+        end
+    `TCDM_EXPLODE_ARRAY_DECLARE(master_ports_interleaved_only, NR_MASTER_PORTS_INTERLEAVED_ONLY)
     for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
-        assign master_ports_interleaved_only[i].gnt = interleaved_masters[NR_MASTER_PORTS+i].gnt ;
-        assign master_ports_interleaved_only[i].r_opc = interleaved_masters[NR_MASTER_PORTS+i].r_opc ;
-        assign master_ports_interleaved_only[i].r_rdata= interleaved_masters[NR_MASTER_PORTS+i].r_rdata ;
-        assign master_ports_interleaved_only[i].r_valid = interleaved_masters[NR_MASTER_PORTS+i].r_valid ;
+        `TCDM_MASTER_EXPLODE(master_ports_interleaved_only[i], master_ports_interleaved_only, [i])
+        `TCDM_ASSIGN(interleaved_masters, [NR_MASTER_PORTS + i], master_ports_interleaved_only, [i])
     end
 
     interleaved_crossbar #(

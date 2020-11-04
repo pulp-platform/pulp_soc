@@ -123,19 +123,19 @@ module soc_interconnect_wrap
     //Wiring signals to interconncet. Unfortunately Synopsys-2019.3 does not support assignment patterns in port lists
     //directly
     XBAR_TCDM_BUS master_ports[5+4]();
-    `TCDM_MASTER_ASSIGN(master_ports[0], tcdm_fc_data)
-    `TCDM_MASTER_ASSIGN(master_ports[1], tcdm_fc_instr)
-    `TCDM_MASTER_ASSIGN(master_ports[2], tcdm_udma_tx)
-    `TCDM_MASTER_ASSIGN(master_ports[3], tcdm_udma_rx)
-    `TCDM_MASTER_ASSIGN(master_ports[4], tcdm_debug)
+    `TCDM_ASSIGN_INTF(master_ports[0], tcdm_fc_data)
+    `TCDM_ASSIGN_INTF(master_ports[1], tcdm_fc_instr)
+    `TCDM_ASSIGN_INTF(master_ports[2], tcdm_udma_tx)
+    `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_rx)
+    `TCDM_ASSIGN_INTF(master_ports[4], tcdm_debug)
     for (genvar i = 0; i < 4; i++) begin
-        `TCDM_MASTER_ASSIGN(master_ports[5+i], axi_bridge_2_interconnect[i])
+        `TCDM_ASSIGN_INTF(master_ports[5+i], axi_bridge_2_interconnect[i])
     end
 
     XBAR_TCDM_BUS contiguous_slaves[3]();
-    `TCDM_MASTER_ASSIGN(l2_private_slaves[0], contiguous_slaves[0])
-    `TCDM_MASTER_ASSIGN(l2_private_slaves[1], contiguous_slaves[1])
-    `TCDM_MASTER_ASSIGN(boot_rom_slave, contiguous_slaves[2])
+    `TCDM_ASSIGN_INTF(l2_private_slaves[0], contiguous_slaves[0])
+    `TCDM_ASSIGN_INTF(l2_private_slaves[1], contiguous_slaves[1])
+    `TCDM_ASSIGN_INTF(boot_rom_slave, contiguous_slaves[2])
 
     AXI_BUS #(.AXI_ADDR_WIDTH(32),
               .AXI_DATA_WIDTH(32),

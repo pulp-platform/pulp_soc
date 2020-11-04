@@ -48,7 +48,7 @@ assign iface.r_opc = exploded_prefix``_r_opc postfix; \
 assign iface.r_rdata = exploded_prefix``_r_rdata postfix; \
 assign iface.r_valid = exploded_prefix``_r_valid postfix;
 
-  `define TCDM_MASTER_ASSIGN(b, a) \
+  `define TCDM_ASSIGN_INTF(b, a) \
 assign b.req  = a.req; \
 assign b.add  = a.add; \
 assign b.wen  = a.wen; \
@@ -58,5 +58,16 @@ assign a.gnt = b.gnt ; \
 assign a.r_opc = b.r_opc ; \
 assign a.r_rdata= b.r_rdata ; \
 assign a.r_valid = b.r_valid ;
+
+  `define TCDM_ASSIGN(b, postfix_b, a, postfix_a) \
+assign b``_req postfix_b  = a``_req postfix_a; \
+assign b``_add postfix_b  = a``_add postfix_a; \
+assign b``_wen postfix_b  = a``_wen postfix_a; \
+assign b``_wdata postfix_b  = a``_wdata postfix_a; \
+assign b``_be postfix_b  = a``_be postfix_a; \
+assign a``_gnt postfix_a = b``_gnt postfix_b ; \
+assign a``_r_opc postfix_a = b``_r_opc postfix_b ; \
+assign a``_r_rdata postfix_a= b``_r_rdata postfix_b ; \
+assign a``_r_valid postfix_a = b``_r_valid postfix_b ;
 
 `endif
