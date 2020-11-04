@@ -34,7 +34,7 @@ module pulp_soc import dm::*; #(
     parameter NGPIO              = 43,
     parameter NPAD               = 64, //Must not be changed as other parts
                                        //downstreams are not parametrci
-    parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
+    parameter NBIT_PADCFG        = 6, //Must not be changed as other parts
                                       //downstreams are not parametrci
     parameter NBIT_PADMUX        = 2,
 
