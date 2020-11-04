@@ -48,7 +48,7 @@ apb_interrupt_cntrl:
   commit: v0.0.1
   domain: [soc]
 axi/axi:
-  commit: fix-ipapprox-deps
+  commit: v0.24.1
   domain: [cluster, soc]
 # axi/axi_node:
 #   commit: v1.1.4
