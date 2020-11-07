@@ -586,6 +586,7 @@ module pulp_soc import dm::*; #(
 
     soc_node #(
         // Parameters
+        .AXI_ID_INP_WIDTH_SOC    (AXI_SOC_NODE_IW_INP),
         .AXI_ID_OUP_WIDTH_SOC    (AXI_SOC_NODE_IW_OUP),
         .AXI_USER_WIDTH_SOC      (AXI_USER_WIDTH),
         .AXI_STRB_WIDTH_SOC      (AXI_DATA_IN_WIDTH/8),
@@ -593,6 +594,7 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH_SOC      (AXI_DATA_IN_WIDTH),
 
         .AXI_ID_INP_WIDTH_CLUSTER(AXI_ID_IN_WIDTH),
+        .AXI_ID_OUP_WIDTH_CLUSTER(AXI_ID_OUT_WIDTH),
         .AXI_USER_WIDTH_CLUSTER  (AXI_USER_WIDTH),
         .AXI_STRB_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH/8),
         .AXI_ADDR_WIDTH_CLUSTER  (AXI_ADDR_WIDTH),
@@ -629,7 +631,7 @@ module pulp_soc import dm::*; #(
     ) i_soc_node (
         // Interfaces
         .cl_slv          (s_data_in_bus),
-        //.cl_mst          (cl_in_Mst),
+        .soc_slv         (s_soc_to_external),
         .soc_mst         (soc_in_mst),
         .c07_slv         (axi_c07_slv),
         .c07_mst         (axi_c07_mst),
@@ -971,17 +973,17 @@ module pulp_soc import dm::*; #(
         .mem_rom_bus      ( s_mem_rom_bus       )
     );
 
-    // test axi connection via software
-    axi_test_ram #(
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) i_axi_test_ram (
-        .clk_i      ( s_soc_clk         ),
-        .rst_ni     ( s_soc_rstn        ),
-        .axi_master ( s_soc_to_external )
-    );
+    // // test axi connection via software
+    // axi_test_ram #(
+    //     .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
+    //     .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+    //     .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+    //     .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    // ) i_axi_test_ram (
+    //     .clk_i      ( s_soc_clk         ),
+    //     .rst_ni     ( s_soc_rstn        ),
+    //     .axi_master ( s_soc_to_external )
+    // );
 
     /* Debug Subsystem */
 

@@ -21,14 +21,14 @@ package automatic soc_node_pkg;
   localparam int unsigned N_MASTERS = `AXI_SOC_NODE_MASTERS; // 3
 
   // SoC peripherals + l2 map from the point of view of outside and the cluster
-  localparam logic [31:0] SOC_START_ADDR = `MASTER_2_START_ADDR; // 32'h1A00_0000
-  localparam logic [31:0] SOC_END_ADDR = `MASTER_2_END_ADDR; // 32'h1FFF_FFFF
+  localparam logic [31:0] SOC_EXT_VIEW_START_ADDR = `MASTER_2_START_ADDR; // 32'h1A00_0000
+  localparam logic [31:0] SOC_EXT_VIEW_END_ADDR = `MASTER_2_END_ADDR; // 32'h1FFF_FFFF
 
-  localparam logic [31:0] C07_START_ADDR = `AXI_SOC_NODE_C07_START_ADDR; // 32'h2000_0000
-  localparam logic [31:0] C07_END_ADDR = `AXI_SOC_NODE_C07_END_ADDR; // 32'h3FFF_FFFF
+  localparam logic [31:0] C07_EXT_VIEW_START_ADDR = `AXI_SOC_NODE_C07_START_ADDR; // 32'h2000_0000
+  localparam logic [31:0] C07_EXT_VIEW_END_ADDR = `AXI_SOC_NODE_C07_END_ADDR; // 32'h3FFF_FFFF
 
-  localparam logic [31:0] NOCR07_START_ADDR = `AXI_SOC_NODE_NOCR07_START_ADDR; // 32'h4000_0000
-  localparam logic [31:0] NOCR07_END_ADDR = `AXI_SOC_NODE_NOCR07_END_ADDR; // 32'hFFFF_FFFF
+  localparam logic [31:0] NOCR07_EXT_VIEW_START_ADDR = `AXI_SOC_NODE_NOCR07_START_ADDR; // 32'h4000_0000
+  localparam logic [31:0] NOCR07_EXT_VIEW_END_ADDR = `AXI_SOC_NODE_NOCR07_END_ADDR; // 32'hFFFF_FFFF
 
   // localparam int unsigned AXI_SOC_NODE_AW = 32;
   // localparam int unsigned AXI_SOC_NODE_DW = 64;
@@ -43,6 +43,7 @@ package automatic soc_node_pkg;
 endpackage // soc_node_pkg
 
 module soc_node #(
+  parameter int unsigned AXI_ID_INP_WIDTH_SOC = 0,
   parameter int unsigned AXI_ID_OUP_WIDTH_SOC = 0,
   parameter int unsigned AXI_USER_WIDTH_SOC = 0,
   parameter int unsigned AXI_STRB_WIDTH_SOC = 0,
@@ -50,6 +51,7 @@ module soc_node #(
   parameter int unsigned AXI_DATA_WIDTH_SOC = 0,
 
   parameter int unsigned AXI_ID_INP_WIDTH_CLUSTER = 0,
+  parameter int unsigned AXI_ID_OUP_WIDTH_CLUSTER = 0,
   parameter int unsigned AXI_USER_WIDTH_CLUSTER = 0,
   parameter int unsigned AXI_STRB_WIDTH_CLUSTER = 0,
   parameter int unsigned AXI_ADDR_WIDTH_CLUSTER = 0,
@@ -85,8 +87,8 @@ module soc_node #(
 ) (
   input  logic   clk_i,
   input  logic   rst_ni,
-  // AXI_BUS.Slave  cl_slv
   AXI_BUS.Slave  cl_slv,
+  AXI_BUS.Slave  soc_slv,
   AXI_BUS.Master soc_mst,
   AXI_BUS.Slave  c07_slv,
   AXI_BUS.Master c07_mst,
@@ -104,8 +106,8 @@ module soc_node #(
 
   typedef logic [AXI_AW-1:0] addr_t;
 
-  addr_t  [N_REGIONS-1:0][soc_node_pkg::N_MASTERS-1:0]  start_addr,
-                                                        end_addr;
+  addr_t  [N_REGIONS-1:0][soc_node_pkg::N_MASTERS-1:0]  ext_view_start_addr,
+                                                        ext_view_end_addr;
   // logic   [N_REGIONS-1:0][soc_node_pkg::N_MASTERS-1:0]  valid_rule;
 
   localparam AXI_IW_OUP = soc_node_pkg::axi_iw_oup(AXI_IW_INP);
@@ -140,43 +142,45 @@ module soc_node #(
     .AXI_USER_WIDTH (AXI_UW)
   ) slaves [soc_node_pkg::N_SLAVES-1:0]();
 
+  // these have address maps
   `AXI_ASSIGN(soc_mst, masters[IDX_SOC]);
   `AXI_ASSIGN(c07_mst, masters[IDX_C07]);
   `AXI_ASSIGN(nocr07_mst, masters[IDX_NOCR07]);
-  //`AXI_ASSIGN(cl_mst, masters[IDX_CLUSTER]);
 
   `AXI_ASSIGN(slaves[0], c07_slv);
   `AXI_ASSIGN(slaves[1], nocr07_slv);
   `AXI_ASSIGN(slaves[2], sms_slv);
   `AXI_ASSIGN(slaves[3], cl_slv);
 
-  // Address Map
+  // Address Map External View
   always_comb begin
-    start_addr  = '0;
-    end_addr    = '0;
+    ext_view_start_addr  = '0;
+    ext_view_end_addr    = '0;
     // valid_rule  = '0;
 
-    // Cluster
-    // start_addr[0][IDX_CLUSTER] = 32'h1000_0000;
-    // end_addr[0][IDX_CLUSTER]   = start_addr[0][IDX_CLUSTER] + 32'h002F_FFFF;
-    // valid_rule[0][IDX_CLUSTER] = 1'b1;
+    // // Cluster
+    // ext_view_start_addr[0][IDX_CLUSTER] = 32'h1000_0000;
+    // ext_view_end_addr[0][IDX_CLUSTER]   = ext_view_start_addr[0][IDX_CLUSTER] + 32'h002F_FFFF; //TODO: abstract this mapping into pkg
+    // // valid_rule[0][IDX_CLUSTER] = 1'b1;
 
-    // SoC
-    start_addr[0][IDX_SOC] = soc_node_pkg::SOC_START_ADDR;
-    end_addr[0][IDX_SOC]   = soc_node_pkg::SOC_END_ADDR;
+    // to SoC
+    ext_view_start_addr[0][IDX_SOC] = soc_node_pkg::SOC_EXT_VIEW_START_ADDR;
+    ext_view_end_addr[0][IDX_SOC]   = soc_node_pkg::SOC_EXT_VIEW_END_ADDR;
     // valid_rule[0][IDX_SOC] = 1'b1;
 
-    // c07
-    start_addr[0][IDX_C07] = soc_node_pkg::C07_START_ADDR;
-    end_addr[0][IDX_C07]   = soc_node_pkg::C07_END_ADDR; // NOTE: arbitrarily assigned this range
+    // to c07
+    ext_view_start_addr[0][IDX_C07] = soc_node_pkg::C07_EXT_VIEW_START_ADDR;
+    ext_view_end_addr[0][IDX_C07]   = soc_node_pkg::C07_EXT_VIEW_END_ADDR; // NOTE: arbitrarily assigned this range
     // valid_rule[0][IDX_C07] = 1'b1;
 
-    // NoCr07
-    start_addr[0][IDX_NOCR07] = soc_node_pkg::NOCR07_START_ADDR;
-    end_addr[0][IDX_NOCR07]   = soc_node_pkg::NOCR07_END_ADDR; // NOTE: map everything else to global memory
+    // to NoCr07
+    ext_view_start_addr[0][IDX_NOCR07] = soc_node_pkg::NOCR07_EXT_VIEW_START_ADDR;
+    ext_view_end_addr[0][IDX_NOCR07]   = soc_node_pkg::NOCR07_EXT_VIEW_END_ADDR; // NOTE: map everything else to global memory
     // valid_rule[0][IDX_NOCR07] = 1'b1;
 
   end
+
+  // Address Map SoC View
 
   // TODO: we use a version that doesn't support region or valid rules. For that
   // we would have to go to the atop branch
@@ -196,8 +200,8 @@ module soc_node #(
     .test_en_i    (1'b0),
     .slave        (slaves),
     .master       (masters),
-    .start_addr_i (start_addr),
-    .end_addr_i   (end_addr)
+    .start_addr_i (ext_view_start_addr),
+    .end_addr_i   (ext_view_end_addr)
     // .valid_rule_i (valid_rule)
   );
 
