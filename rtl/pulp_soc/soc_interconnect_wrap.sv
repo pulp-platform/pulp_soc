@@ -36,6 +36,7 @@ module soc_interconnect_wrap #(
     XBAR_TCDM_BUS.Slave      lint_hwpe [N_HWPE_PORTS-1:0],
     AXI_BUS.Slave            axi_from_cluster,
     AXI_BUS.Master           axi_to_cluster,
+    AXI_BUS.Master           axi_to_external,
     APB_BUS.Master           apb_periph_bus,
     UNICAD_MEM_BUS_32.Master mem_l2_bus[N_L2_BANKS-1:0],
     UNICAD_MEM_BUS_32.Master mem_l2_pri_bus[N_L2_BANKS_PRI-1:0],
@@ -337,7 +338,59 @@ module soc_interconnect_wrap #(
         .AXI_Master_r_resp_i    ( axi_to_cluster.r_resp                         ),
         .AXI_Master_r_last_i    ( axi_to_cluster.r_last                         ),
         .AXI_Master_r_valid_i   ( axi_to_cluster.r_valid                        ),
-        .AXI_Master_r_ready_o   ( axi_to_cluster.r_ready                        )
+        .AXI_Master_r_ready_o   ( axi_to_cluster.r_ready                        ),
+
+        // ---------------------------------------------------------
+        // AXI TARG Port Declarations ------------------------------
+        // ---------------------------------------------------------
+        .AXI_Master2_aw_addr_o   ( axi_to_external.aw_addr                        ),
+        .AXI_Master2_aw_prot_o   ( axi_to_external.aw_prot                        ),
+        .AXI_Master2_aw_region_o ( axi_to_external.aw_region                      ),
+        .AXI_Master2_aw_len_o    ( axi_to_external.aw_len                         ),
+        .AXI_Master2_aw_size_o   ( axi_to_external.aw_size                        ),
+        .AXI_Master2_aw_burst_o  ( axi_to_external.aw_burst                       ),
+        .AXI_Master2_aw_lock_o   ( axi_to_external.aw_lock                        ),
+        .AXI_Master2_aw_cache_o  ( axi_to_external.aw_cache                       ),
+        .AXI_Master2_aw_qos_o    ( axi_to_external.aw_qos                         ),
+        .AXI_Master2_aw_id_o     ( axi_to_external.aw_id[AXI_32_ID_WIDTH-1:0]     ),
+        .AXI_Master2_aw_user_o   ( axi_to_external.aw_user[AXI_32_USER_WIDTH-1:0] ),
+        .AXI_Master2_aw_valid_o  ( axi_to_external.aw_valid                       ),
+        .AXI_Master2_aw_ready_i  ( axi_to_external.aw_ready                       ),
+        // ADDRESS READ CHANNEL
+        .AXI_Master2_ar_addr_o   ( axi_to_external.ar_addr                        ),
+        .AXI_Master2_ar_prot_o   ( axi_to_external.ar_prot                        ),
+        .AXI_Master2_ar_region_o ( axi_to_external.ar_region                      ),
+        .AXI_Master2_ar_len_o    ( axi_to_external.ar_len                         ),
+        .AXI_Master2_ar_size_o   ( axi_to_external.ar_size                        ),
+        .AXI_Master2_ar_burst_o  ( axi_to_external.ar_burst                       ),
+        .AXI_Master2_ar_lock_o   ( axi_to_external.ar_lock                        ),
+        .AXI_Master2_ar_cache_o  ( axi_to_external.ar_cache                       ),
+        .AXI_Master2_ar_qos_o    ( axi_to_external.ar_qos                         ),
+        .AXI_Master2_ar_id_o     ( axi_to_external.ar_id[AXI_32_ID_WIDTH-1:0]     ),
+        .AXI_Master2_ar_user_o   ( axi_to_external.ar_user[AXI_32_USER_WIDTH-1:0] ),
+        .AXI_Master2_ar_valid_o  ( axi_to_external.ar_valid                       ),
+        .AXI_Master2_ar_ready_i  ( axi_to_external.ar_ready                       ),
+        // WRITE CHANNEL
+        .AXI_Master2_w_user_o    ( axi_to_external.w_user[AXI_32_USER_WIDTH-1:0]  ),
+        .AXI_Master2_w_data_o    ( axi_to_external.w_data                         ),
+        .AXI_Master2_w_strb_o    ( axi_to_external.w_strb                         ),
+        .AXI_Master2_w_last_o    ( axi_to_external.w_last                         ),
+        .AXI_Master2_w_valid_o   ( axi_to_external.w_valid                        ),
+        .AXI_Master2_w_ready_i   ( axi_to_external.w_ready                        ),
+        // WRITE RESPONSE CHANNEL
+        .AXI_Master2_b_id_i      ( axi_to_external.b_id[AXI_32_ID_WIDTH-1:0]      ),
+        .AXI_Master2_b_resp_i    ( axi_to_external.b_resp                         ),
+        .AXI_Master2_b_user_i    ( axi_to_external.b_user[AXI_32_USER_WIDTH-1:0]  ),
+        .AXI_Master2_b_valid_i   ( axi_to_external.b_valid                        ),
+        .AXI_Master2_b_ready_o   ( axi_to_external.b_ready                        ),
+        // READ CHANNEL
+        .AXI_Master2_r_id_i      ( axi_to_external.r_id[AXI_32_ID_WIDTH-1:0]      ),
+        .AXI_Master2_r_user_i    ( axi_to_external.r_user[AXI_32_USER_WIDTH-1:0]  ),
+        .AXI_Master2_r_data_i    ( axi_to_external.r_data                         ),
+        .AXI_Master2_r_resp_i    ( axi_to_external.r_resp                         ),
+        .AXI_Master2_r_last_i    ( axi_to_external.r_last                         ),
+        .AXI_Master2_r_valid_i   ( axi_to_external.r_valid                        ),
+        .AXI_Master2_r_ready_o   ( axi_to_external.r_ready                        )
     );
 
 endmodule

@@ -232,6 +232,64 @@ module soc_interconnect #(
     input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_r_user_i,
     input  logic                                                AXI_Master_r_valid_i,
     output logic                                                AXI_Master_r_ready_o,
+
+    // ---------------------------------------------------------
+    // AXI TARG Port Declarations ------------------------------
+    // ---------------------------------------------------------
+    //AXI write address bus -------------- // USED// -----------
+    output logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master2_aw_id_o,
+    output logic [ADDR_WIDTH-1:0]                               AXI_Master2_aw_addr_o,
+    output logic [7:0]                                          AXI_Master2_aw_len_o,
+    output logic [2:0]                                          AXI_Master2_aw_size_o,
+    output logic [1:0]                                          AXI_Master2_aw_burst_o,
+    output logic                                                AXI_Master2_aw_lock_o,
+    output logic [3:0]                                          AXI_Master2_aw_cache_o,
+    output logic [2:0]                                          AXI_Master2_aw_prot_o,
+    output logic [3:0]                                          AXI_Master2_aw_region_o,
+    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_aw_user_o,
+    output logic [3:0]                                          AXI_Master2_aw_qos_o,
+    output logic                                                AXI_Master2_aw_valid_o,
+    input  logic                                                AXI_Master2_aw_ready_i,
+    // ---------------------------------------------------------
+    //AXI write data bus -------------- // USED// --------------
+    output logic [DATA_WIDTH-1:0]                               AXI_Master2_w_data_o,
+    output logic [BE_WIDTH-1:0]                                 AXI_Master2_w_strb_o,
+    output logic                                                AXI_Master2_w_last_o,
+    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_w_user_o,
+    output logic                                                AXI_Master2_w_valid_o,
+    input  logic                                                AXI_Master2_w_ready_i,
+    // ---------------------------------------------------------
+    //AXI write response bus -------------- // USED// ----------
+    input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master2_b_id_i,
+    input  logic [1:0]                                          AXI_Master2_b_resp_i,
+    input  logic                                                AXI_Master2_b_valid_i,
+    input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_b_user_i,
+    output logic                                                AXI_Master2_b_ready_o,
+    // ---------------------------------------------------------
+    //AXI read address bus -------------------------------------
+    output logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master2_ar_id_o,
+    output logic [ADDR_WIDTH-1:0]                               AXI_Master2_ar_addr_o,
+    output logic [7:0]                                          AXI_Master2_ar_len_o,
+    output logic [2:0]                                          AXI_Master2_ar_size_o,
+    output logic [1:0]                                          AXI_Master2_ar_burst_o,
+    output logic                                                AXI_Master2_ar_lock_o,
+    output logic [3:0]                                          AXI_Master2_ar_cache_o,
+    output logic [2:0]                                          AXI_Master2_ar_prot_o,
+    output logic [3:0]                                          AXI_Master2_ar_region_o,
+    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_ar_user_o,
+    output logic [3:0]                                          AXI_Master2_ar_qos_o,
+    output logic                                                AXI_Master2_ar_valid_o,
+    input  logic                                                AXI_Master2_ar_ready_i,
+    // ---------------------------------------------------------
+    //AXI read data bus ----------------------------------------
+    input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master2_r_id_i,
+    input  logic [DATA_WIDTH-1:0]                               AXI_Master2_r_data_i,
+    input  logic [1:0]                                          AXI_Master2_r_resp_i,
+    input  logic                                                AXI_Master2_r_last_i,
+    input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_r_user_i,
+    input  logic                                                AXI_Master2_r_valid_i,
+    output logic                                                AXI_Master2_r_ready_o,
+
     // CH_2 --> ROM
     output logic                                                rom_csn_o,
     output logic [ROM_ADDR_WIDTH-1:0]                           rom_add_o,
@@ -252,13 +310,13 @@ module soc_interconnect #(
     localparam N_CH1_BRIDGE = N_CH1;
 
     localparam PER_ID_WIDTH = N_CH0_BRIDGE+N_CH1_BRIDGE;
-    localparam N_PERIPHS    = 3+N_L2_BANKS_PRI         ;
+    localparam N_PERIPHS    = 3+N_L2_BANKS_PRI         + 1; // hack in another axi port (= (+ 1))
 
     localparam L2_OFFSET_PRI = 15'h1000; // FIXME Put the right FORMULA
 
-                                                                        // PRI_L2_CH1  //PRI_L2_CH0    //ROM          // AXI         // APB
-    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_START_ADDR = { 32'h1C00_8000, 32'h1C00_0000, 32'h1A00_0000,  32'h1000_0000, 32'h1A10_0000};
-    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A40_0000};
+                                                                    // AXI alt (off ip) // PRI_L2_CH1  //PRI_L2_CH0    //ROM          // AXI         // APB
+    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_START_ADDR = { 32'h2000_0000, 32'h1C00_8000, 32'h1C00_0000, 32'h1A00_0000,  32'h1000_0000, 32'h1A10_0000};
+    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'hFFFF_FFFF, 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A40_0000};
 
     localparam logic [ADDR_WIDTH-1:0] TCDM_START_ADDR = {32'h1C01_0000}; // Start of L2 interleaved
     localparam logic [ADDR_WIDTH-1:0] TCDM_END_ADDR   = {32'h1C08_2000}; // END of L2 interleaved
@@ -485,10 +543,17 @@ module soc_interconnect #(
     // Full COnnectivity (Full crossbar)
     // out channels: 2 channels APB32 and AXI32
     // in channels:  2 from FC( fc_data, debug_in) + 4 (AXI --> 2 for read, 2 for write)
+    // N_PERIPHS meaning
+    // 0 -> APB
+    // 1 -> AXI to cluster (AXIX_Master)
+    // 2 -> ROM
+    // 3 -> PRI0 (private mem bank)
+    // 4 -> PRI1 (private mem bank)
+    // 5 -> AXI to external (AXI_Master2)
     XBAR_BRIDGE #(
         .N_CH0             ( N_CH0_BRIDGE                   ), // 2  --> Removed (FC_instr, udma_tx, udma_rx)
         .N_CH1             ( N_CH1_BRIDGE                   ), // 4  --> AXI64
-        .N_SLAVE           ( N_PERIPHS                      ),
+        .N_SLAVE           ( N_PERIPHS                      ), // hack in another axi connection
         .ID_WIDTH          ( PER_ID_WIDTH                   ),
 
         .AUX_WIDTH         ( AUX_WIDTH                      ),
@@ -737,7 +802,7 @@ module soc_interconnect #(
         .AUX_WIDTH        ( AUX_WIDTH         ),
         .AXI_ID_WIDTH     ( AXI_32_ID_WIDTH   ),
         .REGISTERED_GRANT ( "FALSE"           )  // "TRUE"|"FALSE"
-    ) i_lint_2_axi (
+    ) i_lint_2_cluster_axi (
         // Clock and Reset
         .clk_i         ( clk                            ),
         .rst_ni        ( rst_n                          ),
@@ -816,6 +881,98 @@ module soc_interconnect #(
         .r_user_i      ( AXI_Master_r_user_i            ),
         .r_valid_i     ( AXI_Master_r_valid_i           ),
         .r_ready_o     ( AXI_Master_r_ready_o           )
+        // ---------------------------------------------------------
+    );
+
+    // hacked in axi port for going off ip
+    lint_2_axi #(
+        .ADDR_WIDTH       ( ADDR_WIDTH        ),
+        .DATA_WIDTH       ( DATA_WIDTH        ),
+        .BE_WIDTH         ( BE_WIDTH          ),
+        .ID_WIDTH         ( PER_ID_WIDTH      ),
+        .USER_WIDTH       ( AXI_32_USER_WIDTH ),
+        .AUX_WIDTH        ( AUX_WIDTH         ),
+        .AXI_ID_WIDTH     ( AXI_32_ID_WIDTH   ),
+        .REGISTERED_GRANT ( "FALSE"           )  // "TRUE"|"FALSE"
+    ) i_lint_2_external_axi (
+        // Clock and Reset
+        .clk_i         ( clk                            ),
+        .rst_ni        ( rst_n                          ),
+
+        .data_req_i    ( PER_data_req_TO_BRIDGE    [N_PERIPHS-1]  ), // last index is our new axi master port
+        .data_addr_i   ( PER_data_add_TO_BRIDGE    [N_PERIPHS-1]  ),
+        .data_we_i     ( ~PER_data_wen_TO_BRIDGE   [N_PERIPHS-1]  ),
+        .data_wdata_i  ( PER_data_wdata_TO_BRIDGE  [N_PERIPHS-1]  ),
+        .data_be_i     ( PER_data_be_TO_BRIDGE     [N_PERIPHS-1]  ),
+        .data_aux_i    ( PER_data_aux_TO_BRIDGE    [N_PERIPHS-1]  ),
+        .data_ID_i     ( PER_data_ID_TO_BRIDGE     [N_PERIPHS-1]  ),
+        .data_gnt_o    ( PER_data_gnt_TO_BRIDGE    [N_PERIPHS-1]  ),
+
+        .data_rvalid_o ( PER_data_r_valid_TO_BRIDGE [N_PERIPHS-1] ),
+        .data_rdata_o  ( PER_data_r_rdata_TO_BRIDGE [N_PERIPHS-1] ),
+        .data_ropc_o   ( PER_data_r_opc_TO_BRIDGE   [N_PERIPHS-1] ),
+        .data_raux_o   ( PER_data_r_aux_TO_BRIDGE   [N_PERIPHS-1] ),
+        .data_rID_o    ( PER_data_r_ID_TO_BRIDGE    [N_PERIPHS-1] ),
+        // ---------------------------------------------------------
+        // AXI TARG Port Declarations ------------------------------
+        // ---------------------------------------------------------
+        //AXI write address bus -------------- // USED// -----------
+        .aw_id_o       ( AXI_Master2_aw_id_o             ),
+        .aw_addr_o     ( AXI_Master2_aw_addr_o           ),
+        .aw_len_o      ( AXI_Master2_aw_len_o            ),
+        .aw_size_o     ( AXI_Master2_aw_size_o           ),
+        .aw_burst_o    ( AXI_Master2_aw_burst_o          ),
+        .aw_lock_o     ( AXI_Master2_aw_lock_o           ),
+        .aw_cache_o    ( AXI_Master2_aw_cache_o          ),
+        .aw_prot_o     ( AXI_Master2_aw_prot_o           ),
+        .aw_region_o   ( AXI_Master2_aw_region_o         ),
+        .aw_user_o     ( AXI_Master2_aw_user_o           ),
+        .aw_qos_o      ( AXI_Master2_aw_qos_o            ),
+        .aw_valid_o    ( AXI_Master2_aw_valid_o          ),
+        .aw_ready_i    ( AXI_Master2_aw_ready_i          ),
+        // ---------------------------------------------------------
+
+        //AXI write data bus -------------- // USED// --------------
+        .w_data_o      ( AXI_Master2_w_data_o            ),
+        .w_strb_o      ( AXI_Master2_w_strb_o            ),
+        .w_last_o      ( AXI_Master2_w_last_o            ),
+        .w_user_o      ( AXI_Master2_w_user_o            ),
+        .w_valid_o     ( AXI_Master2_w_valid_o           ),
+        .w_ready_i     ( AXI_Master2_w_ready_i           ),
+        // ---------------------------------------------------------
+
+        //AXI write response bus -------------- // USED// ----------
+        .b_id_i        ( AXI_Master2_b_id_i              ),
+        .b_resp_i      ( AXI_Master2_b_resp_i            ),
+        .b_valid_i     ( AXI_Master2_b_valid_i           ),
+        .b_user_i      ( AXI_Master2_b_user_i            ),
+        .b_ready_o     ( AXI_Master2_b_ready_o           ),
+        // ---------------------------------------------------------
+
+        //AXI read address bus -------------------------------------
+        .ar_id_o       ( AXI_Master2_ar_id_o             ),
+        .ar_addr_o     ( AXI_Master2_ar_addr_o           ),
+        .ar_len_o      ( AXI_Master2_ar_len_o            ),
+        .ar_size_o     ( AXI_Master2_ar_size_o           ),
+        .ar_burst_o    ( AXI_Master2_ar_burst_o          ),
+        .ar_lock_o     ( AXI_Master2_ar_lock_o           ),
+        .ar_cache_o    ( AXI_Master2_ar_cache_o          ),
+        .ar_prot_o     ( AXI_Master2_ar_prot_o           ),
+        .ar_region_o   ( AXI_Master2_ar_region_o         ),
+        .ar_user_o     ( AXI_Master2_ar_user_o           ),
+        .ar_qos_o      ( AXI_Master2_ar_qos_o            ),
+        .ar_valid_o    ( AXI_Master2_ar_valid_o          ),
+        .ar_ready_i    ( AXI_Master2_ar_ready_i          ),
+        // ---------------------------------------------------------
+
+        //AXI read data bus ----------------------------------------
+        .r_id_i        ( AXI_Master2_r_id_i              ),
+        .r_data_i      ( AXI_Master2_r_data_i            ),
+        .r_resp_i      ( AXI_Master2_r_resp_i            ),
+        .r_last_i      ( AXI_Master2_r_last_i            ),
+        .r_user_i      ( AXI_Master2_r_user_i            ),
+        .r_valid_i     ( AXI_Master2_r_valid_i           ),
+        .r_ready_o     ( AXI_Master2_r_ready_o           )
         // ---------------------------------------------------------
     );
 
