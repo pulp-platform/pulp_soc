@@ -281,8 +281,11 @@ module pulp_soc import dm::*; #(
     localparam int unsigned AXI_SOC_NODE_AW = 32;
     localparam int unsigned AXI_SOC_NODE_DW = 64;
     localparam int unsigned AXI_SOC_NODE_UW = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_INP = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_OUP = soc_node_pkg::axi_iw_oup(AXI_SOC_NODE_IW_INP);
+    localparam int unsigned AXI_SOC_NODE_IW_INP_EXT = 6;
+    localparam int unsigned AXI_SOC_NODE_IW_OUP_EXT = soc_node_pkg::axi_iw_oup_ext(AXI_SOC_NODE_IW_INP_EXT);
+    localparam int unsigned AXI_SOC_NODE_IW_INP_SOC = 6;
+    localparam int unsigned AXI_SOC_NODE_IW_OUP_SOC = soc_node_pkg::axi_iw_oup_soc(AXI_SOC_NODE_IW_INP_SOC);
+
 
     //  PULP RISC-V cores have not continguos MHARTID.
     //  This leads to set the number of HARTS >= the maximum value of the MHARTID.
@@ -455,7 +458,7 @@ module pulp_soc import dm::*; #(
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH      ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH   ),
-        .AXI_ID_WIDTH   ( AXI_SOC_NODE_IW_OUP ),
+        .AXI_ID_WIDTH   ( AXI_SOC_NODE_IW_OUP_EXT ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
     ) soc_in_mst ();
 
@@ -464,7 +467,7 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_soc_to_external ();
+    ) soc_to_external ();
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
@@ -586,8 +589,8 @@ module pulp_soc import dm::*; #(
 
     soc_node #(
         // Parameters
-        .AXI_ID_INP_WIDTH_SOC    (AXI_SOC_NODE_IW_INP),
-        .AXI_ID_OUP_WIDTH_SOC    (AXI_SOC_NODE_IW_OUP),
+        .AXI_ID_INP_WIDTH_SOC    (AXI_SOC_NODE_IW_INP_EXT),
+        .AXI_ID_OUP_WIDTH_SOC    (AXI_SOC_NODE_IW_OUP_EXT),
         .AXI_USER_WIDTH_SOC      (AXI_USER_WIDTH),
         .AXI_STRB_WIDTH_SOC      (AXI_DATA_IN_WIDTH/8),
         .AXI_ADDR_WIDTH_SOC      (AXI_ADDR_WIDTH),
@@ -625,13 +628,14 @@ module pulp_soc import dm::*; #(
         .AXI_AW                  (AXI_SOC_NODE_AW),
         .AXI_DW                  (AXI_SOC_NODE_DW),
         .AXI_UW                  (AXI_SOC_NODE_UW),
-        .AXI_IW_INP              (AXI_SOC_NODE_IW_INP), // cluster -> soc id width
+        .AXI_IW_INP_EXT          (AXI_SOC_NODE_IW_INP_EXT), // cluster, ext -> soc id width
+        .AXI_IW_INP_SOC          (AXI_SOC_NODE_IW_INP_SOC), // soc -> ext id width
         .MST_SLICE_DEPTH         (1),
         .SLV_SLICE_DEPTH         (1)
     ) i_soc_node (
         // Interfaces
         .cl_slv          (s_data_in_bus),
-        .soc_slv         (s_soc_to_external),
+        .soc_slv         (soc_to_external),
         .soc_mst         (soc_in_mst),
         .c07_slv         (axi_c07_slv),
         .c07_mst         (axi_c07_mst),
@@ -951,7 +955,7 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
         .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
         .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_SOC_NODE_IW_OUP   )
+        .AXI_ID_WIDTH       ( AXI_SOC_NODE_IW_OUP_EXT )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rstn_i           ( s_soc_rstn          ),
@@ -965,7 +969,7 @@ module pulp_soc import dm::*; #(
 
         .axi_from_cluster ( soc_in_mst          ),
         .axi_to_cluster   ( s_data_out_bus      ),
-        .axi_to_external  ( s_soc_to_external   ),
+        .axi_to_external  ( soc_to_external     ),
 
         .apb_periph_bus   ( s_apb_periph_bus    ),
         .mem_l2_bus       ( s_mem_l2_bus        ),
