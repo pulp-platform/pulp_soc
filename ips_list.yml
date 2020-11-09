@@ -63,7 +63,7 @@ timer_unit:
   commit: v1.0.2
   domain: [cluster, soc]
 fpnew:
-  commit: bump-common-cells
+  commit: v0.6.5
   domain: [cluster, soc]
 jtag_pulp:
   commit: v0.1
