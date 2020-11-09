@@ -41,7 +41,7 @@ THE SOFTWARE.
 /*
  * AXI4 RAM
  */
-module axi_ram #
+module axi_verif_ram #
 (
     // Width of data bus in bits
     parameter DATA_WIDTH = 32,
@@ -383,7 +383,7 @@ endmodule
 
 
 // axi interface wrapper for test ram
-module axi_test_ram #(
+module axi_verif_ram_intf #(
     // for the axi sv interface
     parameter int unsigned AXI_ID_WIDTH = 8,
     parameter int unsigned AXI_ADDR_WIDTH = 32,
@@ -396,12 +396,12 @@ module axi_test_ram #(
 );
     localparam int unsigned AXI_EXAMPLE_RAM_SIZE = 12;
 
-    axi_ram #(
+    axi_verif_ram #(
         .DATA_WIDTH(AXI_DATA_WIDTH),
         .ADDR_WIDTH(AXI_EXAMPLE_RAM_SIZE),
         .STRB_WIDTH(AXI_DATA_WIDTH/8),
         .ID_WIDTH(AXI_ID_WIDTH)
-    ) i_axi_ram (
+    ) i_axi_verif_ram (
         .clk (clk_i),
         .rst (~rst_ni),
 

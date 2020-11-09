@@ -977,20 +977,7 @@ module pulp_soc import dm::*; #(
         .mem_rom_bus      ( s_mem_rom_bus       )
     );
 
-    // // test axi connection via software
-    // axi_test_ram #(
-    //     .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-    //     .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-    //     .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-    //     .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    // ) i_axi_test_ram (
-    //     .clk_i      ( s_soc_clk         ),
-    //     .rst_ni     ( s_soc_rstn        ),
-    //     .axi_master ( s_soc_to_external )
-    // );
-
-    /* Debug Subsystem */
-
+    // Debug Subsystem
     dmi_jtag #(
         .IdcodeValue          ( `DMI_JTAG_IDCODE    )
     ) i_dmi_jtag (
