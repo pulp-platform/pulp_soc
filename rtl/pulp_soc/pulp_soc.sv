@@ -689,7 +689,7 @@ module pulp_soc import dm::*; #(
         .cluster_boot_addr_o    ( cluster_boot_addr_o    ),
         .cluster_fetch_enable_o ( cluster_fetch_enable_o ),
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
-        .cluster_irq_o          ( cluster_irq_o          ),
+        .cluster_irq_o          ( cluster_irq_o          )
 
     );
 
