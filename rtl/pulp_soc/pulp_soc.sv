@@ -219,6 +219,17 @@ module pulp_soc import dm::*; #(
     input  logic                    [3:0] sdio_data_i,
     output logic                    [3:0] sdio_data_oen_o,
 
+    output logic                    [1:0] hyper_cs_no,
+    output logic                          hyper_ck_o,
+    output logic                          hyper_ck_no,
+    output logic                    [1:0] hyper_rwds_o,
+    input  logic                          hyper_rwds_i,
+    output logic                    [1:0] hyper_rwds_oe_o,
+    input  logic                   [15:0] hyper_dq_i,
+    output logic                   [15:0] hyper_dq_o,
+    output logic                    [1:0] hyper_dq_oe_o,
+    output logic                          hyper_reset_no,
+
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
@@ -648,6 +659,18 @@ module pulp_soc import dm::*; #(
         .sddata_i               ( sdio_data_i            ),
         .sddata_oen_o           ( sdio_data_oen_o        ),
 
+        //Hyper Bus
+        .hyper_cs_no            ( hyper_cs_no            ),
+        .hyper_ck_o             ( hyper_ck_o             ),
+        .hyper_ck_no            ( hyper_ck_no            ),
+        .hyper_rwds_o           ( hyper_rwds_o           ),
+        .hyper_rwds_i           ( hyper_rwds_i           ),
+        .hyper_rwds_oe_o        ( hyper_rwds_oe_o        ),
+        .hyper_dq_i             ( hyper_dq_i             ),
+        .hyper_dq_o             ( hyper_dq_o             ),
+        .hyper_dq_oe_o          ( hyper_dq_oe_o          ),
+        .hyper_reset_no         ( hyper_reset_no         ),
+
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
         .timer_ch2_o            ( timer_ch2_o            ),
@@ -666,7 +689,8 @@ module pulp_soc import dm::*; #(
         .cluster_boot_addr_o    ( cluster_boot_addr_o    ),
         .cluster_fetch_enable_o ( cluster_fetch_enable_o ),
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
-        .cluster_irq_o          ( cluster_irq_o          )
+        .cluster_irq_o          ( cluster_irq_o          ),
+
     );
 
 
