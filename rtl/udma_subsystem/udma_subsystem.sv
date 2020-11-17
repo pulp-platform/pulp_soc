@@ -17,7 +17,8 @@ module udma_subsystem
     parameter TRANS_SIZE     = 20,  //max uDMA transaction size of 1MB
     parameter N_SPI          = 4,
     parameter N_UART         = 4,
-    parameter N_I2C          = 1
+    parameter N_I2C          = 1,
+    parameter N_HYPER        = 1 
 )
 (
     output logic                       L2_ro_wen_o    ,
@@ -61,12 +62,14 @@ module udma_subsystem
     input  logic                [7:0] event_data_i,
     output logic                      event_ready_o,
 
+    // SPIM
     output logic     [N_SPI-1:0]       spi_clk,
     output logic     [N_SPI-1:0] [3:0] spi_csn,
     output logic     [N_SPI-1:0] [3:0] spi_oen,
     output logic     [N_SPI-1:0] [3:0] spi_sdo,
     input  logic     [N_SPI-1:0] [3:0] spi_sdi,
 
+    // I2C
     input  logic           [N_I2C-1:0] i2c_scl_i,
     output logic           [N_I2C-1:0] i2c_scl_o,
     output logic           [N_I2C-1:0] i2c_scl_oe,
@@ -74,14 +77,17 @@ module udma_subsystem
     output logic           [N_I2C-1:0] i2c_sda_o,
     output logic           [N_I2C-1:0] i2c_sda_oe,
 
+    // CAM
     input  logic                       cam_clk_i,
     input  logic  [CAM_DATA_WIDTH-1:0] cam_data_i,
     input  logic                       cam_hsync_i,
     input  logic                       cam_vsync_i,
 
+    // UART
     input  logic          [N_UART-1:0] uart_rx_i,
     output logic          [N_UART-1:0] uart_tx_o,
 
+    // SDIO
     output logic                       sdio_clk_o,
     output logic                       sdio_cmd_o,
     input  logic                       sdio_cmd_i,
@@ -89,7 +95,8 @@ module udma_subsystem
     output logic                 [3:0] sdio_data_o,
     input  logic                 [3:0] sdio_data_i,
     output logic                 [3:0] sdio_data_oen_o,
-
+    
+    // I2S
     input  logic                       i2s_slave_sd0_i,
     input  logic                       i2s_slave_sd1_i,
     input  logic                       i2s_slave_ws_i,
@@ -97,7 +104,20 @@ module udma_subsystem
     output logic                       i2s_slave_ws_oe,
     input  logic                       i2s_slave_sck_i,
     output logic                       i2s_slave_sck_o,
-    output logic                       i2s_slave_sck_oe
+    output logic                       i2s_slave_sck_oe,
+
+    // HYPERBUS
+    output logic [1:0]                 hyper_cs_no,
+    output logic                       hyper_ck_o,
+    output logic                       hyper_ck_no,
+    output logic [1:0]                 hyper_rwds_o,
+    input  logic                       hyper_rwds_i,
+    output logic [1:0]                 hyper_rwds_oe_o,
+    input  logic [15:0]                hyper_dq_i,
+    output logic [15:0]                hyper_dq_o,
+    output logic [1:0]                 hyper_dq_oe_o,
+    output logic                       hyper_reset_no
+
 );
 
     localparam DEST_SIZE = 2;
@@ -107,11 +127,12 @@ module udma_subsystem
     localparam N_I2S     = 1;
     localparam N_CAM     = 1;
     localparam N_CSI2    = 0;
-    localparam N_HYPER   = 0;
+    //localparam N_HYPER   = 0;
     localparam N_SDIO    = 1;
     localparam N_JTAG    = 0;
     localparam N_MRAM    = 0;
     localparam N_FILTER  = 1;
+    localparam N_CH_HYPER        = 8;
     localparam N_FPGA    = 0;
 `ifdef PULP_TRAINING
     localparam N_EXT_PER = 1;
@@ -119,48 +140,58 @@ module udma_subsystem
     localparam N_EXT_PER = 0;
 `endif
 
-    localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER;
-    localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_FPGA + N_EXT_PER;
+    localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER + N_CH_HYPER;
+    localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_FPGA + N_EXT_PER + N_CH_HYPER;
 
     localparam N_RX_EXT_CHANNELS =   N_FILTER;
     localparam N_TX_EXT_CHANNELS = 2*N_FILTER;
     localparam N_STREAMS         =   N_FILTER;
     localparam STREAM_ID_WIDTH   = 1;//$clog2(N_STREAMS)
 
-    localparam N_PERIPHS = N_SPI + N_HYPER + N_UART + N_MRAM + N_I2C + N_CAM + N_I2S + N_CSI2 + N_SDIO + N_JTAG + N_FILTER + N_FPGA + N_EXT_PER;
+    localparam N_PERIPHS = N_SPI + N_HYPER + N_UART + N_MRAM + N_I2C + N_CAM + N_I2S + N_CSI2 + N_SDIO + N_JTAG + N_FILTER + N_FPGA + N_EXT_PER + N_CH_HYPER;
 
-    //TX Channels
+    // TX Channels
     localparam CH_ID_TX_UART    = 0;
     localparam CH_ID_TX_SPIM    = N_UART;
-    localparam CH_ID_CMD_SPIM   = N_SPI + N_UART;
-    localparam CH_ID_TX_I2C     = N_SPI*2+ + N_UART;
-    localparam CH_ID_TX_SDIO    = N_SPI*2+N_UART+N_I2C;
-    localparam CH_ID_TX_I2S     = CH_ID_TX_SDIO+1;
-    localparam CH_ID_TX_EXT_PER = CH_ID_TX_I2S+1;
+    localparam CH_ID_CMD_SPIM   = CH_ID_TX_SPIM  + N_SPI  ;
+    localparam CH_ID_TX_I2C     = CH_ID_CMD_SPIM + N_SPI  ;
+    localparam CH_ID_TX_SDIO    = CH_ID_TX_I2C   + N_I2C  ;
+    localparam CH_ID_TX_I2S     = CH_ID_TX_SDIO  + N_SDIO ;
+    localparam CH_ID_TX_CAM     = CH_ID_TX_I2S   + N_I2S  ;
+    localparam CH_ID_TX_HYPER   = CH_ID_TX_CAM   + N_CAM  ;
+    // Tx Ext Channel
+    localparam CH_ID_TX_EXT_PER = CH_ID_TX_HYPER + N_HYPER + N_CH_HYPER;
+ 
 
-    //RX Channels
+    // RX Channels
     localparam CH_ID_RX_UART    = 0;
     localparam CH_ID_RX_SPIM    = N_UART;
-    localparam CH_ID_RX_I2C     = N_SPI+N_UART;
-    localparam CH_ID_RX_SDIO    = N_SPI+N_UART+N_I2C;
-    localparam CH_ID_RX_I2S     = CH_ID_RX_SDIO+1;
-    localparam CH_ID_RX_CAM     = CH_ID_RX_I2S+1;
-    localparam CH_ID_RX_EXT_PER = CH_ID_RX_CAM+1;
+    localparam CH_ID_RX_I2C     = CH_ID_RX_SPIM  + N_SPI  ;
+    localparam CH_ID_RX_SDIO    = CH_ID_RX_I2C   + N_I2C  ;
+    localparam CH_ID_RX_I2S     = CH_ID_RX_SDIO  + N_SDIO ;
+    localparam CH_ID_RX_CAM     = CH_ID_RX_I2S   + N_I2S  ;
+    localparam CH_ID_RX_HYPER   = CH_ID_RX_CAM   + N_CAM  ;
+    // Rx Ext Channel
+    localparam CH_ID_RX_EXT_PER = CH_ID_RX_HYPER + N_HYPER + N_CH_HYPER;
 
-    localparam PER_ID_UART    = 0;                  //0
-    localparam PER_ID_SPIM    = PER_ID_UART +1;     //1
-    localparam PER_ID_I2C     = N_SPI+N_UART;       //2, 3
-    localparam PER_ID_SDIO    = N_SPI+N_UART+N_I2C; //4
-    localparam PER_ID_I2S     = PER_ID_SDIO+1;      //5
-    localparam PER_ID_CAM     = PER_ID_I2S+1;       //6
-    localparam PER_ID_FILTER  = PER_ID_CAM+1;       //7
-    localparam PER_ID_EXT_PER = PER_ID_FILTER+1;    //8
-
+    // Stream Channel
+    localparam STREAM_ID_FILTER = 0;
 
     localparam CH_ID_EXT_TX_FILTER = 0;
     localparam CH_ID_EXT_RX_FILTER = 0;
 
-    localparam STREAM_ID_FILTER = 0;
+    localparam PER_ID_UART    = 0;                  //0
+    localparam PER_ID_SPIM    = PER_ID_UART   + N_UART   ;     //1
+    localparam PER_ID_I2C     = PER_ID_SPIM   + N_SPI    ;       //2, 3
+    localparam PER_ID_SDIO    = PER_ID_I2C    + N_I2C    ; //4
+    localparam PER_ID_I2S     = PER_ID_SDIO   + N_SDIO   ;      //5
+    localparam PER_ID_CAM     = PER_ID_I2S    + N_I2S    ;       //6
+    localparam PER_ID_FILTER  = PER_ID_CAM    + N_CAM    ;       //7
+    localparam PER_ID_HYPER   = PER_ID_FILTER + N_FILTER ;
+    localparam PER_ID_EXT_PER = PER_ID_HYPER  + N_HYPER  + N_CH_HYPER;    //8
+
+
+    
 
     logic [N_TX_CHANNELS-1:0] [L2_AWIDTH_NOAL-1 : 0] s_tx_cfg_startaddr;
     logic [N_TX_CHANNELS-1:0]     [TRANS_SIZE-1 : 0] s_tx_cfg_size;
@@ -254,6 +285,10 @@ module udma_subsystem
     logic s_filter_eot_evt;
     logic s_filter_act_evt;
 
+
+    logic s_hyper_sys_clk;
+    logic s_hyper_periph_clk;
+    logic [N_CH_HYPER-1:0] s_evt_eot_hyper;
 
     integer i;
 
@@ -907,8 +942,90 @@ module udma_subsystem
         .filter_ready_o           ( s_stream_ready[STREAM_ID_FILTER]    )
     );
 
+
+
+    assign s_hyper_sys_clk = |s_clk_periphs_core[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER];
+    assign s_hyper_periph_clk = |s_clk_periphs_per[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER];
+
+    //PER_ID 9
+    assign s_events[4*PER_ID_HYPER]            = s_rx_ch_events[CH_ID_RX_HYPER];
+    assign s_events[4*PER_ID_HYPER+1]          = s_tx_ch_events[CH_ID_TX_HYPER];
+    assign s_events[4*PER_ID_HYPER+2]          = 1'b0;
+    assign s_events[4*PER_ID_HYPER+3]          = |s_evt_eot_hyper;
+
+    assign s_rx_cfg_stream[CH_ID_RX_HYPER]     = 'h0;
+    assign s_rx_cfg_stream_id[CH_ID_RX_HYPER]  = 'h0;
+    assign s_rx_ch_destination[CH_ID_RX_HYPER] = 'h0;
+    assign s_tx_ch_destination[CH_ID_TX_HYPER] = 'h0;
+
+    udma_hyper_top #(
+      .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
+      .TRANS_SIZE(TRANS_SIZE),
+      .N_CH_HYPER(N_CH_HYPER)
+    ) i_hyper (
+        .sys_clk_i           ( s_clk_periphs_core[PER_ID_HYPER]                     ),
+        .periph_clk_i        ( s_clk_periphs_per[PER_ID_HYPER]                      ),
+        .rstn_i              ( sys_resetn_i                                         ),
+
+        .cfg_data_i          ( s_periph_data_to                                     ),
+        .cfg_addr_i          ( s_periph_addr                                        ),
+        .cfg_valid_i         ( s_periph_valid[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER]    ),
+        .cfg_rwn_i           ( s_periph_rwn                                         ),
+        .cfg_ready_o         ( s_periph_ready[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER]    ),
+        .cfg_data_o          ( s_periph_data_from[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER]),
+
+        .cfg_rx_startaddr_o  ( s_rx_cfg_startaddr[CH_ID_RX_HYPER]                   ),
+        .cfg_rx_size_o       ( s_rx_cfg_size[CH_ID_RX_HYPER]                        ),
+        .cfg_rx_continuous_o ( s_rx_cfg_continuous[CH_ID_RX_HYPER]                  ),
+        .cfg_rx_en_o         ( s_rx_cfg_en[CH_ID_RX_HYPER]                          ),
+        .cfg_rx_clr_o        ( s_rx_cfg_clr[CH_ID_RX_HYPER]                         ),
+        .cfg_rx_en_i         ( s_rx_ch_en[CH_ID_RX_HYPER]                           ),
+        .cfg_rx_pending_i    ( s_rx_ch_pending[CH_ID_RX_HYPER]                      ),
+        .cfg_rx_curr_addr_i  ( s_rx_ch_curr_addr[CH_ID_RX_HYPER]                    ),
+        .cfg_rx_bytes_left_i ( s_rx_ch_bytes_left[CH_ID_RX_HYPER]                   ),
+
+        .cfg_tx_startaddr_o  ( s_tx_cfg_startaddr[CH_ID_TX_HYPER]                   ),
+        .cfg_tx_size_o       ( s_tx_cfg_size[CH_ID_TX_HYPER]                        ),
+        .cfg_tx_continuous_o ( s_tx_cfg_continuous[CH_ID_TX_HYPER]                  ),
+        .cfg_tx_en_o         ( s_tx_cfg_en[CH_ID_TX_HYPER]                          ),
+        .cfg_tx_clr_o        ( s_tx_cfg_clr[CH_ID_TX_HYPER]                         ),
+        .cfg_tx_en_i         ( s_tx_ch_en[CH_ID_TX_HYPER]                           ),
+        .cfg_tx_pending_i    ( s_tx_ch_pending[CH_ID_TX_HYPER]                      ),
+        .cfg_tx_curr_addr_i  ( s_tx_ch_curr_addr[CH_ID_TX_HYPER]                    ),
+        .cfg_tx_bytes_left_i ( s_tx_ch_bytes_left[CH_ID_TX_HYPER]                   ),
+        .evt_eot_hyper_o     ( s_evt_eot_hyper                                      ),
+
+        .data_tx_req_o       ( s_tx_ch_req[CH_ID_TX_HYPER]                          ),
+        .data_tx_gnt_i       ( s_tx_ch_gnt[CH_ID_TX_HYPER]                          ),
+        .data_tx_datasize_o  ( s_tx_ch_datasize[CH_ID_TX_HYPER]                     ),
+        .data_tx_i           ( s_tx_ch_data[CH_ID_TX_HYPER]                         ),
+        .data_tx_valid_i     ( s_tx_ch_valid[CH_ID_TX_HYPER]                        ),
+        .data_tx_ready_o     ( s_tx_ch_ready[CH_ID_TX_HYPER]                        ),
+
+        .data_rx_datasize_o  ( s_rx_ch_datasize[CH_ID_RX_HYPER]                     ),
+        .data_rx_o           ( s_rx_ch_data[CH_ID_RX_HYPER]                         ),
+        .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_HYPER]                        ),
+        .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_HYPER]                        ),
+
+         //////////////TO/FROM EXTERNAL OF THE CHIP///////////////////////////
+        .hyper_cs_no             ( hyper_cs_no                                      ),
+        .hyper_ck_o              ( hyper_ck_o                                       ),
+        .hyper_ck_no             ( hyper_ck_no                                      ),
+        .hyper_rwds_o            ( hyper_rwds_o                                     ),
+        .hyper_rwds_i            ( hyper_rwds_i                                     ),
+        .hyper_rwds_oe_o         ( hyper_rwds_oe_o                                  ),
+        .hyper_dq_i              ( hyper_dq_i                                       ),
+        .hyper_dq_o              ( hyper_dq_o                                       ),
+        .hyper_dq_oe_o           ( hyper_dq_oe_o                                    ),
+        .hyper_reset_no          ( hyper_reset_no                                   )
+        //.debug_hyper_rwds_oe_o   ( debug_hyper_rwds_oe_o                            ),
+        //.debug_hyper_dq_oe_o     ( debug_hyper_dq_oe_o                              ),
+        //.debug_hyper_phy_state_o ( debug_hyper_phy_state_o                          )
+    );
+
+
 `ifdef PULP_TRAINING
-    //PER_ID 8
+    //PER_ID 9
     assign s_events[4*PER_ID_EXT_PER]            = s_rx_ch_events[CH_ID_RX_EXT_PER];
     assign s_events[4*PER_ID_EXT_PER+1]          = s_tx_ch_events[CH_ID_TX_EXT_PER];
     assign s_events[4*PER_ID_EXT_PER+2]          = 1'b0;

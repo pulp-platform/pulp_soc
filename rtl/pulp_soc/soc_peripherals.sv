@@ -23,7 +23,8 @@ module soc_peripherals #(
     parameter NBIT_PADMUX    = 2,
     parameter N_UART         = 1,
     parameter N_SPI          = 1,
-    parameter N_I2C          = 2
+    parameter N_I2C          = 2,
+    parameter N_HYPER        = 5
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
@@ -138,6 +139,18 @@ module soc_peripherals #(
     output logic                 [3:0] sddata_o,
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
+
+    // HYPERBUS
+    output logic [1:0]                 hyper_cs_no,
+    output logic                       hyper_ck_o,
+    output logic                       hyper_ck_no,
+    output logic [1:0]                 hyper_rwds_o,
+    input  logic                       hyper_rwds_i,
+    output logic [1:0]                 hyper_rwds_oe_o,
+    input  logic [15:0]                hyper_dq_i,
+    output logic [15:0]                hyper_dq_o,
+    output logic [1:0]                 hyper_dq_oe_o,
+    output logic                       hyper_reset_no,
 
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
@@ -463,7 +476,19 @@ module soc_peripherals #(
         .i2c_scl_oe       ( i2c_scl_oe_o         ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe_o         )
+        .i2c_sda_oe       ( i2c_sda_oe_o         ),
+
+
+        .hyper_cs_no      ( hyper_cs_no          ),
+        .hyper_ck_o       ( hyper_ck_o           ),
+        .hyper_ck_no      ( hyper_ck_no          ),
+        .hyper_rwds_o     ( hyper_rwds_o         ),
+        .hyper_rwds_i     ( hyper_rwds_i         ),
+        .hyper_rwds_oe_o  ( hyper_rwds_oe_o      ),
+        .hyper_dq_i       ( hyper_dq_i           ),
+        .hyper_dq_o       ( hyper_dq_o           ),
+        .hyper_dq_oe_o    ( hyper_dq_oe_o        ),
+        .hyper_reset_no   ( hyper_reset_no       )
 
     );
 
