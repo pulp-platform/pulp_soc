@@ -961,7 +961,7 @@ module udma_subsystem
     udma_hyper_top #(
       .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
       .TRANS_SIZE(TRANS_SIZE),
-      .N_CH_HYPER(N_CH_HYPER)
+      .NB_CH(N_CH_HYPER)
     ) i_hyper (
         .sys_clk_i           ( s_clk_periphs_core[PER_ID_HYPER]                     ),
         .periph_clk_i        ( s_clk_periphs_per[PER_ID_HYPER]                      ),
