@@ -117,3 +117,6 @@ hwpe-mac-engine:
 riscv-dbg:
   commit: v0.2
   domain: [soc]
+register_interface:
+  commit: add_ipapprox
+  domain: [soc]
