@@ -90,3 +90,18 @@ components_behav:
   flags: [
     skip_synthesis,
   ]
+
+wide_alu:
+  targets:
+    - rtl
+  incdirs:
+    - ../ibex/shared/rtl
+    - ../register_interface/include
+  files:
+    - rtl/wide_alu_deaccelerator/gen_sv/wide_alu_reg_pkg.sv
+    - rtl/wide_alu_deaccelerator/gen_sv/wide_alu_reg_top.sv
+    - rtl/wide_alu_deaccelerator/wide_alu_pkg.sv
+    - rtl/wide_alu_deaccelerator/wide_alu.sv
+    - rtl/wide_alu_deaccelerator/wide_alu_top.sv
+  vlog_opts:
+    - -L register_interface_lib

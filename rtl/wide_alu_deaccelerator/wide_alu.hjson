@@ -1,0 +1,101 @@
+{
+    name: "wide_alu",
+    clock_primary: "clk_i",
+    reset_primary: "rst_ni",
+    bus_device: "reg",
+    bus_host: "",
+
+    regwidth: "32",
+    registers: [
+        { multireg:
+          { name: "OP_A",
+            desc: "Subword of Operand A.",
+            count: "8",
+            cname: "OP_A",
+            swaccess: "wo",
+            fields: [
+                { bits: "31:0"
+                }
+            ],
+          }
+        },
+        { multireg:
+          { name: "OP_B",
+            desc: "Subword of Operand B.",
+            count: "8",
+            cname: "OP_B",
+            swaccess: "wo",
+            fields: [
+                { bits: "31:0"
+                }
+            ],
+          }
+        },
+        { multireg:
+          { name: "RESULT",
+            desc: "Subword of results.",
+            count: "16",
+            cname: "RESULT",
+            swaccess: "ro",
+            hwaccess: "hwo",
+            hwext: "true",
+            fields: [
+                { bits: "31:0"
+                }
+            ],
+          }
+        },
+        { name: "CTRL1",
+          desc: "Controls clear and trigger signal of the deaccelerator.",
+          swaccess: "wo",
+          hwaccess: "hro",
+          hwext: "true",
+          fields: [
+              { bits: "0", name: "TRIGGER",
+                desc: "Trigger operation on rising edge."
+              }
+              { bits: "1", name: "CLEAR_ERR",
+                desc: "Clear a pending ERROR in the deaccelerator."
+              }
+          ]
+        },
+        { name: "CTRL2",
+          desc: "Configures the operation and its delay within the deaccelerator.",
+          swaccess: "rw",
+          hwaccess: "hrw",
+          hwext: "true",
+          fields: [
+              { bits: "2:0", name: "OPSEL",
+                desc: "Select the operation to perform.",
+                enum: [
+                    { value: "0", name: "ADD", desc: "Perform add operation." },
+                    { value: "1", name: "SUB", desc: "Perform sub operation." },
+                    { value: "2", name: "MUL", desc: "Perform mul operation." },
+                    { value: "3", name: "XOR", desc: "Perform xor operation." },
+                    { value: "4", name: "AND", desc: "Perform and operation." },
+                    { value: "5", name: "OR", desc: "Perform or operation." },
+                ]
+              }
+              { bits: "23:16", name: "DELAY",
+                desc: "Configures the number of cycles the deaccelerator requires to finishe the operation. "
+              }
+          ]
+        },
+        { name: "STATUS",
+          desc: "Contains the current status of the Deaccelerator.",
+          swaccess: "ro",
+          hwaccess: "hwo",
+          hwext: "true",
+          fields: [
+              { bits: "1:0", name: "CODE",
+                desc: "The current status code of the accelerator.",
+                enum: [
+                    { value: "0", name: "IDLE", desc: "Accelerator is idle, results are avaialble for read."},
+                    { value: "1", name: "PENDING", desc: "Pending operation. Chaning configuration while pending results in an error."},
+                    { value: "2", name: "ERROR_WRITE", desc: "A configuration change was attempted during pending operation."},
+                    { value: "3", name: "ERROR_OPCODE", desc: "The accelerator was supplied with an unknown opcode."}
+                ]}
+          ]
+        }
+    ],
+}
