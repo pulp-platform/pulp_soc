@@ -19,16 +19,16 @@
 #
 
 L2_tcdm_hybrid_interco:
-  commit: pulpissimo-v1.0
+  commit: fa55e72859dcfb117a2788a77352193bef94ff2b
   domain: [soc]
 adv_dbg_if:
-  commit: v0.0.1
+  commit: v0.0.2
   domain: [cluster, soc]
 apb/apb2per:
-  commit: v0.0.1
+  commit: v0.1.0
   domain: [soc]
 apb/apb_adv_timer:
-  commit: v1.0.2
+  commit: v1.0.3
   domain: [soc]
 apb/apb_fll_if:
   commit: a1f67b624fe379d4d319c809656b672f0267cfc8
@@ -40,7 +40,7 @@ apb/apb_node:
   commit: v0.1.1
   domain: [soc]
 apb_interrupt_cntrl:
-  commit: v0.0.1
+  commit: v0.1.1
   domain: [soc]
 axi/axi:
   commit: v0.7.1
@@ -77,13 +77,13 @@ scm:
   commit: v1.0.1
   domain: [cluster, soc]
 generic_FLL:
-  commit: v0.1
+  commit: 1c92dc73a940392182fd4cb7b86f35649b349595
   domain: [soc]
 tech_cells_generic:
-  commit: v0.1.6
+  commit: v0.2.2
   domain: [cluster, soc]
 udma/udma_core:
-  commit: v1.0.0
+  commit: v1.0.1
   domain: [soc]
 udma/udma_uart:
   commit: v1.0.0
@@ -104,10 +104,10 @@ udma/udma_camera:
   commit: v1.0.0
   domain: [soc]
 udma/udma_filter:
-  commit: v1.0.0
+  commit: v1.0.1
   domain: [soc]
 udma/udma_external_per:
-  commit: v1.0.0
+  commit: v1.0.1
   domain: [soc]
 hwpe-mac-engine:
   commit: v1.2

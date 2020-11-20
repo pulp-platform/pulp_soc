@@ -8,42 +8,42 @@ package:
     - "Pirmin Vogel <vogelpi@lowrisc.org>"
     - "Stefan Mach <smach@iis.ee.ethz.ch>"
     - "Antonio Pullini <pullinia@iis.ee.ethz.ch>"
-    - "Gianmarco Ottavi <gianmarco.ottavi@studio.unibo.it>"
+    - "Gianmarco Ottavi <gianmarco.ottavi2@unibo.it>"
     - "Manuel Eggimann <meggiman@iis.ee.ethz.ch>"
     - "Luca Valente <luca.valente2@unibo.it>"
 
 dependencies:
   L2_tcdm_hybrid_interco: { git: "git@github.com:pulp-platform/L2_tcdm_hybrid_interco.git", rev: "fa55e72859dcfb117a2788a77352193bef94ff2b" }
-  adv_dbg_if: { git: "git@github.com:micprog/adv_dbg_if.git", rev: "310390ff278c4ca20bf73f7cbfa1da5cae442601" } # To be updated with pulp-platform dependency
-  apb2per: { git: "git@github.com:micprog/apb2per.git", rev: "66c49a191af7b2e19e3f6695affe6f21ae588fdb" } # To be updated with pulp-platform dependency
-  apb_adv_timer: { git: "git@github.com:micprog/apb_adv_timer.git", rev: "83846c3ece57610d4e6fc06538a6b00b903da6ae" } # To be updated with pulp-platform dependency
+  adv_dbg_if: { git: "git@github.com:pulp-platform/adv_dbg_if.git", version: 0.0.2 }
+  apb2per: { git: "git@github.com:pulp-platform/apb2per.git", version: 0.1.0 }
+  apb_adv_timer: { git: "git@github.com:pulp-platform/apb_adv_timer.git", version: 1.0.3 }
   apb_fll_if: { git: "git@github.com:pulp-platform/apb_fll_if.git", rev: "a1f67b624fe379d4d319c809656b672f0267cfc8" }
   apb_gpio: { git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0 }
   apb_node: { git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1 }
-  apb_interrupt_cntrl: { git: "git@github.com:micprog/apb_interrupt_cntrl.git", rev: "1490c893ead716b4a9022d9abd75a6c51d29eef0" } # To be updated with pulp-platform dependency
-  axi: { git: "git@github.com:pulp-platform/axi.git", version: 0.7.1 } # really old (now 0.24?)
+  apb_interrupt_cntrl: { git: "git@github.com:pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
+  axi: { git: "git@github.com:pulp-platform/axi.git", version: 0.7.1 } # outdated (now 0.24?)
   axi_node: { git: "git@github.com:pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
   axi_slice: { git: "git@github.com:pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
-  axi_slice_dc: {git: "git@github.com:pulp-platform/axi_slice_dc.git", version: 1.1.3 } # deprecated, replaced by axi_cdc (in axi repo)
-  timer_unit: {git: "git@github.com:pulp-platform/timer_unit.git", version: 1.0.2 }
-  common_cells: { git: "git@github.com:pulp-platform/common_cells.git", version: 1.13.1 }  # may only be a subrepo dependency?
+  axi_slice_dc: { git: "git@github.com:pulp-platform/axi_slice_dc.git", version: 1.1.3 } # deprecated, replaced by axi_cdc (in axi repo)
+  timer_unit: { git: "git@github.com:pulp-platform/timer_unit.git", version: 1.0.2 }
+  common_cells: { git: "git@github.com:pulp-platform/common_cells.git", version: 1.13.1 }
   fpnew: { git: "git@github.com:pulp-platform/fpnew.git", version: 0.6.4 }
   jtag_pulp: { git: "git@github.com:pulp-platform/jtag_pulp.git", rev: "v0.1" }
-  riscv: { git: "git@github.com:micprog/cv32e40p.git", rev: "29a838f6e2811b12220cb13bb02b37bd8ccd012f" } # { git: "git@github.com:pulp-platform/riscv.git", rev: "pulpissimo-v3.4.0" } # To be updated to CV32E40P? # To be updated with pulp-platform dependency
-  ibex: { git: "git@github.com:micprog/ibex", rev: "5480f422d8cd349fa5e3cc7c8a6bd2d7c7197bde" } # To be updated with lowrisc dependency
-  scm: { git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}  # may only be a subrepo dependency?
-  generic_FLL: { git: "git@github.com:micprog/generic_FLL.git", rev: "83ad61abaa096847a716c12a29b964a2753f6911" } # To be updated with pulp-platform dependency
-  tech_cells_generic: { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.1.6 }
-  udma_core: { git: "git@github.com:micprog/udma_core.git", rev: "203f457a979810aba6c64a1c7ddf3cdee87c9207" } # To be updated with pulp-platform dependency
-  udma_uart: { git: "git@github.com:micprog/udma_uart.git", rev: "1a351f7f952cc2ee84202e238137b728bb66af90" } # To be updated with pulp-platform dependency
-  udma_i2c: { git: "git@github.com:micprog/udma_i2c.git", rev: "415849d9b6da1ed219534b2b958d5df202fd12b0" } # To be updated with pulp-platform dependency
-  udma_i2s: { git: "git@github.com:micprog/udma_i2s.git", rev: "1b1737aafd379b5962f4ec017d840a8bf09d1eb5" } # To be updated with pulp-platform dependency
-  udma_qspi: { git: "git@github.com:micprog/udma_qspi.git", rev: "914ba30c696e545425a984d23bf4e6ae3c28b6d0" } # To be updated with pulp-platform dependency
-  udma_sdio: { git: "git@github.com:micprog/udma_sdio.git", rev: "1cf0759f1b1615af3f6b885e292d812a3f833e07" } # To be updated with pulp-platform dependency
-  udma_camera: { git: "git@github.com:micprog/udma_camera.git", rev: "5614808c96464bff2508fff8ae851081b800798a" } # To be updated with pulp-platform dependency
-  udma_filter: { git: "git@github.com:micprog/udma_filter.git", rev: "88600b8c806a7f4e3570647ad62a79288524b6ca" } # To be updated with pulp-platform dependency
-  udma_external_per: { git: "git@github.com:micprog/udma_external_per.git", rev: "c192226612a59b0fa61828f577b5d4f8031fd908" } # To be updated with pulp-platform dependency
-  hwpe-mac-engine: { git: "git@github.com:micprog/hwpe-mac-engine.git", rev: "d9a60d8ffee398c8d2c9745dcbec12fc7d29a008" } # To be updated with pulp-platform dependency
+  riscv: { git: "git@github.com:micprog/cv32e40p.git", rev: "pulpissimo-v3.4.1"} # To be updated to openhwgroup repository
+  ibex: { git: "git@github.com:micprog/ibex.git", rev: "8ca24dc02fc528ae2f020077bec259fcc8efae7e" } # To be updated with lowrisc dependency
+  scm: { git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}
+  generic_FLL: { git: "git@github.com:pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
+  tech_cells_generic: { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.2.2 }
+  udma_core: { git: "git@github.com:pulp-platform/udma_core.git", rev: "c36a405f33275576700746b0d90eab0ce278e600" }
+  udma_uart: { git: "git@github.com:pulp-platform/udma_uart.git", rev: "e0da2998cc8208c6d5406deece2dca87f9f66ad0" }
+  udma_i2c: { git: "git@github.com:pulp-platform/udma_i2c.git", rev: "7b84fdb22b9c562528781a40b303ab8ef80c4c9a" }
+  udma_i2s: { git: "git@github.com:pulp-platform/udma_i2s.git", rev: "2f49e65515747d092819662d90169d6d72886cfc" }
+  udma_qspi: { git: "git@github.com:pulp-platform/udma_qspi.git", rev: "a206066ea0ed3934fdc9d8f9c846bc20dfaabbed" }
+  udma_sdio: { git: "git@github.com:pulp-platform/udma_sdio.git", rev: "43ba199296d369e0fd6faaee2dd0d620968e7674" }
+  udma_camera: { git: "git@github.com:pulp-platform/udma_camera.git", rev: "1769551f4d6a7d42b3cafaf2f3c442d1a0ae4a47" }
+  udma_filter: { git: "git@github.com:pulp-platform/udma_filter.git", rev: "2a8206f4243ae82d47accfd70837560765caa93f" }
+  udma_external_per: { git: "git@github.com:pulp-platform/udma_external_per.git", rev: "71a397519fbab1e36c37daf8f84178ca59d2fb70" }
+  hwpe-mac-engine: { git: "git@github.com:micprog/hwpe-mac-engine.git", rev: "v1.2-bender" } # To be updated with pulp-platform dependency
   riscv-dbg: { git: "git@github.com:pulp-platform/riscv-dbg.git", rev: "v0.2" }
   # apb for interface?
 
