@@ -17,7 +17,7 @@ dependencies:
   adv_dbg_if: { git: "git@github.com:micprog/adv_dbg_if.git", rev: "310390ff278c4ca20bf73f7cbfa1da5cae442601" } # To be updated with pulp-platform dependency
   apb2per: { git: "git@github.com:micprog/apb2per.git", rev: "66c49a191af7b2e19e3f6695affe6f21ae588fdb" } # To be updated with pulp-platform dependency
   apb_adv_timer: { git: "git@github.com:micprog/apb_adv_timer.git", rev: "83846c3ece57610d4e6fc06538a6b00b903da6ae" } # To be updated with pulp-platform dependency
-  apb_fll_if: { git: "git@github.com:pulp-platform/apb_fll_if.git", rev: "7f43fd6bee698b6c608433d402f0b504313490e6" }
+  apb_fll_if: { git: "git@github.com:pulp-platform/apb_fll_if.git", rev: "a1f67b624fe379d4d319c809656b672f0267cfc8" }
   apb_gpio: { git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0 }
   apb_node: { git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1 }
   apb_interrupt_cntrl: { git: "git@github.com:micprog/apb_interrupt_cntrl.git", rev: "1490c893ead716b4a9022d9abd75a6c51d29eef0" } # To be updated with pulp-platform dependency

@@ -31,7 +31,7 @@ apb/apb_adv_timer:
   commit: v1.0.2
   domain: [soc]
 apb/apb_fll_if:
-  commit: pulpissimo-v1.0
+  commit: a1f67b624fe379d4d319c809656b672f0267cfc8
   domain: [soc]
 apb/apb_gpio:
   commit: v0.2.0
