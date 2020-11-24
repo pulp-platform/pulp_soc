@@ -79,7 +79,7 @@ module apb_soc_ctrl #(
 
     input  logic                      sel_fll_clk_i,
     input  logic                      boot_l2_i,
-    input  logic                      bootsel_i,
+    input  logic [1:0]                bootsel_i,
     input  logic                      fc_fetch_en_valid_i,
     input  logic                      fc_fetch_en_i,
 
@@ -522,7 +522,7 @@ module apb_soc_ctrl #(
       end
       else
       begin
-        r_bootsel <= {r_bootsel[0],bootsel_i};
+        r_bootsel <= bootsel_i;
       end
     end
 
