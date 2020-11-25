@@ -31,7 +31,7 @@ apb/apb_adv_timer:
   commit: v1.0.3
   domain: [soc]
 apb/apb_fll_if:
-  commit: a1f67b624fe379d4d319c809656b672f0267cfc8
+  commit: v0.1.3
   domain: [soc]
 apb/apb_gpio:
   commit: v0.2.0
@@ -70,8 +70,8 @@ riscv:
   commit: pulpissimo-v3.4.0
   domain: [cluster, soc]
 ibex:
-  commit: e65a27e14dda7bb3b09cadc4e9232305fd451cec
-  group: lowRISC
+  commit: e96f07951e56aef4b70a3c9d71db0cbfb929d410
+  group: micprog
   domain: [soc]
 scm:
   commit: v1.0.1

@@ -17,7 +17,7 @@ dependencies:
   adv_dbg_if:             { git: "git@github.com:pulp-platform/adv_dbg_if.git", version: 0.0.2 }
   apb2per:                { git: "git@github.com:pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "git@github.com:pulp-platform/apb_adv_timer.git", version: 1.0.3 }
-  apb_fll_if:             { git: "git@github.com:pulp-platform/apb_fll_if.git", rev: "a1f67b624fe379d4d319c809656b672f0267cfc8" }
+  apb_fll_if:             { git: "git@github.com:pulp-platform/apb_fll_if.git", version: 0.1.3 }
   apb_gpio:               { git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0 }
   apb_node:               { git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1 }
   apb_interrupt_cntrl:    { git: "git@github.com:pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
@@ -30,7 +30,7 @@ dependencies:
   fpnew:                  { git: "git@github.com:pulp-platform/fpnew.git", version: 0.6.4 }
   jtag_pulp:              { git: "git@github.com:pulp-platform/jtag_pulp.git", rev: "v0.1" }
   riscv:                  { git: "git@github.com:micprog/cv32e40p.git", rev: "pulpissimo-v3.4.1"} # To be updated to openhwgroup repository
-  ibex:                   { git: "git@github.com:micprog/ibex.git", rev: "8ca24dc02fc528ae2f020077bec259fcc8efae7e" } # To be updated with lowrisc dependency
+  ibex:                   { git: "git@github.com:micprog/ibex.git", rev: "e96f07951e56aef4b70a3c9d71db0cbfb929d410" } # To be updated with lowrisc dependency
   scm:                    { git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "git@github.com:pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
   tech_cells_generic:     { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.2.2 }
@@ -64,7 +64,15 @@ sources:
   - files: 
       - rtl/udma_subsystem/udma_subsystem.sv
   # fc
-  - files: 
+  - target: rtl
+    defines:
+      TRACE_EXECUTION: ~
+    files: 
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/fc_hwpe.sv
+  - target: not(rtl)
+    files: 
       - rtl/fc/fc_demux.sv
       - rtl/fc/fc_subsystem.sv
       - rtl/fc/fc_hwpe.sv
