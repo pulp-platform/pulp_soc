@@ -39,7 +39,7 @@ void set_operands(uint32_t* a, uint32_t* b)
   uint32_t volatile * op_a_reg_start = (uint32_t*)WIDE_ALU_OP_A_0(0);
   uint32_t volatile * op_b_reg_start = (uint32_t*)WIDE_ALU_OP_B_0(0);
   //Make sure we are in idle state before changing the operands
-  for (int i = 0; i<256/8; i++)
+  for (int i = 0; i<256/32; i++)
   {
     op_a_reg_start[i] = a[i];
     op_b_reg_start[i] = b[i];
