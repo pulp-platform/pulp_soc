@@ -95,8 +95,8 @@ wide_alu:
   targets:
     - rtl
   incdirs:
-    - ../ibex/shared/rtl
     - ../register_interface/include
+    - ../register_interface/vendor/lowrisc_opentitan/include
   files:
     - rtl/wide_alu_deaccelerator/gen_sv/wide_alu_reg_pkg.sv
     - rtl/wide_alu_deaccelerator/gen_sv/wide_alu_reg_top.sv
