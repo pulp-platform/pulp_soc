@@ -30,7 +30,7 @@ dependencies:
   fpnew:                  { git: "git@github.com:pulp-platform/fpnew.git", version: 0.6.4 }
   jtag_pulp:              { git: "git@github.com:pulp-platform/jtag_pulp.git", rev: "v0.1" }
   riscv:                  { git: "git@github.com:micprog/cv32e40p.git", rev: "pulpissimo-v3.4.1"} # To be updated to openhwgroup repository
-  ibex:                   { git: "git@github.com:micprog/ibex.git", rev: "e96f07951e56aef4b70a3c9d71db0cbfb929d410" } # To be updated with lowrisc dependency
+  ibex:                   { git: "git@github.com:lowRISC/ibex.git", rev: "aa320957eb34d02dc819db9dc7fa64b036b9b852" }
   scm:                    { git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "git@github.com:pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
   tech_cells_generic:     { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.2.2 }
