@@ -82,6 +82,7 @@ module wide_alu_top
     ) i_regfile (
        .clk_i,
        .rst_ni,
+       .devmode_i(1'b1),
 
        //From Protocol converter
        .reg_req_i(to_reg_file_req),
