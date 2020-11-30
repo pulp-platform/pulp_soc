@@ -34,7 +34,7 @@ module wide_alu_top
      input logic clk_i,
      input logic rst_ni,
      input logic test_mode_i,
-     AXI_BUS.Master axi_slave
+     AXI_BUS.Slave axi_slave
      );
     import wide_alu_reg_pkg::wide_alu_hw2reg_t;
     import wide_alu_reg_pkg::wide_alu_reg2hw_t;
