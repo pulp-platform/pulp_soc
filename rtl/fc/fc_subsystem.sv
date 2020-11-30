@@ -218,22 +218,22 @@ module fc_subsystem #(
         .boot_addr_i           ( boot_addr         ),
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
         .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
         .instr_gnt_i           ( core_instr_gnt    ),
         .instr_rvalid_i        ( core_instr_rvalid ),
+        .instr_addr_o          ( core_instr_addr   ),
+        .instr_rdata_i         ( core_instr_rdata  ),
         .instr_err_i           ( core_instr_err    ),
 
         // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
         .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
         .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
         .data_rvalid_i         ( core_data_rvalid  ),
+        .data_we_o             ( core_data_we      ),
+        .data_be_o             ( core_data_be      ),
+        .data_addr_o           ( core_data_addr    ),
+        .data_wdata_o          ( core_data_wdata   ),
+        .data_rdata_i          ( core_data_rdata   ),
         .data_err_i            ( core_data_err     ),
 
         .irq_software_i        ( 1'b0              ),
