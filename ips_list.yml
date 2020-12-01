@@ -19,7 +19,7 @@
 #
 
 L2_tcdm_hybrid_interco:
-  commit: fa55e72859dcfb117a2788a77352193bef94ff2b
+  commit: v1.0.0
   domain: [soc]
 adv_dbg_if:
   commit: v0.0.2
