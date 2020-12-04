@@ -61,6 +61,8 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2
 ) (
+	output logic						  pulp_clk,	
+
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
     input  logic                          test_clk_i,
@@ -507,7 +509,7 @@ module pulp_soc import dm::*; #(
         assign base_addr_int = 4'b0001; //FIXME attach this signal somewhere in the soc peripherals --> IGOR
     `endif
 
-
+	assign pulp_clk = s_soc_clk; //Put to top------------------------------------------------------------
 
     logic s_cluster_isolate_dc;
     logic s_rstn_cluster_sync_soc;
