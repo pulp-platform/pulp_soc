@@ -93,7 +93,7 @@ module interleaved_crossbar
     //Interleaved Output Port Selection
     logic [NR_MASTER_PORTS-1:0] [PORT_SEL_WIDTH-1:0] port_sel;
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
-        assign port_sel[i] = master_ports[i].add[BE_WIDTH+PORT_SEL_WIDTH-1:BE_WIDTH];
+        assign port_sel[i] = master_ports[i].add[$clog2(BE_WIDTH)+PORT_SEL_WIDTH-1:$clog2(BE_WIDTH)];
     end
 
     //Crossbar instantiation
