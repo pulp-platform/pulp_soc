@@ -161,7 +161,7 @@ module l2_ram_multi_bank #(
         .csn_i   ( ~mem_pri_slave[1].req                 ),
         .wen_i   ( mem_pri_slave[1].wen                  ),
         .be_i    ( mem_pri_slave[1].be                   ),
-        .addr_i  ( pri0_address[PRI1_MEM_ADDR_WIDTH+1:2] ), //Convert from byte to word addressing
+        .addr_i  ( pri1_address[PRI1_MEM_ADDR_WIDTH+1:2] ), //Convert from byte to word addressing
         .wdata_i ( mem_pri_slave[1].wdata                ),
         .rdata_o ( mem_pri_slave[1].r_rdata              )
         );
