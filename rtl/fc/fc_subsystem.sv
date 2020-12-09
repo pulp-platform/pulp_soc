@@ -9,8 +9,6 @@
 // specific language governing permissions and limitations under the License.
 
 
-`include "soc_bus_defines.sv"
-
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
