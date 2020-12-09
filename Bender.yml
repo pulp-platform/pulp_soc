@@ -35,13 +35,13 @@ dependencies:
   generic_FLL:            { git: "git@github.com:pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
   tech_cells_generic:     { git: "git@github.com:pulp-platform/tech_cells_generic.git", version: 0.2.2 }
   udma_core:              { git: "git@github.com:pulp-platform/udma_core.git", rev: "c36a405f33275576700746b0d90eab0ce278e600" }
-  udma_uart:              { git: "git@github.com:pulp-platform/udma_uart.git", rev: "e0da2998cc8208c6d5406deece2dca87f9f66ad0" }
-  udma_i2c:               { git: "git@github.com:pulp-platform/udma_i2c.git", rev: "7b84fdb22b9c562528781a40b303ab8ef80c4c9a" }
-  udma_i2s:               { git: "git@github.com:pulp-platform/udma_i2s.git", rev: "2f49e65515747d092819662d90169d6d72886cfc" }
-  udma_qspi:              { git: "git@github.com:pulp-platform/udma_qspi.git", rev: "a206066ea0ed3934fdc9d8f9c846bc20dfaabbed" }
-  udma_sdio:              { git: "git@github.com:pulp-platform/udma_sdio.git", rev: "43ba199296d369e0fd6faaee2dd0d620968e7674" }
-  udma_camera:            { git: "git@github.com:pulp-platform/udma_camera.git", rev: "1769551f4d6a7d42b3cafaf2f3c442d1a0ae4a47" }
-  udma_filter:            { git: "git@github.com:pulp-platform/udma_filter.git", rev: "2a8206f4243ae82d47accfd70837560765caa93f" }
+  udma_uart:              { git: "git@github.com:pulp-platform/udma_uart.git", version: 1.0.1 }
+  udma_i2c:               { git: "git@github.com:pulp-platform/udma_i2c.git", rev: "v1.0" }
+  udma_i2s:               { git: "git@github.com:pulp-platform/udma_i2s.git", version: 1.1.1 }
+  udma_qspi:              { git: "git@github.com:pulp-platform/udma_qspi.git", version: 1.0.3 }
+  udma_sdio:              { git: "git@github.com:pulp-platform/udma_sdio.git", rev: "v1.1" }
+  udma_camera:            { git: "git@github.com:pulp-platform/udma_camera.git", version: 1.1.1 }
+  udma_filter:            { git: "git@github.com:pulp-platform/udma_filter.git", version: 1.0.2 }
   udma_external_per:      { git: "git@github.com:pulp-platform/udma_external_per.git", rev: "71a397519fbab1e36c37daf8f84178ca59d2fb70" }
   hwpe-mac-engine:        { git: "git@github.com:micprog/hwpe-mac-engine.git", rev: "v1.2-bender" } # To be updated with pulp-platform dependency
   riscv-dbg:              { git: "git@github.com:pulp-platform/riscv-dbg.git", rev: "v0.2" }

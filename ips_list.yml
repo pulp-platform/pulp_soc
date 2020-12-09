@@ -70,7 +70,7 @@ riscv:
   commit: pulpissimo-v3.4.0
   domain: [cluster, soc]
 ibex:
-  commit: aa320957eb34d02dc819db9dc7fa64b036b9b852
+  commit: b148f3af51066ac3537c7c6eb4acbc17004bf868
   group: lowRISC
   domain: [soc]
 scm:
@@ -86,25 +86,25 @@ udma/udma_core:
   commit: v1.0.1
   domain: [soc]
 udma/udma_uart:
-  commit: v1.0.0
+  commit: v1.0.1
   domain: [soc]
 udma/udma_i2c:
-  commit: vega_v1.0.0
+  commit: v1.0
   domain: [soc]
 udma/udma_i2s:
-  commit: v1.1.0
+  commit: v1.1.1
   domain: [soc]
 udma/udma_qspi:
-  commit: v1.0.0
+  commit: v1.0.3
   domain: [soc]
 udma/udma_sdio:
-  commit: vega_v1.0.5
+  commit: v1.1
   domain: [soc]
 udma/udma_camera:
-  commit: v1.0.0
+  commit: v1.1.1
   domain: [soc]
 udma/udma_filter:
-  commit: v1.0.1
+  commit: v1.0.2
   domain: [soc]
 udma/udma_external_per:
   commit: v1.0.1
