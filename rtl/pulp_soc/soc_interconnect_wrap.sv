@@ -67,8 +67,14 @@ module soc_interconnect_wrap
     //////////////////////////////////////////////////////////////
     // 64-bit AXI to TCDM Bridge (Cluster to SoC communication) //
     //////////////////////////////////////////////////////////////
-    XBAR_TCDM_BUS axi_bridge_2_interconnect[4](); //We need 4 32-bit TCDM ports to achieve fullbandwidth with one 64-bit AXI
-                                                  //port
+    XBAR_TCDM_BUS axi_bridge_2_interconnect[pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS](); //We need 4
+                                                                                                         //32-bit TCDM
+                                                                                                         //ports to
+                                                                                                         //achieve full
+                                                                                                         //bandwidth
+                                                                                                         //with one
+                                                                                                         //64-bit AXI
+                                                                                                         //port
 
     axi64_2_lint32_wrap #(
                      .AXI_USER_WIDTH(AXI_USER_WIDTH),
@@ -109,9 +115,7 @@ module soc_interconnect_wrap
     // Instantiate Interconnect //
     //////////////////////////////
 
-    localparam INTERNAL_NR_AXI_XBAR_MASTERS = 5 + 4; //5 for fc_instr, fc_data, udma_rx, udma_tx, debug_access and 4
-                                                     //four 64-bit axi plug
-    localparam AXI_SLAVE_ID_WIDTH = AXI_IN_ID_WIDTH + $clog2(INTERNAL_NR_AXI_XBAR_MASTERS);
+    localparam AXI_SLAVE_ID_WIDTH = AXI_IN_ID_WIDTH + $clog2(pkg_soc_interconnect::NR_TCDM_MASTER_PORTS);
 
     //Internal wiring to APB protocol converter
     AXI_BUS #(.AXI_ADDR_WIDTH(32),
@@ -122,14 +126,16 @@ module soc_interconnect_wrap
 
     //Wiring signals to interconncet. Unfortunately Synopsys-2019.3 does not support assignment patterns in port lists
     //directly
-    XBAR_TCDM_BUS master_ports[5+4]();
+    XBAR_TCDM_BUS master_ports[pkg_soc_interconnect::NR_TCDM_MASTER_PORTS](); //increase the package localparma as well
+                                //if you want to add new master ports. The parameter is used by other IPs to calcualte
+                                //the required AXI ID width.
     `TCDM_ASSIGN_INTF(master_ports[0], tcdm_fc_data)
     `TCDM_ASSIGN_INTF(master_ports[1], tcdm_fc_instr)
     `TCDM_ASSIGN_INTF(master_ports[2], tcdm_udma_tx)
     `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_rx)
     `TCDM_ASSIGN_INTF(master_ports[4], tcdm_debug)
-    for (genvar i = 0; i < 4; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[5+i], axi_bridge_2_interconnect[i])
+    for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[pkg_soc_interconnect::NR_SOC_TCDM_MASTER_PORTS+i], axi_bridge_2_interconnect[i])
     end
 
     XBAR_TCDM_BUS contiguous_slaves[3]();
@@ -147,7 +153,7 @@ module soc_interconnect_wrap
 
     //Interconnect instantiation
     soc_interconnect #(
-                       .NR_MASTER_PORTS(5+4), // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
+                       .NR_MASTER_PORTS(pkg_soc_interconnect::NR_TCDM_MASTER_PORTS), // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
                                               // axi plug
                        .NR_MASTER_PORTS_INTERLEAVED_ONLY(NR_HWPE_PORTS), // HWPEs (PULP accelerators) only have access
                                                                          // to the interleaved memory region
