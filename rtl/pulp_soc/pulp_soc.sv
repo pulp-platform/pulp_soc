@@ -12,32 +12,35 @@
 `include "pulp_soc_defines.sv"
 
 module pulp_soc import dm::*; #(
-    parameter CORE_TYPE          = 0,
-    parameter USE_FPU            = 1,
-    parameter USE_HWPE           = 1,
-    parameter USE_CLUSTER_EVENT  = 1,
-    parameter AXI_ADDR_WIDTH     = 32,
-    parameter AXI_DATA_IN_WIDTH  = 64,
-    parameter AXI_DATA_OUT_WIDTH = 32,
-    parameter AXI_ID_IN_WIDTH    = 6,
-    localparam AXI_ID_OUT_WIDTH  = pkg_soc_interconnect::AXI_ID_OUT_WIDTH,
-    parameter AXI_USER_WIDTH     = 6,
-    parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
-    parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
-    parameter BUFFER_WIDTH       = 8,
-    parameter EVNT_WIDTH         = 8,
-    parameter NB_CORES           = 8,
-    parameter NB_HWPE_PORTS      = 4,
-    parameter NGPIO              = 43,
-    parameter NPAD               = 64, //Must not be changed as other parts
+    parameter CORE_TYPE               = 0,
+    parameter USE_FPU                 = 1,
+    parameter USE_HWPE                = 1,
+    parameter USE_CLUSTER_EVENT       = 1,
+    parameter AXI_ADDR_WIDTH          = 32,
+    parameter AXI_DATA_IN_WIDTH       = 64,
+    parameter AXI_DATA_OUT_WIDTH      = 32,
+    parameter AXI_ID_IN_WIDTH         = 6,
+    localparam AXI_ID_OUT_WIDTH       = pkg_soc_interconnect::AXI_ID_OUT_WIDTH,
+    parameter AXI_USER_WIDTH          = 6,
+    parameter AXI_STRB_WIDTH_IN       = AXI_DATA_IN_WIDTH/8,
+    parameter AXI_STRB_WIDTH_OUT      = AXI_DATA_OUT_WIDTH/8,
+    parameter BUFFER_WIDTH            = 8,
+    parameter EVNT_WIDTH              = 8,
+    parameter NB_CORES                = 8,
+    parameter NB_HWPE_PORTS           = 4,
+    parameter NGPIO                   = 43,
+    parameter NPAD                    = 64, //Must not be changed as other parts
                                        //downstreams are not parametrci
-    parameter NBIT_PADCFG        = 6, //Must not be changed as other parts
+    parameter NBIT_PADCFG             = 6, //Must not be changed as other parts
                                       //downstreams are not parametrci
-    parameter NBIT_PADMUX        = 2,
+    parameter NBIT_PADMUX             = 2,
 
-    parameter int unsigned N_UART = 1,
-    parameter int unsigned N_SPI  = 1,
-    parameter int unsigned N_I2C  = 2
+    parameter int unsigned N_UART     = 1,
+    parameter int unsigned N_SPI      = 1,
+    parameter int unsigned N_I2C      = 2,
+    parameter bit ISOLATE_CLUSTER_CDC = 0 // If 0, ties the cluster <-> soc AXI CDC isolation signal to 0 statically
+                                          // disabling the connection. For PULPissimo (MCU without a cluster) this should be set
+                                          // to 0.
 ) (
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
@@ -460,7 +463,7 @@ module pulp_soc import dm::*; #(
     assign cluster_rtc_o     = ref_clk_i;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
-   assign s_cluster_isolate_dc = 1'b1;
+    assign s_cluster_isolate_dc = ISOLATE_CLUSTER_CDC;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
