@@ -24,7 +24,7 @@ L2_tcdm_hybrid_interco:
   commit: pulpissimo-v1.0
   domain: [soc]
 cluster_interconnect:
-  commit: master
+  commit: v1.1.0
   domain: [soc]
 adv_dbg_if:
   commit: v0.0.1
