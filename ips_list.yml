@@ -118,5 +118,5 @@ riscv-dbg:
   commit: v0.2
   domain: [soc]
 register_interface:
-  commit: add_ipapprox
+  commit: b1bc9c22e0c2a5801107070c022904498dbae34b
   domain: [soc]
