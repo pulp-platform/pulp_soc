@@ -160,9 +160,11 @@ module soc_interconnect
 
     //Concatenate the l2 demux master port array and the interleaved only port array
     XBAR_TCDM_BUS interleaved_masters[NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY]();
-    //Synopsys is to stupid to handle expressions for array indices on the left-hand side of assignments. This is a
-    // verbose workaround for it. The next couple of ugly macro magic unpacks each interface into individual signal arrays,
-    // performs the assignments to the interface and packs the signal back to an array of interfaces.
+
+    //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
+    // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
+    // This is a verbose workaround for it. The next couple of ugly macro magic unpacks each interface into individual
+    // signal arrays, performs the assignments to the interface and packs the signal back to an array of interfaces.
     `TCDM_EXPLODE_ARRAY_DECLARE(interleaved_masters, NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY)
     for (genvar i = 0; i < NR_MASTER_PORTS + NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
         `TCDM_SLAVE_EXPLODE(interleaved_masters[i], interleaved_masters, [i])

@@ -138,8 +138,15 @@ module soc_interconnect_wrap
     `TCDM_ASSIGN_INTF(master_ports[2], tcdm_udma_tx)
     `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_rx)
     `TCDM_ASSIGN_INTF(master_ports[4], tcdm_debug)
-    for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[pkg_soc_interconnect::NR_SOC_TCDM_MASTER_PORTS+i], axi_bridge_2_interconnect[i])
+
+    //Assign the 4 master ports from the AXI plug to the interface array
+
+    //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
+    // Using a macro instead of a package parameter is an ugly but necessary workaround.
+    // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
+    `define NR_SOC_TCDM_MASTER_PORTS 5
+    for (genvar i = 0; i < 4; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
     end
 
     XBAR_TCDM_BUS contiguous_slaves[3]();

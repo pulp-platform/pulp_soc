@@ -35,12 +35,12 @@ module axi64_2_lint32_wrap
      );
 
     // *Do not change* The legacy wrapper was never tested for other bitwidths.
-    localparam AXI_ADDR_WIDTH  = 32;
-    localparam AXI_DATA_WIDTH  = 64;
-    localparam AXI_STRB_WIDTH  = AXI_DATA_WIDTH/8;
-    localparam TCDM_DATA_WIDTH = 32;
-    localparam TCDM_ADDR_WIDTH = 32;
-    localparam TCDM_BE_WIDTH = TCDM_DATA_WIDTH/8;
+    localparam int unsigned AXI_ADDR_WIDTH  = 32;
+    localparam int unsigned AXI_DATA_WIDTH  = 64;
+    localparam int unsigned AXI_STRB_WIDTH  = AXI_DATA_WIDTH/8;
+    localparam int unsigned TCDM_DATA_WIDTH = 32;
+    localparam int unsigned TCDM_ADDR_WIDTH = 32;
+    localparam int unsigned TCDM_BE_WIDTH = TCDM_DATA_WIDTH/8;
 
     //Explode the output TCDM interface into arrays of individual signals
     `TCDM_EXPLODE_ARRAY_DECLARE(tcdm_slaves, 4)

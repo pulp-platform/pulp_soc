@@ -39,7 +39,7 @@ apb/apb_fll_if:
   commit: pulpissimo-v1.0
   domain: [soc]
 apb/apb_gpio:
-  commit: 0e9f142
+  commit: 0e9f142f2f11278445c953ad011fce1c7ed85b66
   domain: [soc]
 apb/apb_node:
   commit: v0.1.1
