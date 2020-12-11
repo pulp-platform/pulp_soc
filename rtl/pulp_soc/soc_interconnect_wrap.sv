@@ -1,344 +1,255 @@
-// Copyright 2018 ETH Zurich and University of Bologna.
+//-----------------------------------------------------------------------------
+// Title         : SoC Interconnect Wrapper
+//-----------------------------------------------------------------------------
+// File          : soc_interconnect_wrap_v2.sv
+// Author        : Manuel Eggimann  <meggimann@iis.ee.ethz.ch>
+// Created       : 30.10.2020
+//-----------------------------------------------------------------------------
+// Description :
+// This module instantiates the SoC interconnect and attaches the various SoC
+// ports. Furthermore, the wrapper also instantiates the required protocol converters
+// (AXI, APB).
+//-----------------------------------------------------------------------------
+// Copyright (C) 2013-2020 ETH Zurich, University of Bologna
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
-// compliance with the License.  You may obtain a copy of the License at
+// compliance with the License. You may obtain a copy of the License at
 // http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
 // or agreed to in writing, software, hardware and materials distributed under
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+//-----------------------------------------------------------------------------
+
+`include "soc_mem_map.svh"
+`include "tcdm_macros.svh"
+`include "axi/assign.svh"
 
 
-module soc_interconnect_wrap #(
-    parameter N_L2_BANKS         = 4,
-    parameter N_L2_BANKS_PRI     = 2,
-    parameter N_HWPE_PORTS       = 4,
-    parameter ADDR_MEM_WIDTH     = 12,
-    parameter ADDR_MEM_PRI_WIDTH = 12,
-    parameter AXI_32_ID_WIDTH    = 12,
-    parameter AXI_32_USER_WIDTH  = 6,
-    parameter ROM_ADDR_WIDTH     = 10,
-    // 64 bit axi Interface
-    parameter AXI_ADDR_WIDTH     = 32,
-    parameter AXI_DATA_WIDTH     = 64,
-    parameter AXI_STRB_WIDTH     = 8,
-    parameter AXI_USER_WIDTH     = 6,
-    parameter AXI_ID_WIDTH       = 7
-) (
-    input logic              clk_i,
-    input logic              rstn_i,
-    input logic              test_en_i,
-    XBAR_TCDM_BUS.Slave      lint_fc_data,
-    XBAR_TCDM_BUS.Slave      lint_fc_instr,
-    XBAR_TCDM_BUS.Slave      lint_udma_tx,
-    XBAR_TCDM_BUS.Slave      lint_udma_rx,
-    XBAR_TCDM_BUS.Slave      lint_debug,
-    XBAR_TCDM_BUS.Slave      lint_hwpe [N_HWPE_PORTS-1:0],
-    AXI_BUS.Slave            axi_from_cluster,
-    AXI_BUS.Master           axi_to_cluster,
-    APB_BUS.Master           apb_periph_bus,
-    UNICAD_MEM_BUS_32.Master mem_l2_bus[N_L2_BANKS-1:0],
-    UNICAD_MEM_BUS_32.Master mem_l2_pri_bus[N_L2_BANKS_PRI-1:0],
-    UNICAD_MEM_BUS_32.Master mem_rom_bus
-);
+module soc_interconnect_wrap
+    import pkg_soc_interconnect::addr_map_rule_t;
+    #(
+      parameter int  NR_HWPE_PORTS = 0,
+      parameter int  NR_L2_PORTS = 4,
+      // AXI Input Plug
+      localparam int AXI_IN_ADDR_WIDTH = 32, // All addresses in the SoC must be 32-bit
+      localparam int AXI_IN_DATA_WIDTH = 64, // The internal AXI->TCDM protocol converter does not support any other
+                                             // datawidths than 64-bit
+      parameter int  AXI_IN_ID_WIDTH = 6,
+      parameter int  AXI_USER_WIDTH = 6,
+      // Axi Output Plug
+      localparam int AXI_OUT_ADDR_WIDTH = 32, // All addresses in the SoC must be 32-bit
+      localparam int AXI_OUT_DATA_WIDTH = 32  // The internal TCDM->AXI protocol converter does not support any other
+                                              // datawidths than 32-bit
+    ) (
+       input logic clk_i,
+       input logic rst_ni,
+       input logic test_en_i,
+       XBAR_TCDM_BUS.Slave      tcdm_fc_data, //Data Port of the Fabric Controller
+       XBAR_TCDM_BUS.Slave      tcdm_fc_instr, //Instruction Port of the Fabric Controller
+       XBAR_TCDM_BUS.Slave      tcdm_udma_tx, //TX Channel for the uDMA
+       XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
+       XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
+       XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
+       AXI_BUS.Slave            axi_master_plug, // Normaly used for cluster -> SoC communication
+       AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
+       APB_BUS.Master           apb_peripheral_bus, // Connects to all the SoC Peripherals
+       XBAR_TCDM_BUS.Master     l2_interleaved_slaves[NR_L2_PORTS], // Connects to the interleaved memory banks
+       XBAR_TCDM_BUS.Master     l2_private_slaves[2], // Connects to core-private memory banks
+       XBAR_TCDM_BUS.Master     boot_rom_slave //Connects to the bootrom
+     );
 
-    logic [N_L2_BANKS-1:0][31:0]                       mem_wdata;
-    logic [N_L2_BANKS-1:0][ADDR_MEM_WIDTH-1:0]         mem_add;
-    logic [N_L2_BANKS-1:0]                             mem_csn;
-    logic [N_L2_BANKS-1:0]                             mem_wen;
-    logic [N_L2_BANKS-1:0][3:0]                        mem_be;
-    logic [N_L2_BANKS-1:0][31:0]                       mem_rdata;
+    //**Do not change these values unles you verified that all downstream IPs are properly parametrized and support it**
+    localparam ADDR_WIDTH = 32;
+    localparam DATA_WIDTH = 32;
 
-    logic [N_L2_BANKS_PRI-1:0][31:0]                   mem_pri_wdata;
-    logic [N_L2_BANKS_PRI-1:0][ADDR_MEM_PRI_WIDTH-1:0] mem_pri_add;
-    logic [N_L2_BANKS_PRI-1:0]                         mem_pri_csn;
-    logic [N_L2_BANKS_PRI-1:0]                         mem_pri_wen;
-    logic [N_L2_BANKS_PRI-1:0][3:0]                    mem_pri_be;
-    logic [N_L2_BANKS_PRI-1:0][31:0]                   mem_pri_rdata;
 
-    // accelerator interface - must be unrolled
-    logic [N_HWPE_PORTS-1:0]       s_lint_hwpe_req;
-    logic [N_HWPE_PORTS-1:0][31:0] s_lint_hwpe_add;
-    logic [N_HWPE_PORTS-1:0]       s_lint_hwpe_wen;
-    logic [N_HWPE_PORTS-1:0][31:0] s_lint_hwpe_wdata;
-    logic [N_HWPE_PORTS-1:0][3:0]  s_lint_hwpe_be;
-    logic [N_HWPE_PORTS-1:0]       s_lint_hwpe_gnt;
-    logic [N_HWPE_PORTS-1:0]       s_lint_hwpe_r_valid;
-    logic [N_HWPE_PORTS-1:0][31:0] s_lint_hwpe_r_rdata;
-    logic [N_HWPE_PORTS-1:0] s_lint_hwpe_r_opc;
+    //////////////////////////////////////////////////////////////
+    // 64-bit AXI to TCDM Bridge (Cluster to SoC communication) //
+    //////////////////////////////////////////////////////////////
+    XBAR_TCDM_BUS axi_bridge_2_interconnect[pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS](); //We need 4
+                                                                                                         //32-bit TCDM
+                                                                                                         //ports to
+                                                                                                         //achieve full
+                                                                                                         //bandwidth
+                                                                                                         //with one
+                                                                                                         //64-bit AXI
+                                                                                                         //port
 
-    genvar i;
+    axi64_2_lint32_wrap #(
+                     .AXI_USER_WIDTH(AXI_USER_WIDTH),
+                     .AXI_ID_WIDTH(AXI_IN_ID_WIDTH)
+                     ) i_axi64_to_lint32(
+                                         .clk_i,
+                                         .rst_ni,
+                                         .test_en_i,
+                                         .axi_master(axi_master_plug),
+                                         .tcdm_slaves(axi_bridge_2_interconnect)
+                                         );
 
-    generate
 
-        for(i=0; i<N_HWPE_PORTS; i++)
-        begin : HWPE_BINDING
-            assign s_lint_hwpe_req   [i] = lint_hwpe[i].req;
-            assign s_lint_hwpe_add   [i] = lint_hwpe[i].add;
-            assign s_lint_hwpe_wen   [i] = lint_hwpe[i].wen;
-            assign s_lint_hwpe_wdata [i] = lint_hwpe[i].wdata;
-            assign s_lint_hwpe_be    [i] = lint_hwpe[i].be;
-            assign lint_hwpe[i].gnt     = s_lint_hwpe_gnt     [i];
-            assign lint_hwpe[i].r_valid = s_lint_hwpe_r_valid [i];
-            assign lint_hwpe[i].r_rdata = s_lint_hwpe_r_rdata [i];
-            assign lint_hwpe[i].r_opc   = s_lint_hwpe_r_opc   [i];
-        end
 
-        for(i=0; i<N_L2_BANKS; i++)
-        begin : L2_BUS_BINDING
-            assign mem_l2_bus[i].csn                     =  mem_csn[i]; // invert the csn because req is active high and csn is active low
-            assign mem_l2_bus[i].add[ADDR_MEM_WIDTH-1:0] =  mem_add[i];
-            assign mem_l2_bus[i].wen                     =  mem_wen[i];
-            assign mem_l2_bus[i].wdata                   =  mem_wdata[i];
-            assign mem_l2_bus[i].be                      =  mem_be[i];
-            assign mem_rdata[i]                          =  mem_l2_bus[i].rdata;
-        end
+    ////////////////////////////////////////
+    // Address Rules for the interconnect //
+    ////////////////////////////////////////
+    localparam NR_RULES_L2_DEMUX = 4;
+    //Everything that is not routed to port 1 or 2 ends up in port 0 by default
+    localparam addr_map_rule_t [NR_RULES_L2_DEMUX-1:0] L2_DEMUX_RULES = '{
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK1_END_ADDR} , //Both , bank0 and bank1 are in the  same address block
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_BOOT_ROM_START_ADDR      , end_addr: `SOC_MEM_MAP_BOOT_ROM_END_ADDR}      ,
+       '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }         ,
+       '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_ALIAS_START_ADDR    , end_addr: `SOC_MEM_MAP_TCDM_ALIAS_END_ADDR}};
 
-        for(i=0; i<N_L2_BANKS_PRI; i++)
-        begin : L2_BUS_PRI_BINDING
-            assign mem_l2_pri_bus[i].csn                     =  mem_pri_csn[i];
-            assign mem_l2_pri_bus[i].add[ADDR_MEM_PRI_WIDTH-1:0] =  mem_pri_add[i];
-            assign mem_l2_pri_bus[i].wen                     =  mem_pri_wen[i];
-            assign mem_l2_pri_bus[i].wdata                   =  mem_pri_wdata[i];
-            assign mem_l2_pri_bus[i].be                      =  mem_pri_be[i];
-            assign mem_pri_rdata[i]                          =  mem_l2_pri_bus[i].rdata;
-        end
+    localparam NR_RULES_INTERLEAVED_REGION = 2;
+    localparam addr_map_rule_t [NR_RULES_INTERLEAVED_REGION-1:0] INTERLEAVED_ADDR_SPACE = '{
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR },
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_ALIAS_START_ADDR    , end_addr: `SOC_MEM_MAP_TCDM_ALIAS_END_ADDR}};
 
-    endgenerate
+    localparam NR_RULES_CONTIG_CROSSBAR = 3;
+    localparam addr_map_rule_t [NR_RULES_CONTIG_CROSSBAR-1:0] CONTIGUOUS_CROSSBAR_RULES = '{
+        '{ idx: 0 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK0_END_ADDR} ,
+        '{ idx: 1 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK1_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK1_END_ADDR} ,
+        '{ idx: 2 , start_addr: `SOC_MEM_MAP_BOOT_ROM_START_ADDR      , end_addr: `SOC_MEM_MAP_BOOT_ROM_END_ADDR}};
 
+    localparam NR_RULES_AXI_CROSSBAR = 2;
+    localparam addr_map_rule_t [NR_RULES_AXI_CROSSBAR-1:0] AXI_CROSSBAR_RULES = '{
+       '{ idx: 0, start_addr: `SOC_MEM_MAP_AXI_PLUG_START_ADDR,    end_addr: `SOC_MEM_MAP_AXI_PLUG_END_ADDR},
+       '{ idx: 1, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
+
+    //////////////////////////////
+    // Instantiate Interconnect //
+    //////////////////////////////
+
+
+    //Internal wiring to APB protocol converter
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(32),
+              .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_to_axi_lite_bridge();
+
+    //Wiring signals to interconncet. Unfortunately Synopsys-2019.3 does not support assignment patterns in port lists
+    //directly
+    XBAR_TCDM_BUS master_ports[pkg_soc_interconnect::NR_TCDM_MASTER_PORTS](); //increase the package localparma as well
+                                //if you want to add new master ports. The parameter is used by other IPs to calcualte
+                                //the required AXI ID width.
+    `TCDM_ASSIGN_INTF(master_ports[0], tcdm_fc_data)
+    `TCDM_ASSIGN_INTF(master_ports[1], tcdm_fc_instr)
+    `TCDM_ASSIGN_INTF(master_ports[2], tcdm_udma_tx)
+    `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_rx)
+    `TCDM_ASSIGN_INTF(master_ports[4], tcdm_debug)
+
+    //Assign the 4 master ports from the AXI plug to the interface array
+
+    //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
+    // Using a macro instead of a package parameter is an ugly but necessary workaround.
+    // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
+    `define NR_SOC_TCDM_MASTER_PORTS 5
+    for (genvar i = 0; i < 4; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
+    end
+
+    XBAR_TCDM_BUS contiguous_slaves[3]();
+    `TCDM_ASSIGN_INTF(l2_private_slaves[0], contiguous_slaves[0])
+    `TCDM_ASSIGN_INTF(l2_private_slaves[1], contiguous_slaves[1])
+    `TCDM_ASSIGN_INTF(boot_rom_slave, contiguous_slaves[2])
+
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(32),
+              .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_slaves[2]();
+    `AXI_ASSIGN(axi_slave_plug, axi_slaves[0])
+    `AXI_ASSIGN(axi_to_axi_lite_bridge, axi_slaves[1])
+
+    //Interconnect instantiation
     soc_interconnect #(
-        .N_L2_BANKS        ( N_L2_BANKS         ),
-        .ADDR_L2_WIDTH     ( ADDR_MEM_WIDTH     ),
-        .N_HWPE_PORTS      ( N_HWPE_PORTS       ),
+                       .NR_MASTER_PORTS(pkg_soc_interconnect::NR_TCDM_MASTER_PORTS), // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
+                                              // axi plug
+                       .NR_MASTER_PORTS_INTERLEAVED_ONLY(NR_HWPE_PORTS), // HWPEs (PULP accelerators) only have access
+                                                                         // to the interleaved memory region
+                       .NR_ADDR_RULES_L2_DEMUX(NR_RULES_L2_DEMUX),
+                       .NR_SLAVE_PORTS_INTERLEAVED(NR_L2_PORTS), // Number of interleaved memory banks
+                       .NR_ADDR_RULES_SLAVE_PORTS_INTLVD(NR_RULES_INTERLEAVED_REGION),
+                       .NR_SLAVE_PORTS_CONTIG(3), // Bootrom + number of private memory banks (normally 1 for
+                                                  // programm instructions and 1 for programm stack )
+                       .NR_ADDR_RULES_SLAVE_PORTS_CONTIG(NR_RULES_CONTIG_CROSSBAR),
+                       .NR_AXI_SLAVE_PORTS(2), // 1 for AXI to cluster, 1 for SoC peripherals (converted to APB)
+                       .NR_ADDR_RULES_AXI_SLAVE_PORTS(NR_RULES_AXI_CROSSBAR),
+                       .AXI_MASTER_ID_WIDTH(1), //Doesn't need to be changed. All axi masters in the current
+                                                //interconnect come from a TCDM protocol converter and thus do not have and AXI ID.
+                                                //However, the unerlaying IPs do not support an ID lenght of 0, thus we use 1.
+                       .AXI_USER_WIDTH(AXI_USER_WIDTH)
+                       ) i_soc_interconnect (
+                                             .clk_i,
+                                             .rst_ni,
+                                             .test_en_i,
+                                             .master_ports(master_ports),
+                                             .master_ports_interleaved_only(tcdm_hwpe),
+                                             .addr_space_l2_demux(L2_DEMUX_RULES),
+                                             .addr_space_interleaved(INTERLEAVED_ADDR_SPACE),
+                                             .interleaved_slaves(l2_interleaved_slaves),
+                                             .addr_space_contiguous(CONTIGUOUS_CROSSBAR_RULES),
+                                             .contiguous_slaves(contiguous_slaves),
+                                             .addr_space_axi(AXI_CROSSBAR_RULES),
+                                             .axi_slaves(axi_slaves)
+                                             );
 
-        .AXI_32_ID_WIDTH   ( AXI_32_ID_WIDTH    ),
-        .AXI_32_USER_WIDTH ( AXI_32_USER_WIDTH  ),
 
-        .AXI_ADDR_WIDTH    ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH    ( AXI_DATA_WIDTH     ),
-        .AXI_STRB_WIDTH    ( AXI_STRB_WIDTH     ),
-        .AXI_USER_WIDTH    ( AXI_USER_WIDTH     ),
-        .AXI_ID_WIDTH      ( AXI_ID_WIDTH       ),
+    ////////////////////////
+    // AXI4 to APB Bridge //
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // We do the conversion in two steps: We convert AXI4 to AXI4 lite and from there to APB //
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
-        .N_L2_BANKS_PRI    ( N_L2_BANKS_PRI     ),
-        .ADDR_L2_PRI_WIDTH ( ADDR_MEM_PRI_WIDTH ),
-        .ROM_ADDR_WIDTH    ( ROM_ADDR_WIDTH     )
-    ) i_soc_interconnect (
-        .clk                    ( clk_i                                         ),
-        .rst_n                  ( rstn_i                                        ),
-        .test_en_i              ( test_en_i                                     ),
+    AXI_LITE #(
+               .AXI_ADDR_WIDTH(32),
+               .AXI_DATA_WIDTH(32)) axi_lite_to_apb_bridge();
 
-        .L2_D_o                 ( mem_wdata                                     ),
-        .L2_A_o                 ( mem_add                                       ),
-        .L2_CEN_o               ( mem_csn                                       ),
-        .L2_WEN_o               ( mem_wen                                       ),
-        .L2_BE_o                ( mem_be                                        ),
-        .L2_Q_i                 ( mem_rdata                                     ),
+    axi_to_axi_lite_intf #(
+                           .AXI_ADDR_WIDTH(32),
+                           .AXI_DATA_WIDTH(32),
+                           .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
+                           .AXI_USER_WIDTH(AXI_USER_WIDTH),
+                           .AXI_MAX_WRITE_TXNS(1),
+                           .AXI_MAX_READ_TXNS(1),
+                           .FALL_THROUGH(1)
+                           ) i_axi_to_axi_lite (
+                                                .clk_i,
+                                                .rst_ni,
+                                                .testmode_i(test_en_i),
+                                                .slv(axi_to_axi_lite_bridge),
+                                                .mst(axi_lite_to_apb_bridge)
+                                                );
 
-        .L2_pri_D_o             ( mem_pri_wdata                                 ),
-        .L2_pri_A_o             ( mem_pri_add                                   ),
-        .L2_pri_CEN_o           ( mem_pri_csn                                   ),
-        .L2_pri_WEN_o           ( mem_pri_wen                                   ),
-        .L2_pri_BE_o            ( mem_pri_be                                    ),
-        .L2_pri_Q_i             ( mem_pri_rdata                                 ),
+    // The AXI-Lite to APB bridge is capable of connecting one AXI to multiple APB ports using address mapping rules.
+    // We do not use this feature and just supply a default rule that matches everything in the peripheral region
 
-        //RISC DATA PORT
-        .FC_DATA_req_i          ( lint_fc_data.req                              ),
-        .FC_DATA_add_i          ( lint_fc_data.add                              ),
-        .FC_DATA_wen_i          ( lint_fc_data.wen                              ),
-        .FC_DATA_wdata_i        ( lint_fc_data.wdata                            ),
-        .FC_DATA_be_i           ( lint_fc_data.be                               ),
-        .FC_DATA_aux_i          ( '0                                            ),
-        .FC_DATA_gnt_o          ( lint_fc_data.gnt                              ),
-        .FC_DATA_r_aux_o        (                                               ),
-        .FC_DATA_r_valid_o      ( lint_fc_data.r_valid                          ),
-        .FC_DATA_r_rdata_o      ( lint_fc_data.r_rdata                          ),
-        .FC_DATA_r_opc_o        ( lint_fc_data.r_opc                            ),
+    localparam addr_map_rule_t [0:0] APB_BRIDGE_RULES = '{
+        '{ idx: 0, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
 
-        // RISC INSTR PORT
-        .FC_INSTR_req_i         ( lint_fc_instr.req                             ),
-        .FC_INSTR_add_i         ( lint_fc_instr.add                             ),
-        .FC_INSTR_wen_i         ( lint_fc_instr.wen                             ),
-        .FC_INSTR_wdata_i       ( lint_fc_instr.wdata                           ),
-        .FC_INSTR_be_i          ( lint_fc_instr.be                              ),
-        .FC_INSTR_aux_i         ( '0                                            ),
-        .FC_INSTR_gnt_o         ( lint_fc_instr.gnt                             ),
-        .FC_INSTR_r_aux_o       (                                               ),
-        .FC_INSTR_r_valid_o     ( lint_fc_instr.r_valid                         ),
-        .FC_INSTR_r_rdata_o     ( lint_fc_instr.r_rdata                         ),
-        .FC_INSTR_r_opc_o       ( lint_fc_instr.r_opc                           ),
+    axi_lite_to_apb_intf #(
+                           .NoApbSlaves(1),
+                           .NoRules(1),
+                           .AddrWidth(32),
+                           .DataWidth(32),
+                           .rule_t(addr_map_rule_t)
+                           ) i_axi_lite_to_apb (
+                                                .clk_i,
+                                                .rst_ni,
+                                                .slv(axi_lite_to_apb_bridge),
+                                                .paddr_o(apb_peripheral_bus.paddr),
+                                                .pprot_o(),
+                                                .pselx_o(apb_peripheral_bus.psel),
+                                                .penable_o(apb_peripheral_bus.penable),
+                                                .pwrite_o(apb_peripheral_bus.pwrite),
+                                                .pwdata_o(apb_peripheral_bus.pwdata),
+                                                .pstrb_o(),
+                                                .pready_i(apb_peripheral_bus.pready),
+                                                .prdata_i(apb_peripheral_bus.prdata),
+                                                .pslverr_i(apb_peripheral_bus.pslverr),
+                                                .addr_map_i(APB_BRIDGE_RULES)
+                                                );
 
-        // UDMA TX
-        .UDMA_TX_req_i          ( lint_udma_tx.req                              ),
-        .UDMA_TX_add_i          ( lint_udma_tx.add                              ),
-        .UDMA_TX_wen_i          ( lint_udma_tx.wen                              ),
-        .UDMA_TX_wdata_i        ( lint_udma_tx.wdata                            ),
-        .UDMA_TX_be_i           ( lint_udma_tx.be                               ),
-        .UDMA_TX_aux_i          ( '0                                            ),
-        .UDMA_TX_gnt_o          ( lint_udma_tx.gnt                              ),
-        .UDMA_TX_r_aux_o        (                                               ),
-        .UDMA_TX_r_valid_o      ( lint_udma_tx.r_valid                          ),
-        .UDMA_TX_r_rdata_o      ( lint_udma_tx.r_rdata                          ),
-        .UDMA_TX_r_opc_o        ( lint_udma_tx.r_opc                            ),
 
-        // UDMA RX
-        .UDMA_RX_req_i          ( lint_udma_rx.req                              ),
-        .UDMA_RX_add_i          ( lint_udma_rx.add                              ),
-        .UDMA_RX_wen_i          ( lint_udma_rx.wen                              ),
-        .UDMA_RX_wdata_i        ( lint_udma_rx.wdata                            ),
-        .UDMA_RX_be_i           ( lint_udma_rx.be                               ),
-        .UDMA_RX_aux_i          ( '0                                            ),
-        .UDMA_RX_gnt_o          ( lint_udma_rx.gnt                              ),
-        .UDMA_RX_r_aux_o        (                                               ),
-        .UDMA_RX_r_valid_o      ( lint_udma_rx.r_valid                          ),
-        .UDMA_RX_r_rdata_o      ( lint_udma_rx.r_rdata                          ),
-        .UDMA_RX_r_opc_o        ( lint_udma_rx.r_opc                            ),
-
-        // DBG
-        .DBG_RX_req_i           ( lint_debug.req                                ),
-        .DBG_RX_add_i           ( lint_debug.add                                ),
-        .DBG_RX_wen_i           ( lint_debug.wen                                ),
-        .DBG_RX_wdata_i         ( lint_debug.wdata                              ),
-        .DBG_RX_be_i            ( lint_debug.be                                 ),
-        .DBG_RX_aux_i           ( '0                                            ),
-        .DBG_RX_gnt_o           ( lint_debug.gnt                                ),
-        .DBG_RX_r_aux_o         (                                               ),
-        .DBG_RX_r_valid_o       ( lint_debug.r_valid                            ),
-        .DBG_RX_r_rdata_o       ( lint_debug.r_rdata                            ),
-        .DBG_RX_r_opc_o         ( lint_debug.r_opc                              ),
-
-        // HWPE
-        .HWPE_req_i             ( s_lint_hwpe_req                               ),
-        .HWPE_add_i             ( s_lint_hwpe_add                               ),
-        .HWPE_wen_i             ( s_lint_hwpe_wen                               ),
-        .HWPE_wdata_i           ( s_lint_hwpe_wdata                             ),
-        .HWPE_be_i              ( s_lint_hwpe_be                                ),
-        .HWPE_aux_i             ( '0                                            ),
-        .HWPE_gnt_o             ( s_lint_hwpe_gnt                               ),
-        .HWPE_r_aux_o           (                                               ),
-        .HWPE_r_valid_o         ( s_lint_hwpe_r_valid                           ),
-        .HWPE_r_rdata_o         ( s_lint_hwpe_r_rdata                           ),
-        .HWPE_r_opc_o           ( s_lint_hwpe_r_opc                             ),
-
-        // AXI INTERFACE (FROM CLUSTER)
-        .AXI_Slave_aw_addr_i    ( axi_from_cluster.aw_addr                      ),
-        .AXI_Slave_aw_prot_i    ( axi_from_cluster.aw_prot                      ),
-        .AXI_Slave_aw_region_i  ( axi_from_cluster.aw_region                    ),
-        .AXI_Slave_aw_len_i     ( axi_from_cluster.aw_len                       ),
-        .AXI_Slave_aw_size_i    ( axi_from_cluster.aw_size                      ),
-        .AXI_Slave_aw_burst_i   ( axi_from_cluster.aw_burst                     ),
-        .AXI_Slave_aw_lock_i    ( axi_from_cluster.aw_lock                      ),
-        .AXI_Slave_aw_cache_i   ( axi_from_cluster.aw_cache                     ),
-        .AXI_Slave_aw_qos_i     ( axi_from_cluster.aw_qos                       ),
-        .AXI_Slave_aw_id_i      ( axi_from_cluster.aw_id[AXI_ID_WIDTH-1:0]      ),
-        .AXI_Slave_aw_user_i    ( axi_from_cluster.aw_user[AXI_USER_WIDTH-1:0]  ),
-        .AXI_Slave_aw_valid_i   ( axi_from_cluster.aw_valid                     ),
-        .AXI_Slave_aw_ready_o   ( axi_from_cluster.aw_ready                     ),
-        // ADDRESS READ CHANNEL
-        .AXI_Slave_ar_addr_i    ( axi_from_cluster.ar_addr                      ),
-        .AXI_Slave_ar_prot_i    ( axi_from_cluster.ar_prot                      ),
-        .AXI_Slave_ar_region_i  ( axi_from_cluster.ar_region                    ),
-        .AXI_Slave_ar_len_i     ( axi_from_cluster.ar_len                       ),
-        .AXI_Slave_ar_size_i    ( axi_from_cluster.ar_size                      ),
-        .AXI_Slave_ar_burst_i   ( axi_from_cluster.ar_burst                     ),
-        .AXI_Slave_ar_lock_i    ( axi_from_cluster.ar_lock                      ),
-        .AXI_Slave_ar_cache_i   ( axi_from_cluster.ar_cache                     ),
-        .AXI_Slave_ar_qos_i     ( axi_from_cluster.ar_qos                       ),
-        .AXI_Slave_ar_id_i      ( axi_from_cluster.ar_id[AXI_ID_WIDTH-1:0]      ),
-        .AXI_Slave_ar_user_i    ( axi_from_cluster.ar_user[AXI_USER_WIDTH-1:0]  ),
-        .AXI_Slave_ar_valid_i   ( axi_from_cluster.ar_valid                     ),
-        .AXI_Slave_ar_ready_o   ( axi_from_cluster.ar_ready                     ),
-        // WRITE CHANNEL
-        .AXI_Slave_w_user_i     ( axi_from_cluster.w_user[AXI_USER_WIDTH-1:0]   ),
-        .AXI_Slave_w_data_i     ( axi_from_cluster.w_data                       ),
-        .AXI_Slave_w_strb_i     ( axi_from_cluster.w_strb                       ),
-        .AXI_Slave_w_last_i     ( axi_from_cluster.w_last                       ),
-        .AXI_Slave_w_valid_i    ( axi_from_cluster.w_valid                      ),
-        .AXI_Slave_w_ready_o    ( axi_from_cluster.w_ready                      ),
-        // WRITE RESPONSE CHANNEL
-        .AXI_Slave_b_id_o       ( axi_from_cluster.b_id[AXI_ID_WIDTH-1:0]       ),
-        .AXI_Slave_b_resp_o     ( axi_from_cluster.b_resp                       ),
-        .AXI_Slave_b_user_o     ( axi_from_cluster.b_user[AXI_USER_WIDTH-1:0]   ),
-        .AXI_Slave_b_valid_o    ( axi_from_cluster.b_valid                      ),
-        .AXI_Slave_b_ready_i    ( axi_from_cluster.b_ready                      ),
-        // READ CHANNEL
-        .AXI_Slave_r_id_o       ( axi_from_cluster.r_id[AXI_ID_WIDTH-1:0]       ),
-        .AXI_Slave_r_user_o     ( axi_from_cluster.r_user[AXI_USER_WIDTH-1:0]   ),
-        .AXI_Slave_r_data_o     ( axi_from_cluster.r_data                       ),
-        .AXI_Slave_r_resp_o     ( axi_from_cluster.r_resp                       ),
-        .AXI_Slave_r_last_o     ( axi_from_cluster.r_last                       ),
-        .AXI_Slave_r_valid_o    ( axi_from_cluster.r_valid                      ),
-        .AXI_Slave_r_ready_i    ( axi_from_cluster.r_ready                      ),
-
-        // BRIDGES
-        // LINT TO APB
-        .APB_PADDR_o            ( apb_periph_bus.paddr                          ),
-        .APB_PWDATA_o           ( apb_periph_bus.pwdata                         ),
-        .APB_PWRITE_o           ( apb_periph_bus.pwrite                         ),
-        .APB_PSEL_o             ( apb_periph_bus.psel                           ),
-        .APB_PENABLE_o          ( apb_periph_bus.penable                        ),
-        .APB_PRDATA_i           ( apb_periph_bus.prdata                         ),
-        .APB_PREADY_i           ( apb_periph_bus.pready                         ),
-        .APB_PSLVERR_i          ( apb_periph_bus.pslverr                        ),
-
-        // ROM binding --> no need of Flow control, already handled in fc_interconnect
-        .rom_csn_o              ( mem_rom_bus.csn                               ),
-        .rom_add_o              ( mem_rom_bus.add[ROM_ADDR_WIDTH-1:0]           ),
-        .rom_rdata_i            ( mem_rom_bus.rdata                             ),
-
-        // LINT TO AXI
-        // ---------------------------------------------------------
-        // AXI TARG Port Declarations ------------------------------
-        // ---------------------------------------------------------
-        .AXI_Master_aw_addr_o   ( axi_to_cluster.aw_addr                        ),
-        .AXI_Master_aw_prot_o   ( axi_to_cluster.aw_prot                        ),
-        .AXI_Master_aw_region_o ( axi_to_cluster.aw_region                      ),
-        .AXI_Master_aw_len_o    ( axi_to_cluster.aw_len                         ),
-        .AXI_Master_aw_size_o   ( axi_to_cluster.aw_size                        ),
-        .AXI_Master_aw_burst_o  ( axi_to_cluster.aw_burst                       ),
-        .AXI_Master_aw_lock_o   ( axi_to_cluster.aw_lock                        ),
-        .AXI_Master_aw_cache_o  ( axi_to_cluster.aw_cache                       ),
-        .AXI_Master_aw_qos_o    ( axi_to_cluster.aw_qos                         ),
-        .AXI_Master_aw_id_o     ( axi_to_cluster.aw_id[AXI_32_ID_WIDTH-1:0]     ),
-        .AXI_Master_aw_user_o   ( axi_to_cluster.aw_user[AXI_32_USER_WIDTH-1:0] ),
-        .AXI_Master_aw_valid_o  ( axi_to_cluster.aw_valid                       ),
-        .AXI_Master_aw_ready_i  ( axi_to_cluster.aw_ready                       ),
-        // ADDRESS READ CHANNEL
-        .AXI_Master_ar_addr_o   ( axi_to_cluster.ar_addr                        ),
-        .AXI_Master_ar_prot_o   ( axi_to_cluster.ar_prot                        ),
-        .AXI_Master_ar_region_o ( axi_to_cluster.ar_region                      ),
-        .AXI_Master_ar_len_o    ( axi_to_cluster.ar_len                         ),
-        .AXI_Master_ar_size_o   ( axi_to_cluster.ar_size                        ),
-        .AXI_Master_ar_burst_o  ( axi_to_cluster.ar_burst                       ),
-        .AXI_Master_ar_lock_o   ( axi_to_cluster.ar_lock                        ),
-        .AXI_Master_ar_cache_o  ( axi_to_cluster.ar_cache                       ),
-        .AXI_Master_ar_qos_o    ( axi_to_cluster.ar_qos                         ),
-        .AXI_Master_ar_id_o     ( axi_to_cluster.ar_id[AXI_32_ID_WIDTH-1:0]     ),
-        .AXI_Master_ar_user_o   ( axi_to_cluster.ar_user[AXI_32_USER_WIDTH-1:0] ),
-        .AXI_Master_ar_valid_o  ( axi_to_cluster.ar_valid                       ),
-        .AXI_Master_ar_ready_i  ( axi_to_cluster.ar_ready                       ),
-        // WRITE CHANNEL
-        .AXI_Master_w_user_o    ( axi_to_cluster.w_user[AXI_32_USER_WIDTH-1:0]  ),
-        .AXI_Master_w_data_o    ( axi_to_cluster.w_data                         ),
-        .AXI_Master_w_strb_o    ( axi_to_cluster.w_strb                         ),
-        .AXI_Master_w_last_o    ( axi_to_cluster.w_last                         ),
-        .AXI_Master_w_valid_o   ( axi_to_cluster.w_valid                        ),
-        .AXI_Master_w_ready_i   ( axi_to_cluster.w_ready                        ),
-        // WRITE RESPONSE CHANNEL
-        .AXI_Master_b_id_i      ( axi_to_cluster.b_id[AXI_32_ID_WIDTH-1:0]      ),
-        .AXI_Master_b_resp_i    ( axi_to_cluster.b_resp                         ),
-        .AXI_Master_b_user_i    ( axi_to_cluster.b_user[AXI_32_USER_WIDTH-1:0]  ),
-        .AXI_Master_b_valid_i   ( axi_to_cluster.b_valid                        ),
-        .AXI_Master_b_ready_o   ( axi_to_cluster.b_ready                        ),
-        // READ CHANNEL
-        .AXI_Master_r_id_i      ( axi_to_cluster.r_id[AXI_32_ID_WIDTH-1:0]      ),
-        .AXI_Master_r_user_i    ( axi_to_cluster.r_user[AXI_32_USER_WIDTH-1:0]  ),
-        .AXI_Master_r_data_i    ( axi_to_cluster.r_data                         ),
-        .AXI_Master_r_resp_i    ( axi_to_cluster.r_resp                         ),
-        .AXI_Master_r_last_i    ( axi_to_cluster.r_last                         ),
-        .AXI_Master_r_valid_i   ( axi_to_cluster.r_valid                        ),
-        .AXI_Master_r_ready_o   ( axi_to_cluster.r_ready                        )
-    );
-
-endmodule
-
+endmodule : soc_interconnect_wrap
