@@ -100,6 +100,11 @@ module soc_interconnect_wrap
        '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }         ,
        '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_ALIAS_START_ADDR    , end_addr: `SOC_MEM_MAP_TCDM_ALIAS_END_ADDR}};
 
+    localparam NR_RULES_INTERLEAVED_REGION = 2;
+    localparam addr_map_rule_t [NR_RULES_INTERLEAVED_REGION-1:0] INTERLEAVED_ADDR_SPACE = '{
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR },
+       '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_ALIAS_START_ADDR    , end_addr: `SOC_MEM_MAP_TCDM_ALIAS_END_ADDR}};
+
     localparam NR_RULES_CONTIG_CROSSBAR = 3;
     localparam addr_map_rule_t [NR_RULES_CONTIG_CROSSBAR-1:0] CONTIGUOUS_CROSSBAR_RULES = '{
         '{ idx: 0 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK0_END_ADDR} ,
@@ -158,6 +163,7 @@ module soc_interconnect_wrap
                                                                          // to the interleaved memory region
                        .NR_ADDR_RULES_L2_DEMUX(NR_RULES_L2_DEMUX),
                        .NR_SLAVE_PORTS_INTERLEAVED(NR_L2_PORTS), // Number of interleaved memory banks
+                       .NR_ADDR_RULES_SLAVE_PORTS_INTLVD(NR_RULES_INTERLEAVED_REGION),
                        .NR_SLAVE_PORTS_CONTIG(3), // Bootrom + number of private memory banks (normally 1 for
                                                   // programm instructions and 1 for programm stack )
                        .NR_ADDR_RULES_SLAVE_PORTS_CONTIG(NR_RULES_CONTIG_CROSSBAR),
@@ -174,6 +180,7 @@ module soc_interconnect_wrap
                                              .master_ports(master_ports),
                                              .master_ports_interleaved_only(tcdm_hwpe),
                                              .addr_space_l2_demux(L2_DEMUX_RULES),
+                                             .addr_space_interleaved(INTERLEAVED_ADDR_SPACE),
                                              .interleaved_slaves(l2_interleaved_slaves),
                                              .addr_space_contiguous(CONTIGUOUS_CROSSBAR_RULES),
                                              .contiguous_slaves(contiguous_slaves),

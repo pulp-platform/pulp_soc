@@ -19,6 +19,7 @@ pulp_soc:
     rtl/pulp_soc/soc_event_arbiter.sv,
     rtl/pulp_soc/soc_event_generator.sv,
     rtl/pulp_soc/soc_event_queue.sv,
+    rtl/pulp_soc/tcdm_error_slave.sv,
     rtl/pulp_soc/soc_interconnect.sv,
     rtl/pulp_soc/soc_interconnect_wrap.sv,
     rtl/pulp_soc/soc_peripherals.sv,
