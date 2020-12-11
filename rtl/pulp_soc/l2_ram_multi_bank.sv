@@ -38,7 +38,8 @@ module l2_ram_multi_bank #(
     logic [31:0]           interleaved_addresses[NB_BANKS];
     for(genvar i=0; i<NB_BANKS; i++) begin : CUTS
         //Perform TCDM handshaking for constant 1 cycle latency
-        assign mem_slave[i].gnt     = mem_slave[i].req;
+        assign mem_slave[i].gnt = mem_slave[i].req;
+        assign mem_slave[i].r_opc = 1'b0;
         always_ff @(posedge clk_i, negedge rst_ni) begin
             if (!rst_ni) begin
                 mem_slave[i].r_valid <= 1'b0;
@@ -86,7 +87,8 @@ module l2_ram_multi_bank #(
 
     // PRIVATE BANK0
     //Perform TCDM handshaking for constant 1 cycle latency
-    assign mem_pri_slave[0].gnt     = mem_pri_slave[0].req;
+    assign mem_pri_slave[0].gnt = mem_pri_slave[0].req;
+    assign mem_pri_slave[0].r_opc = 1'b0;
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (!rst_ni) begin
             mem_pri_slave[0].r_valid <= 1'b0;
@@ -128,7 +130,8 @@ module l2_ram_multi_bank #(
 
     // PRIVATE BANK1
     //Perform TCDM handshaking for constant 1 cycle latency
-    assign mem_pri_slave[1].gnt     = mem_pri_slave[1].req;
+    assign mem_pri_slave[1].gnt = mem_pri_slave[1].req;
+    assign mem_pri_slave[1].r_opc = 1'b0;
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (!rst_ni) begin
             mem_pri_slave[1].r_valid <= 1'b0;
