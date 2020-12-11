@@ -6,19 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Completely replaced soc_interconnect with a new parametric version
-- Added AXI Crossbar to soc_interconnect to attach custom IPs
-- Added new pulp_soc parameter to isolate the axi plug CDC fifo in case it is not needed
-- Add register_interface as dependency to simplify integration of custom ip using reggen
-- Properly assert r_opc signal in new interconnect to indicate bus errors
+### Changed
+### Removed
+### Fixed
+
+## [2.0.0] - 2020-12-11
+### Added
+- Completely replaced `soc_interconnect` with a new parametric version
+- Added AXI Crossbar to `soc_interconnect` to attach custom IPs
+- Added new `pulp_soc` parameter to isolate the axi plug CDC fifo in case it is not needed
+- Add `register_interface` as dependency to simplify integration of custom ip using reggen
+- Properly assert `r_opc` signal in new interconnect to indicate bus errors
 - Add error checking for illegal access on HWPE ports which only have access to L2 interleaved memory
 ### Changed
 - AXI ID width of cluster plugs are now set to actually required width instead of a hardcoded one
 - TCDM protocol to SRAM specific protocol is moved from interconnect to memory bank module
 ### Removed
-- obsolete axi_node dependency
+- obsolete `axi_node` dependency
 - obsolete header files
+
+## [1.4.2] - 2020-11-04
 ### Fixed
+- Propagate `ZFINX` parameter
 
 ## [1.4.1] - 2020-10-28
 ### Changed
