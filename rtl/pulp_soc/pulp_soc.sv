@@ -61,7 +61,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2
 ) (
-	output logic						  pulp_clk,	
+	output logic						  pulp_clk,
 
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
