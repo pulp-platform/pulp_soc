@@ -1,925 +1,319 @@
-// Copyright 2018 ETH Zurich and University of Bologna.
+//-----------------------------------------------------------------------------
+// Title         : soc_interconnect
+//-----------------------------------------------------------------------------
+// File          : soc_interconnect.sv
+// Author        : Manuel Eggimann  <meggimann@iis.ee.ethz.ch>
+// Created       : 29.10.2020
+//-----------------------------------------------------------------------------
+// Description :
+//
+//-----------------------------------------------------------------------------
+// Copyright (C) 2013-2020 ETH Zurich, University of Bologna
 // Copyright and related rights are licensed under the Solderpad Hardware
 // License, Version 0.51 (the "License"); you may not use this file except in
-// compliance with the License.  You may obtain a copy of the License at
+// compliance with the License. You may obtain a copy of the License at
 // http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
 // or agreed to in writing, software, hardware and materials distributed under
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+//-----------------------------------------------------------------------------
+`include "tcdm_macros.svh"
+`include "axi/assign.svh"
+
+module soc_interconnect
+    import pkg_soc_interconnect::addr_map_rule_t;
+    import axi_pkg::xbar_cfg_t;
+    #(
+      // TCDM Bus Master Config
+      parameter int unsigned  NR_MASTER_PORTS, //Master Ports to the SoC interconnect with access to all memory regions
+      parameter int unsigned  NR_MASTER_PORTS_INTERLEAVED_ONLY, //Master ports with access restricted to only the interleaved
+                                                                //ports (no axes to APB, AXI, or contiguous slaves) TCDM Bus
+                                                                //Slave Config
+      // L2 Demux Addr rules
+      parameter int unsigned  NR_ADDR_RULES_L2_DEMUX,
+      // Interleaved TCDM slave
+      parameter int unsigned  NR_SLAVE_PORTS_INTERLEAVED,
+      parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_INTLVD,
+      // Contiguous TCDM slave
+      parameter int unsigned  NR_SLAVE_PORTS_CONTIG,
+      parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_CONTIG,
+      // AXI Master ID Width
+      parameter int unsigned  AXI_MASTER_ID_WIDTH = 1, // Not really used since we only connect TCDM masters to the
+                                                       // axi_xbar with protocol converters. However, the value must not be zero.
+      // AXI Slaves
+      parameter int unsigned  NR_AXI_SLAVE_PORTS,
+      parameter int unsigned  NR_ADDR_RULES_AXI_SLAVE_PORTS,
+      localparam int unsigned AXI_SLAVE_ID_WIDTH = AXI_MASTER_ID_WIDTH + $clog2(NR_MASTER_PORTS), //The actual ID
+                                                                                                    //width of the AXI slaves is clog2(NR_AXI_MASTERS) larger than the master id width since the
+                                                                                                    //axi_mux in the XBAR will append an identificatoin tag to the outgoing transactions
+                                                                                                    //towards the axi slaves so it can backroute the responses
+      parameter int unsigned  AXI_USER_WIDTH
+      )
+    (
+     input logic                                                 clk_i,
+     input logic                                                 rst_ni,
+     input logic                                                 test_en_i, // 0 Normal operation, 1 put sub-IPs into testmode (bypass clock gates)
+     XBAR_TCDM_BUS.Slave                                         master_ports[NR_MASTER_PORTS],
+     XBAR_TCDM_BUS.Slave                                         master_ports_interleaved_only[NR_MASTER_PORTS_INTERLEAVED_ONLY],
+     input addr_map_rule_t[NR_ADDR_RULES_L2_DEMUX-1:0]           addr_space_l2_demux,
+     //Interleaved Slave
+     input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_INTLVD-1:0] addr_space_interleaved,
+     XBAR_TCDM_BUS.Master                                        interleaved_slaves[NR_SLAVE_PORTS_INTERLEAVED],
+     //Contiguous Slave
+     input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_CONTIG-1:0] addr_space_contiguous,
+     XBAR_TCDM_BUS.Master                                        contiguous_slaves[NR_SLAVE_PORTS_CONTIG],
+     //AXI Slave
+     input addr_map_rule_t [NR_ADDR_RULES_AXI_SLAVE_PORTS-1:0]   addr_space_axi,
+     AXI_BUS.Master                                              axi_slaves[NR_AXI_SLAVE_PORTS] //AXI_ID width must be
+                                                                                                //at least clog2(NR_AXI_SLAVES)
+     );
 
 
-module soc_interconnect #(
-    parameter USE_AXI           = 1,
-    parameter ADDR_WIDTH        = 32,
-    parameter N_HWPE_PORTS      = 4,
-    parameter N_MASTER_32       = 5+N_HWPE_PORTS,
-    parameter N_MASTER_AXI_64   = 1,
-    parameter DATA_WIDTH        = 32,
-    parameter BE_WIDTH          = DATA_WIDTH/8,
-    parameter ID_WIDTH          = N_MASTER_32+N_MASTER_AXI_64*4,
-    parameter AUX_WIDTH         = 8,
-    parameter N_L2_BANKS        = 4,
-    parameter N_L2_BANKS_PRI    = 2,
-    parameter ADDR_L2_WIDTH     = 12,
-    parameter ADDR_L2_PRI_WIDTH = 12,
-    parameter ROM_ADDR_WIDTH    = 10,
-    // AXI PARAMS
-    // 32 bit axi Interface
-    parameter AXI_32_ID_WIDTH   = 12,
-    parameter AXI_32_USER_WIDTH = 6,
-    // 64 bit axi Interface
-    parameter AXI_ADDR_WIDTH    = 32,
-    parameter AXI_DATA_WIDTH    = 64,
-    parameter AXI_STRB_WIDTH    = 8,
-    parameter AXI_USER_WIDTH    = 6,
-    parameter AXI_ID_WIDTH      = 7
-) (
-    input  logic                                                clk,
-    input  logic                                                rst_n,
-    input  logic                                                test_en_i,
-    output logic [N_L2_BANKS-1:0]     [DATA_WIDTH-1:0]          L2_D_o,
-    output logic [N_L2_BANKS-1:0]     [ADDR_L2_WIDTH-1:0]       L2_A_o,
-    output logic [N_L2_BANKS-1:0]                               L2_CEN_o,
-    output logic [N_L2_BANKS-1:0]                               L2_WEN_o,
-    output logic [N_L2_BANKS-1:0]     [BE_WIDTH-1:0]            L2_BE_o,
-    input  logic [N_L2_BANKS-1:0]     [DATA_WIDTH-1:0]          L2_Q_i,
-    //RISC DATA PORT
-    input  logic                                                FC_DATA_req_i,
-    input  logic [ADDR_WIDTH-1:0]                               FC_DATA_add_i,
-    input  logic                                                FC_DATA_wen_i,
-    input  logic [DATA_WIDTH-1:0]                               FC_DATA_wdata_i,
-    input  logic [BE_WIDTH-1:0]                                 FC_DATA_be_i,
-    input  logic [AUX_WIDTH-1:0]                                FC_DATA_aux_i,
-    output logic                                                FC_DATA_gnt_o,
-    output logic [AUX_WIDTH-1:0]                                FC_DATA_r_aux_o,
-    output logic                                                FC_DATA_r_valid_o,
-    output logic [DATA_WIDTH-1:0]                               FC_DATA_r_rdata_o,
-    output logic                                                FC_DATA_r_opc_o,
-    // RISC INSTR PORT
-    input  logic                                                FC_INSTR_req_i,
-    input  logic [ADDR_WIDTH-1:0]                               FC_INSTR_add_i,
-    input  logic                                                FC_INSTR_wen_i,
-    input  logic [DATA_WIDTH-1:0]                               FC_INSTR_wdata_i,
-    input  logic [BE_WIDTH-1:0]                                 FC_INSTR_be_i,
-    input  logic [AUX_WIDTH-1:0]                                FC_INSTR_aux_i,
-    output logic                                                FC_INSTR_gnt_o,
-    output logic [AUX_WIDTH-1:0]                                FC_INSTR_r_aux_o,
-    output logic                                                FC_INSTR_r_valid_o,
-    output logic [DATA_WIDTH-1:0]                               FC_INSTR_r_rdata_o,
-    output logic                                                FC_INSTR_r_opc_o,
-    // UDMA TX
-    input  logic                                                UDMA_TX_req_i,
-    input  logic [ADDR_WIDTH-1:0]                               UDMA_TX_add_i,
-    input  logic                                                UDMA_TX_wen_i,
-    input  logic [DATA_WIDTH-1:0]                               UDMA_TX_wdata_i,
-    input  logic [BE_WIDTH-1:0]                                 UDMA_TX_be_i,
-    input  logic [AUX_WIDTH-1:0]                                UDMA_TX_aux_i,
-    output logic                                                UDMA_TX_gnt_o,
-    output logic [AUX_WIDTH-1:0]                                UDMA_TX_r_aux_o,
-    output logic                                                UDMA_TX_r_valid_o,
-    output logic [DATA_WIDTH-1:0]                               UDMA_TX_r_rdata_o,
-    output logic                                                UDMA_TX_r_opc_o,
-    // UDMA RX
-    input  logic                                                UDMA_RX_req_i,
-    input  logic [ADDR_WIDTH-1:0]                               UDMA_RX_add_i,
-    input  logic                                                UDMA_RX_wen_i,
-    input  logic [DATA_WIDTH-1:0]                               UDMA_RX_wdata_i,
-    input  logic [BE_WIDTH-1:0]                                 UDMA_RX_be_i,
-    input  logic [AUX_WIDTH-1:0]                                UDMA_RX_aux_i,
-    output logic                                                UDMA_RX_gnt_o,
-    output logic [AUX_WIDTH-1:0]                                UDMA_RX_r_aux_o,
-    output logic                                                UDMA_RX_r_valid_o,
-    output logic [DATA_WIDTH-1:0]                               UDMA_RX_r_rdata_o,
-    output logic                                                UDMA_RX_r_opc_o,
-    // DBG
-    input  logic                                                DBG_RX_req_i,
-    input  logic [ADDR_WIDTH-1:0]                               DBG_RX_add_i,
-    input  logic                                                DBG_RX_wen_i,
-    input  logic [DATA_WIDTH-1:0]                               DBG_RX_wdata_i,
-    input  logic [BE_WIDTH-1:0]                                 DBG_RX_be_i,
-    input  logic [AUX_WIDTH-1:0]                                DBG_RX_aux_i,
-    output logic                                                DBG_RX_gnt_o,
-    output logic [AUX_WIDTH-1:0]                                DBG_RX_r_aux_o,
-    output logic                                                DBG_RX_r_valid_o,
-    output logic [DATA_WIDTH-1:0]                               DBG_RX_r_rdata_o,
-    output logic                                                DBG_RX_r_opc_o,
-    // HWPE
-    input  logic [N_HWPE_PORTS-1:0]                             HWPE_req_i,
-    input  logic [N_HWPE_PORTS-1:0]   [ADDR_WIDTH-1:0]          HWPE_add_i,
-    input  logic [N_HWPE_PORTS-1:0]                             HWPE_wen_i,
-    input  logic [N_HWPE_PORTS-1:0]   [DATA_WIDTH-1:0]          HWPE_wdata_i,
-    input  logic [N_HWPE_PORTS-1:0]   [BE_WIDTH-1:0]            HWPE_be_i,
-    input  logic [N_HWPE_PORTS-1:0]   [AUX_WIDTH-1:0]           HWPE_aux_i,
-    output logic [N_HWPE_PORTS-1:0]                             HWPE_gnt_o,
-    output logic [N_HWPE_PORTS-1:0]   [AUX_WIDTH-1:0]           HWPE_r_aux_o,
-    output logic [N_HWPE_PORTS-1:0]                             HWPE_r_valid_o,
-    output logic [N_HWPE_PORTS-1:0]   [DATA_WIDTH-1:0]          HWPE_r_rdata_o,
-    output logic [N_HWPE_PORTS-1:0]                             HWPE_r_opc_o,
-    // AXI INTERFACE (FROM CLUSTER)
-    input  logic [AXI_ADDR_WIDTH-1:0]                           AXI_Slave_aw_addr_i,
-    input  logic [2:0]                                          AXI_Slave_aw_prot_i,
-    input  logic [3:0]                                          AXI_Slave_aw_region_i,
-    input  logic [7:0]                                          AXI_Slave_aw_len_i,
-    input  logic [2:0]                                          AXI_Slave_aw_size_i,
-    input  logic [1:0]                                          AXI_Slave_aw_burst_i,
-    input  logic                                                AXI_Slave_aw_lock_i,
-    input  logic [3:0]                                          AXI_Slave_aw_cache_i,
-    input  logic [3:0]                                          AXI_Slave_aw_qos_i,
-    input  logic [AXI_ID_WIDTH-1:0]                             AXI_Slave_aw_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]                           AXI_Slave_aw_user_i,
-    input  logic                                                AXI_Slave_aw_valid_i,
-    output logic                                                AXI_Slave_aw_ready_o,
-    // ADDRESS READ CHANNEL
-    input  logic [AXI_ADDR_WIDTH-1:0]                           AXI_Slave_ar_addr_i,
-    input  logic [2:0]                                          AXI_Slave_ar_prot_i,
-    input  logic [3:0]                                          AXI_Slave_ar_region_i,
-    input  logic [7:0]                                          AXI_Slave_ar_len_i,
-    input  logic [2:0]                                          AXI_Slave_ar_size_i,
-    input  logic [1:0]                                          AXI_Slave_ar_burst_i,
-    input  logic                                                AXI_Slave_ar_lock_i,
-    input  logic [3:0]                                          AXI_Slave_ar_cache_i,
-    input  logic [3:0]                                          AXI_Slave_ar_qos_i,
-    input  logic [AXI_ID_WIDTH-1:0]                             AXI_Slave_ar_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]                           AXI_Slave_ar_user_i,
-    input  logic                                                AXI_Slave_ar_valid_i,
-    output logic                                                AXI_Slave_ar_ready_o,
-    // WRITE CHANNEL
-    input  logic [AXI_USER_WIDTH-1:0]                           AXI_Slave_w_user_i,
-    input  logic [AXI_DATA_WIDTH-1:0]                           AXI_Slave_w_data_i,
-    input  logic [AXI_STRB_WIDTH-1:0]                           AXI_Slave_w_strb_i,
-    input  logic                                                AXI_Slave_w_last_i,
-    input  logic                                                AXI_Slave_w_valid_i,
-    output logic                                                AXI_Slave_w_ready_o,
-    // WRITE RESPONSE CHANNEL
-    output logic [AXI_ID_WIDTH-1:0]                             AXI_Slave_b_id_o,
-    output logic [1:0]                                          AXI_Slave_b_resp_o,
-    output logic [AXI_USER_WIDTH-1:0]                           AXI_Slave_b_user_o,
-    output logic                                                AXI_Slave_b_valid_o,
-    input  logic                                                AXI_Slave_b_ready_i,
-    // READ CHANNEL
-    output logic [AXI_ID_WIDTH-1:0]                             AXI_Slave_r_id_o,
-    output logic [AXI_USER_WIDTH-1:0]                           AXI_Slave_r_user_o,
-    output logic [AXI_DATA_WIDTH-1:0]                           AXI_Slave_r_data_o,
-    output logic [1:0]                                          AXI_Slave_r_resp_o,
-    output logic                                                AXI_Slave_r_last_o,
-    output logic                                                AXI_Slave_r_valid_o,
-    input  logic                                                AXI_Slave_r_ready_i,
-    // BRIDGES
-    // CH_0 --> APB
-    output logic [ADDR_WIDTH-1:0]                               APB_PADDR_o,
-    output logic [DATA_WIDTH-1:0]                               APB_PWDATA_o,
-    output logic                                                APB_PWRITE_o,
-    output logic                                                APB_PSEL_o,
-    output logic                                                APB_PENABLE_o,
-    input  logic [DATA_WIDTH-1:0]                               APB_PRDATA_i,
-    input  logic                                                APB_PREADY_i,
-    input  logic                                                APB_PSLVERR_i,
-    // CH_1 --> AXI
-    // ---------------------------------------------------------
-    // AXI TARG Port Declarations ------------------------------
-    // ---------------------------------------------------------
-    //AXI write address bus -------------- // USED// -----------
-    output logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master_aw_id_o,
-    output logic [ADDR_WIDTH-1:0]                               AXI_Master_aw_addr_o,
-    output logic [7:0]                                          AXI_Master_aw_len_o,
-    output logic [2:0]                                          AXI_Master_aw_size_o,
-    output logic [1:0]                                          AXI_Master_aw_burst_o,
-    output logic                                                AXI_Master_aw_lock_o,
-    output logic [3:0]                                          AXI_Master_aw_cache_o,
-    output logic [2:0]                                          AXI_Master_aw_prot_o,
-    output logic [3:0]                                          AXI_Master_aw_region_o,
-    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_aw_user_o,
-    output logic [3:0]                                          AXI_Master_aw_qos_o,
-    output logic                                                AXI_Master_aw_valid_o,
-    input  logic                                                AXI_Master_aw_ready_i,
-    // ---------------------------------------------------------
-    //AXI write data bus -------------- // USED// --------------
-    output logic [DATA_WIDTH-1:0]                               AXI_Master_w_data_o,
-    output logic [BE_WIDTH-1:0]                                 AXI_Master_w_strb_o,
-    output logic                                                AXI_Master_w_last_o,
-    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_w_user_o,
-    output logic                                                AXI_Master_w_valid_o,
-    input  logic                                                AXI_Master_w_ready_i,
-    // ---------------------------------------------------------
-    //AXI write response bus -------------- // USED// ----------
-    input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master_b_id_i,
-    input  logic [1:0]                                          AXI_Master_b_resp_i,
-    input  logic                                                AXI_Master_b_valid_i,
-    input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_b_user_i,
-    output logic                                                AXI_Master_b_ready_o,
-    // ---------------------------------------------------------
-    //AXI read address bus -------------------------------------
-    output logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master_ar_id_o,
-    output logic [ADDR_WIDTH-1:0]                               AXI_Master_ar_addr_o,
-    output logic [7:0]                                          AXI_Master_ar_len_o,
-    output logic [2:0]                                          AXI_Master_ar_size_o,
-    output logic [1:0]                                          AXI_Master_ar_burst_o,
-    output logic                                                AXI_Master_ar_lock_o,
-    output logic [3:0]                                          AXI_Master_ar_cache_o,
-    output logic [2:0]                                          AXI_Master_ar_prot_o,
-    output logic [3:0]                                          AXI_Master_ar_region_o,
-    output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_ar_user_o,
-    output logic [3:0]                                          AXI_Master_ar_qos_o,
-    output logic                                                AXI_Master_ar_valid_o,
-    input  logic                                                AXI_Master_ar_ready_i,
-    // ---------------------------------------------------------
-    //AXI read data bus ----------------------------------------
-    input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master_r_id_i,
-    input  logic [DATA_WIDTH-1:0]                               AXI_Master_r_data_i,
-    input  logic [1:0]                                          AXI_Master_r_resp_i,
-    input  logic                                                AXI_Master_r_last_i,
-    input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master_r_user_i,
-    input  logic                                                AXI_Master_r_valid_i,
-    output logic                                                AXI_Master_r_ready_o,
-    // CH_2 --> ROM
-    output logic                                                rom_csn_o,
-    output logic [ROM_ADDR_WIDTH-1:0]                           rom_add_o,
-    input  logic [DATA_WIDTH-1:0]                               rom_rdata_i,
-    // CH_3, CH_4 Private Mem Banks (L2)
-    output logic [N_L2_BANKS_PRI-1:0] [DATA_WIDTH-1:0]          L2_pri_D_o,
-    output logic [N_L2_BANKS_PRI-1:0] [ADDR_L2_PRI_WIDTH-1:0]   L2_pri_A_o,
-    output logic [N_L2_BANKS_PRI-1:0]                           L2_pri_CEN_o,
-    output logic [N_L2_BANKS_PRI-1:0]                           L2_pri_WEN_o,
-    output logic [N_L2_BANKS_PRI-1:0] [BE_WIDTH-1:0]            L2_pri_BE_o,
-    input  logic [N_L2_BANKS_PRI-1:0] [DATA_WIDTH-1:0]          L2_pri_Q_i
-);
+    // Internal Parameters
+    // Do **NOT** change
+    localparam int unsigned BUS_DATA_WIDTH = 32;
+    localparam int unsigned BUS_ADDR_WIDTH = 32;
 
-    localparam N_CH0 = N_MASTER_32      ;
-    localparam N_CH1 = N_MASTER_AXI_64*4;
+    // Internal Wiring Signals
+    XBAR_TCDM_BUS l2_demux_2_interleaved_xbar[NR_MASTER_PORTS]();
+    XBAR_TCDM_BUS l2_demux_2_contiguous_xbar[NR_MASTER_PORTS]();
+    XBAR_TCDM_BUS l2_demux_2_axi_bridge[NR_MASTER_PORTS]();
 
-    localparam N_CH0_BRIDGE = N_CH0;
-    localparam N_CH1_BRIDGE = N_CH1;
-
-    localparam PER_ID_WIDTH = N_CH0_BRIDGE+N_CH1_BRIDGE;
-    localparam N_PERIPHS    = 3+N_L2_BANKS_PRI         ;
-
-    localparam L2_OFFSET_PRI = 15'h1000; // FIXME Put the right FORMULA
-
-                                                                        // PRI_L2_CH1  //PRI_L2_CH0    //ROM          // AXI         // APB
-    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_START_ADDR = { 32'h1C00_8000, 32'h1C00_0000, 32'h1A00_0000,  32'h1000_0000, 32'h1A10_0000};
-    localparam logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0] PER_END_ADDR   = { 32'h1C01_0000, 32'h1C00_8000, 32'h1A04_0000,  32'h1040_0000, 32'h1A40_0000};
-
-    localparam logic [ADDR_WIDTH-1:0] TCDM_START_ADDR = {32'h1C01_0000}; // Start of L2 interleaved
-    localparam logic [ADDR_WIDTH-1:0] TCDM_END_ADDR   = {32'h1C08_2000}; // END of L2 interleaved
-
-    logic [N_MASTER_32-1:0]                           FC_data_req_INT_32;
-    logic [N_MASTER_32-1:0] [ADDR_WIDTH - 1:0]        FC_data_add_INT_32;
-    logic [ADDR_WIDTH-1:0]                            FC_DATA_add_int;
-    logic [N_MASTER_32-1:0]                           FC_data_wen_INT_32;
-    logic [N_MASTER_32-1:0] [DATA_WIDTH - 1:0]        FC_data_wdata_INT_32;
-    logic [N_MASTER_32-1:0] [BE_WIDTH - 1:0]          FC_data_be_INT_32;
-    logic [N_MASTER_32-1:0] [AUX_WIDTH - 1:0]         FC_data_aux_INT_32;
-    logic [N_MASTER_32-1:0]                           FC_data_gnt_INT_32;
-    logic [N_MASTER_32-1:0] [AUX_WIDTH-1:0]           FC_data_r_aux_INT_32;
-    logic [N_MASTER_32-1:0]                           FC_data_r_valid_INT_32;
-    logic [N_MASTER_32-1:0] [DATA_WIDTH - 1:0]        FC_data_r_rdata_INT_32;
-    logic [N_MASTER_32-1:0] FC_data_r_opc_INT_32;
-
-    logic [N_MASTER_AXI_64*4-1:0]                     AXI_data_req_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [ADDR_WIDTH - 1:0]  AXI_data_add_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0]                     AXI_data_wen_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [DATA_WIDTH - 1:0]  AXI_data_wdata_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [BE_WIDTH - 1:0]    AXI_data_be_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [AUX_WIDTH - 1:0]   AXI_data_aux_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0]                     AXI_data_gnt_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [AUX_WIDTH-1:0]     AXI_data_r_aux_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0]                     AXI_data_r_valid_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] [DATA_WIDTH - 1:0]  AXI_data_r_rdata_INT_64;
-    logic [N_MASTER_AXI_64*4-1:0] AXI_data_r_opc_INT_64;
-
-    logic [N_CH0+N_CH1-1:0]                           PER_data_req_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][ADDR_WIDTH-1:0]           PER_data_add_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0]                           PER_data_wen_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][DATA_WIDTH-1:0]           PER_data_wdata_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][BE_WIDTH-1:0]             PER_data_be_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][AUX_WIDTH-1:0]            PER_data_aux_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0] PER_data_gnt_DEM_2_L2_XBAR;
-
-    logic [N_CH0+N_CH1-1:0]                           PER_data_r_valid_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][DATA_WIDTH-1:0]           PER_data_r_rdata_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0]                           PER_data_r_opc_DEM_2_L2_XBAR;
-    logic [N_CH0+N_CH1-1:0][AUX_WIDTH-1:0]            PER_data_r_aux_DEM_2_L2_XBAR;
-
-    // ---------------- BRIDGE SIDE --------------------------
-    // Req --> to Mem
-    logic [N_PERIPHS-1:0]                             PER_data_req_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][ADDR_WIDTH-1:0]             PER_data_add_TO_BRIDGE;
-    logic [N_PERIPHS-1:0]                             PER_data_wen_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][DATA_WIDTH-1:0]             PER_data_wdata_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][BE_WIDTH-1:0]               PER_data_be_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][PER_ID_WIDTH-1:0]           PER_data_ID_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][AUX_WIDTH-1:0]              PER_data_aux_TO_BRIDGE;
-    logic [N_PERIPHS-1:0] PER_data_gnt_TO_BRIDGE;
-
-    // Resp        --> From Mem
-    logic [N_PERIPHS-1:0][DATA_WIDTH-1:0]             PER_data_r_rdata_TO_BRIDGE;
-    logic [N_PERIPHS-1:0]                             PER_data_r_valid_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][PER_ID_WIDTH-1:0]           PER_data_r_ID_TO_BRIDGE;
-    logic [N_PERIPHS-1:0]                             PER_data_r_opc_TO_BRIDGE;
-    logic [N_PERIPHS-1:0][AUX_WIDTH-1:0]              PER_data_r_aux_TO_BRIDGE;
-
-    logic [N_CH0 + N_CH1-1:0][DATA_WIDTH-1:0]         TCDM_data_wdata_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0][ADDR_WIDTH-1:0]         TCDM_data_add_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0][ADDR_L2_WIDTH+$clog2(N_L2_BANKS)-1:0]      TCDM_data_add_DEM_TO_XBAR_resized;
-    logic [N_CH0 + N_CH1-1:0]                         TCDM_data_req_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0]                         TCDM_data_wen_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0][BE_WIDTH-1:0]           TCDM_data_be_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0]                         TCDM_data_gnt_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0][DATA_WIDTH-1:0]         TCDM_data_r_rdata_DEM_TO_XBAR;
-    logic [N_CH0 + N_CH1-1:0] TCDM_data_r_valid_DEM_TO_XBAR;
+    //////////////////////
+    // L2 Demultiplexer //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // This is the first stage of the interconnect. For every master, transactions are multiplexed between three     //
+    // different target slaves. The first slave port routes to the axi crossbar, the second slave port routes        //
+    // to the contiguous crossbar and the third slave port connects to the interleaved crossbar.                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    logic [N_L2_BANKS-1:0][DATA_WIDTH-1:0]            TCDM_data_wdata_TO_MEM;
-    logic [N_L2_BANKS-1:0][ADDR_L2_WIDTH-1:0]         TCDM_data_add_TO_MEM;
-    logic [N_L2_BANKS-1:0]                            TCDM_data_req_TO_MEM;
-    logic [N_L2_BANKS-1:0]                            TCDM_data_wen_TO_MEM;
-    logic [N_L2_BANKS-1:0][BE_WIDTH-1:0]              TCDM_data_be_TO_MEM;
-    logic [N_L2_BANKS-1:0][ID_WIDTH-1:0]              TCDM_data_ID_TO_MEM;
-    logic [N_L2_BANKS-1:0][DATA_WIDTH-1:0]            TCDM_data_rdata_TO_MEM;
-    logic [N_L2_BANKS-1:0]                            TCDM_data_rvalid_TO_MEM;
-    logic [N_L2_BANKS-1:0][ID_WIDTH-1:0]              TCDM_data_rID_TO_MEM;
+    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
+        XBAR_TCDM_BUS demux_slaves[3]();
 
-    // ROM BINDING
-    assign rom_csn_o                     = ~PER_data_req_TO_BRIDGE[2];
-    assign rom_add_o                     = PER_data_add_TO_BRIDGE[2];
-    assign PER_data_r_rdata_TO_BRIDGE[2] = rom_rdata_i;
+        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], demux_slaves[0]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
 
-    assign PER_data_gnt_TO_BRIDGE[2]     = 1'b1;
-    assign PER_data_r_opc_TO_BRIDGE[2]   = 1'b0;
-    always_ff @(posedge clk or negedge rst_n)
-    begin : proc_
-       if(~rst_n)
-       begin
-           PER_data_r_valid_TO_BRIDGE[2] <= '0;
-           PER_data_r_ID_TO_BRIDGE[2]    <= '0;
-           PER_data_r_aux_TO_BRIDGE[2]   <= '0;
-       end
-       else
-       begin
-           PER_data_r_ID_TO_BRIDGE[2]    <= PER_data_ID_TO_BRIDGE[2];
-           PER_data_r_valid_TO_BRIDGE[2] <= PER_data_req_TO_BRIDGE[2];
-           PER_data_r_aux_TO_BRIDGE[2]   <= PER_data_aux_TO_BRIDGE[2];
-       end
+
+        tcdm_demux #(
+                     .NR_OUTPUTS(3),
+                     .NR_ADDR_MAP_RULES(NR_ADDR_RULES_L2_DEMUX)
+                     ) i_l2_demux(
+                                  .clk_i,
+                                  .rst_ni,
+                                  .test_en_i,
+                                  .addr_map_rules(addr_space_l2_demux),
+                                  .master_port(master_ports[i]),
+                                  .slave_ports(demux_slaves)
+                                  );
     end
 
-    genvar k;
-    generate
-        // Private mem Binding
-        for (k = 0; k< N_L2_BANKS_PRI; k++) begin
-            assign L2_pri_D_o   [k] =  PER_data_wdata_TO_BRIDGE[k+3];
-            assign L2_pri_A_o   [k] =  PER_data_add_TO_BRIDGE  [k+3][ADDR_L2_PRI_WIDTH+1:2];
-            assign L2_pri_CEN_o [k] = ~PER_data_req_TO_BRIDGE  [k+3];
-            assign L2_pri_WEN_o [k] =  PER_data_wen_TO_BRIDGE  [k+3];
-            assign L2_pri_BE_o  [k] =  PER_data_be_TO_BRIDGE   [k+3];
+    ///////////////////////////////////////
+    // Interleaved only address checkers //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // The following code checks, that no interleaved-only master is trying to access address space outside the //
+    // interleaved memory region.                                                                               //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    XBAR_TCDM_BUS master_ports_interleaved_only_checked[NR_MASTER_PORTS_INTERLEAVED_ONLY]();
+    for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin : gen_interleaved_only_err_checkers
+        XBAR_TCDM_BUS err_demux_slaves[2]();
 
-            assign PER_data_r_rdata_TO_BRIDGE[k+3] = L2_pri_Q_i  [k];
-            assign PER_data_gnt_TO_BRIDGE[k+3]     = 1'b1;
-            assign PER_data_r_opc_TO_BRIDGE[k+3]   = '0;
+        `TCDM_ASSIGN_INTF(master_ports_interleaved_only_checked[i], err_demux_slaves[1]);
 
-            always_ff @(posedge clk or negedge rst_n)
-            begin : proc_L2_CH_pri_rvalid_gen
-                if(~rst_n) begin
-                    PER_data_r_valid_TO_BRIDGE[k+3] <= '0;
-                    PER_data_r_ID_TO_BRIDGE[k+3]    <= '0;
-                    PER_data_r_aux_TO_BRIDGE[k+3]   <= '0;
-                end
-                else begin
-                    PER_data_r_valid_TO_BRIDGE[k+3] <= PER_data_req_TO_BRIDGE[k+3];
-                    PER_data_r_ID_TO_BRIDGE[k+3]    <= PER_data_ID_TO_BRIDGE[k+3];
-                    PER_data_r_aux_TO_BRIDGE[k+3]   <= PER_data_aux_TO_BRIDGE[k+3];
-                end
-            end
-
-        end
-    endgenerate
-
-    always_comb
-    begin
-        FC_DATA_add_int = FC_DATA_add_i;
-        if(FC_DATA_add_i[31:20] == 12'h000)
-            FC_DATA_add_int[31:20] = 12'h1C0;
+        //The tcdm demux will route all transaction that do not match any addr rule to port 0 (which we connect to an
+        //error slave)
+        tcdm_demux #(
+                     .NR_OUTPUTS(2),
+                     .NR_ADDR_MAP_RULES(NR_ADDR_RULES_SLAVE_PORTS_INTLVD)
+                     ) i_err_demux(
+                                  .clk_i,
+                                  .rst_ni,
+                                  .test_en_i,
+                                  .addr_map_rules ( addr_space_interleaved           ),
+                                  .master_port    ( master_ports_interleaved_only[i] ),
+                                  .slave_ports    ( err_demux_slaves                 )
+                                  );
+        tcdm_error_slave #(
+          .ERROR_RESPONSE(32'hBADACCE5)
+        ) i_error_slave_interleaved (
+          .clk_i,
+          .rst_ni,
+          .slave(err_demux_slaves[0])
+          );
     end
 
-    assign FC_data_req_INT_32      =  {  FC_INSTR_req_i      ,  UDMA_TX_req_i     ,  UDMA_RX_req_i     , DBG_RX_req_i     , FC_DATA_req_i      };
-    assign FC_data_add_INT_32      =  {  FC_INSTR_add_i      ,  UDMA_TX_add_i     ,  UDMA_RX_add_i     , DBG_RX_add_i     , FC_DATA_add_int    };
-    assign FC_data_wen_INT_32      =  {  FC_INSTR_wen_i      ,  UDMA_TX_wen_i     ,  UDMA_RX_wen_i     , DBG_RX_wen_i     , FC_DATA_wen_i      };
-    assign FC_data_wdata_INT_32    =  {  FC_INSTR_wdata_i    ,  UDMA_TX_wdata_i   ,  UDMA_RX_wdata_i   , DBG_RX_wdata_i   , FC_DATA_wdata_i    };
-    assign FC_data_be_INT_32       =  {  FC_INSTR_be_i       ,  UDMA_TX_be_i      ,  UDMA_RX_be_i      , DBG_RX_be_i      , FC_DATA_be_i       };
-    assign FC_data_aux_INT_32      =  {  FC_INSTR_aux_i      ,  UDMA_TX_aux_i     ,  UDMA_RX_aux_i     , DBG_RX_aux_i     , FC_DATA_aux_i      };
-    assign                            {  FC_INSTR_gnt_o      ,  UDMA_TX_gnt_o     ,  UDMA_RX_gnt_o     , DBG_RX_gnt_o     , FC_DATA_gnt_o      } = FC_data_gnt_INT_32     ;
-    assign                            {  FC_INSTR_r_aux_o    ,  UDMA_TX_r_aux_o   ,  UDMA_RX_r_aux_o   , DBG_RX_r_aux_o   , FC_DATA_r_aux_o    } = FC_data_r_aux_INT_32   ;
-    assign                            {  FC_INSTR_r_valid_o  ,  UDMA_TX_r_valid_o ,  UDMA_RX_r_valid_o , DBG_RX_r_valid_o , FC_DATA_r_valid_o  } = FC_data_r_valid_INT_32 ;
-    assign                            {  FC_INSTR_r_rdata_o  ,  UDMA_TX_r_rdata_o ,  UDMA_RX_r_rdata_o , DBG_RX_r_rdata_o , FC_DATA_r_rdata_o  } = FC_data_r_rdata_INT_32 ;
-    assign                            {  FC_INSTR_r_opc_o    ,  UDMA_TX_r_opc_o   ,  UDMA_RX_r_opc_o   , DBG_RX_r_opc_o   , FC_DATA_r_opc_o    } = FC_data_r_opc_INT_32   ;
 
-    // the accelerator is directly connected to the interleaved region
-    assign TCDM_data_req_DEM_TO_XBAR   [N_CH0-1:N_CH0-N_HWPE_PORTS] =  HWPE_req_i;
-    assign TCDM_data_add_DEM_TO_XBAR   [N_CH0-1:N_CH0-N_HWPE_PORTS] =  HWPE_add_i;
-    assign TCDM_data_wen_DEM_TO_XBAR   [N_CH0-1:N_CH0-N_HWPE_PORTS] =  HWPE_wen_i;
-    assign TCDM_data_wdata_DEM_TO_XBAR [N_CH0-1:N_CH0-N_HWPE_PORTS] =  HWPE_wdata_i;
-    assign TCDM_data_be_DEM_TO_XBAR    [N_CH0-1:N_CH0-N_HWPE_PORTS] =  HWPE_be_i;
-    assign HWPE_gnt_o      = TCDM_data_gnt_DEM_TO_XBAR     [N_CH0-1:N_CH0-N_HWPE_PORTS];
-    assign HWPE_r_valid_o  = TCDM_data_r_valid_DEM_TO_XBAR [N_CH0-1:N_CH0-N_HWPE_PORTS];
-    assign HWPE_r_rdata_o  = TCDM_data_r_rdata_DEM_TO_XBAR [N_CH0-1:N_CH0-N_HWPE_PORTS];
+    //////////////////////////
+    // Interleaved Crossbar //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  This is a fully connected crossbar with combinational arbitration (logarithmic Inteconnect). It arbitrates    //
+    //  from the master ports from the L2 demultiplexer and the interleaved-only master ports (ports that do not have //
+    //  access to the other address spaces) to the TCDM slaves with address interleaving. That is, the least          //
+    //  significant **word address** bits are used to select the slave port. This results in a more equal load on the //
+    //  SRAM banks when the master access memory regions in a sequential manner. EVERY SLAVE IS EXPECTED TO HAVE      //
+    //  CONSTANT LATENCY OF 1 CYCLE. Slaves that cannot respond within a single cycle must appropriately delay the    //
+    //  assertion of the gnt (grant) signal. Asserting grant without asserting r_valid in the next cycle results in   //
+    //  undefined behavior.                                                                                           //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    genvar j;
-    generate
-        for(j=0;j<N_CH0+N_CH1;j++) begin
-            assign TCDM_data_add_DEM_TO_XBAR_resized[j] = TCDM_data_add_DEM_TO_XBAR[j][ADDR_L2_WIDTH+$clog2(N_L2_BANKS)+2-1:2];
+    //Concatenate the l2 demux master port array and the interleaved only port array
+    XBAR_TCDM_BUS interleaved_masters[NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY]();
+
+    //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
+    // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
+    // This is a verbose workaround for it. The next couple of ugly macro magic unpacks each interface into individual
+    // signal arrays, performs the assignments to the interface and packs the signal back to an array of interfaces.
+    `TCDM_EXPLODE_ARRAY_DECLARE(interleaved_masters, NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY)
+    for (genvar i = 0; i < NR_MASTER_PORTS + NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
+        `TCDM_SLAVE_EXPLODE(interleaved_masters[i], interleaved_masters, [i])
+    end
+    `TCDM_EXPLODE_ARRAY_DECLARE(l2_demux_2_interleaved_xbar, NR_MASTER_PORTS)
+    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
+        `TCDM_MASTER_EXPLODE(l2_demux_2_interleaved_xbar[i], l2_demux_2_interleaved_xbar, [i])
+        `TCDM_ASSIGN(interleaved_masters, [i], l2_demux_2_interleaved_xbar, [i])
         end
-    endgenerate
-
-    // ██╗     ██████╗         ██╗  ██╗██████╗  █████╗ ██████╗
-    // ██║     ╚════██╗        ╚██╗██╔╝██╔══██╗██╔══██╗██╔══██╗
-    // ██║      █████╔╝         ╚███╔╝ ██████╔╝███████║██████╔╝
-    // ██║     ██╔═══╝          ██╔██╗ ██╔══██╗██╔══██║██╔══██╗
-    // ███████╗███████╗███████╗██╔╝ ██╗██████╔╝██║  ██║██║  ██║
-    // ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-    // out channels: 4 memory channels
-    // in channels:  5 from FC( fc_instr, fc_data, udma_tx, udma_rx, debug_in) + 4 (AXI --> 2 for read, 2 for write)
-    XBAR_L2 #(
-        .N_CH0          ( N_CH0                            ),
-        .N_CH1          ( N_CH1                            ),
-        .N_SLAVE        ( N_L2_BANKS                       ),
-        .ID_WIDTH       ( N_CH0+N_CH1                      ),
-
-        //FRONT END PARAMS
-        .ADDR_IN_WIDTH  ( ADDR_L2_WIDTH+$clog2(N_L2_BANKS) ),
-        .DATA_WIDTH     ( DATA_WIDTH                       ),
-        .BE_WIDTH       ( BE_WIDTH                         ),
-        .ADDR_MEM_WIDTH ( ADDR_L2_WIDTH                    )
-    ) XBAR_L2_i (
-        // ---------------- MASTER CH0+CH1 SIDE  --------------------------
-        .data_req_i     ( TCDM_data_req_DEM_TO_XBAR         ),
-        .data_add_i     ( TCDM_data_add_DEM_TO_XBAR_resized ),
-        .data_wen_i     ( TCDM_data_wen_DEM_TO_XBAR         ),
-        .data_wdata_i   ( TCDM_data_wdata_DEM_TO_XBAR       ),
-        .data_be_i      ( TCDM_data_be_DEM_TO_XBAR          ),
-        .data_gnt_o     ( TCDM_data_gnt_DEM_TO_XBAR         ),
-        .data_r_valid_o ( TCDM_data_r_valid_DEM_TO_XBAR     ),
-        .data_r_rdata_o ( TCDM_data_r_rdata_DEM_TO_XBAR     ),
-
-        // ---------------- MM_SIDE (Interleaved) --------------------------
-        .data_req_o     ( TCDM_data_req_TO_MEM              ),
-        .data_add_o     ( TCDM_data_add_TO_MEM              ),
-        .data_wen_o     ( TCDM_data_wen_TO_MEM              ),
-        .data_wdata_o   ( TCDM_data_wdata_TO_MEM            ),
-        .data_be_o      ( TCDM_data_be_TO_MEM               ),
-        .data_ID_o      ( TCDM_data_ID_TO_MEM               ),
-
-        .data_r_rdata_i ( TCDM_data_rdata_TO_MEM            ),
-        .data_r_valid_i ( TCDM_data_rvalid_TO_MEM           ),
-        .data_r_ID_i    ( TCDM_data_rID_TO_MEM              ),
-
-        .clk            ( clk                               ),
-        .rst_n          ( rst_n                             )
-    );
-
-    // ██████╗ ██████╗ ██╗██████╗  ██████╗ ███████╗        ██╗  ██╗██████╗  █████╗ ██████╗
-    // ██╔══██╗██╔══██╗██║██╔══██╗██╔════╝ ██╔════╝        ╚██╗██╔╝██╔══██╗██╔══██╗██╔══██╗
-    // ██████╔╝██████╔╝██║██║  ██║██║  ███╗█████╗           ╚███╔╝ ██████╔╝███████║██████╔╝
-    // ██╔══██╗██╔══██╗██║██║  ██║██║   ██║██╔══╝           ██╔██╗ ██╔══██╗██╔══██║██╔══██╗
-    // ██████╔╝██║  ██║██║██████╔╝╚██████╔╝███████╗███████╗██╔╝ ██╗██████╔╝██║  ██║██║  ██║
-    // ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-    // Full COnnectivity (Full crossbar)
-    // out channels: 2 channels APB32 and AXI32
-    // in channels:  2 from FC( fc_data, debug_in) + 4 (AXI --> 2 for read, 2 for write)
-    XBAR_BRIDGE #(
-        .N_CH0             ( N_CH0_BRIDGE                   ), // 2  --> Removed (FC_instr, udma_tx, udma_rx)
-        .N_CH1             ( N_CH1_BRIDGE                   ), // 4  --> AXI64
-        .N_SLAVE           ( N_PERIPHS                      ),
-        .ID_WIDTH          ( PER_ID_WIDTH                   ),
-
-        .AUX_WIDTH         ( AUX_WIDTH                      ),
-        .ADDR_WIDTH        ( ADDR_WIDTH                     ),
-        .DATA_WIDTH        ( DATA_WIDTH                     ),
-        .BE_WIDTH          ( BE_WIDTH                       )
-    ) XBAR_BRIDGE_i (
-        .data_req_i        ( PER_data_req_DEM_2_L2_XBAR     ),
-        .data_add_i        ( PER_data_add_DEM_2_L2_XBAR     ),
-        .data_wen_i        ( PER_data_wen_DEM_2_L2_XBAR     ),
-        .data_wdata_i      ( PER_data_wdata_DEM_2_L2_XBAR   ),
-        .data_be_i         ( PER_data_be_DEM_2_L2_XBAR      ),
-        .data_aux_i        ( PER_data_aux_DEM_2_L2_XBAR     ),
-        .data_gnt_o        ( PER_data_gnt_DEM_2_L2_XBAR     ),
-        .data_r_valid_o    ( PER_data_r_valid_DEM_2_L2_XBAR ),
-        .data_r_rdata_o    ( PER_data_r_rdata_DEM_2_L2_XBAR ),
-        .data_r_opc_o      ( PER_data_r_opc_DEM_2_L2_XBAR   ),
-        .data_r_aux_o      ( PER_data_r_aux_DEM_2_L2_XBAR   ),
-
-        .data_req_o        ( PER_data_req_TO_BRIDGE         ),
-        .data_add_o        ( PER_data_add_TO_BRIDGE         ),
-        .data_wen_o        ( PER_data_wen_TO_BRIDGE         ),
-        .data_wdata_o      ( PER_data_wdata_TO_BRIDGE       ),
-        .data_be_o         ( PER_data_be_TO_BRIDGE          ),
-        .data_ID_o         ( PER_data_ID_TO_BRIDGE          ),
-        .data_aux_o        ( PER_data_aux_TO_BRIDGE         ),
-        .data_gnt_i        ( PER_data_gnt_TO_BRIDGE         ),
-
-        .data_r_rdata_i    ( PER_data_r_rdata_TO_BRIDGE     ),
-        .data_r_valid_i    ( PER_data_r_valid_TO_BRIDGE     ),
-        .data_r_ID_i       ( PER_data_r_ID_TO_BRIDGE        ),
-        .data_r_opc_i      ( PER_data_r_opc_TO_BRIDGE       ),
-        .data_r_aux_i      ( PER_data_r_aux_TO_BRIDGE       ),
-
-        .clk               ( clk                            ),
-        .rst_n             ( rst_n                          ),
-
-        .START_ADDR        ( PER_START_ADDR                 ),
-        .END_ADDR          ( PER_END_ADDR                   )
-    );
-
-    genvar i;
-    generate
-        // ██╗     ██████╗      ████████╗ ██████╗██████╗ ███╗   ███╗        ██████╗ ███████╗███╗   ███╗██╗   ██╗██╗  ██╗
-        // ██║     ╚════██╗     ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║        ██╔══██╗██╔════╝████╗ ████║██║   ██║╚██╗██╔╝
-        // ██║      █████╔╝        ██║   ██║     ██║  ██║██╔████╔██║        ██║  ██║█████╗  ██╔████╔██║██║   ██║ ╚███╔╝
-        // ██║     ██╔═══╝         ██║   ██║     ██║  ██║██║╚██╔╝██║        ██║  ██║██╔══╝  ██║╚██╔╝██║██║   ██║ ██╔██╗
-        // ███████╗███████╗███████╗██║   ╚██████╗██████╔╝██║ ╚═╝ ██║███████╗██████╔╝███████╗██║ ╚═╝ ██║╚██████╔╝██╔╝ ██╗
-        // ╚══════╝╚══════╝╚══════╝╚═╝    ╚═════╝╚═════╝ ╚═╝     ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝
-        for(i=0; i<N_CH0-N_HWPE_PORTS; i++) begin : FC_DEMUX_32
-            l2_tcdm_demux #(
-                .ADDR_WIDTH ( ADDR_WIDTH ), //= 32,
-                .DATA_WIDTH ( DATA_WIDTH ), //= 32,
-                .BE_WIDTH   ( BE_WIDTH   ), //= DATA_WIDTH/8,
-                .AUX_WIDTH  ( AUX_WIDTH  ), //=
-                .N_PERIPHS  ( N_PERIPHS  )  //= 2
-            ) DEMUX_MASTER_32 (
-                .clk                 ( clk                                ),
-                .rst_n               ( rst_n                              ),
-                .test_en_i           ( test_en_i                          ),
-
-                // CORE SIDE
-                .data_req_i          ( FC_data_req_INT_32     [i]         ),
-                .data_add_i          ( FC_data_add_INT_32     [i]         ),
-                .data_wen_i          ( FC_data_wen_INT_32     [i]         ),
-                .data_wdata_i        ( FC_data_wdata_INT_32   [i]         ),
-                .data_be_i           ( FC_data_be_INT_32      [i]         ),
-                .data_aux_i          ( FC_data_aux_INT_32     [i]         ),
-                .data_gnt_o          ( FC_data_gnt_INT_32     [i]         ),
-                .data_r_aux_o        ( FC_data_r_aux_INT_32   [i]         ),
-                .data_r_valid_o      ( FC_data_r_valid_INT_32 [i]         ),
-                .data_r_rdata_o      ( FC_data_r_rdata_INT_32 [i]         ),
-                .data_r_opc_o        ( FC_data_r_opc_INT_32   [i]         ),
-
-                // Interleaved Region
-                .data_req_o_TDCM     ( TCDM_data_req_DEM_TO_XBAR      [i] ),
-                .data_add_o_TDCM     ( TCDM_data_add_DEM_TO_XBAR      [i] ),
-                .data_wen_o_TDCM     ( TCDM_data_wen_DEM_TO_XBAR      [i] ),
-                .data_wdata_o_TDCM   ( TCDM_data_wdata_DEM_TO_XBAR    [i] ),
-                .data_be_o_TDCM      ( TCDM_data_be_DEM_TO_XBAR       [i] ),
-                .data_gnt_i_TDCM     ( TCDM_data_gnt_DEM_TO_XBAR      [i] ),
-                .data_r_valid_i_TDCM ( TCDM_data_r_valid_DEM_TO_XBAR  [i] ),
-                .data_r_rdata_i_TDCM ( TCDM_data_r_rdata_DEM_TO_XBAR  [i] ),
-
-                // Memory Regions : Bridges
-                .data_req_o_PER      ( PER_data_req_DEM_2_L2_XBAR     [i] ),
-                .data_add_o_PER      ( PER_data_add_DEM_2_L2_XBAR     [i] ),
-                .data_wen_o_PER      ( PER_data_wen_DEM_2_L2_XBAR     [i] ),
-                .data_wdata_o_PER    ( PER_data_wdata_DEM_2_L2_XBAR   [i] ),
-                .data_be_o_PER       ( PER_data_be_DEM_2_L2_XBAR      [i] ),
-                .data_aux_o_PER      ( PER_data_aux_DEM_2_L2_XBAR     [i] ),
-                .data_gnt_i_PER      ( PER_data_gnt_DEM_2_L2_XBAR     [i] ),
-                .data_r_valid_i_PER  ( PER_data_r_valid_DEM_2_L2_XBAR [i] ),
-                .data_r_rdata_i_PER  ( PER_data_r_rdata_DEM_2_L2_XBAR [i] ),
-                .data_r_opc_i_PER    ( PER_data_r_opc_DEM_2_L2_XBAR   [i] ),
-                .data_r_aux_i_PER    ( PER_data_r_aux_DEM_2_L2_XBAR   [i] ),
-
-                .PER_START_ADDR      ( PER_START_ADDR                     ),
-                .PER_END_ADDR        ( PER_END_ADDR                       ),
-                .TCDM_START_ADDR     ( TCDM_START_ADDR                    ),
-                .TCDM_END_ADDR       ( TCDM_END_ADDR                      )
-            );
-        end
-
-        for(i=0; i<N_CH1; i++) begin : FC_DEMUX_64
-            l2_tcdm_demux #(
-                .ADDR_WIDTH ( ADDR_WIDTH ), //= 32,
-                .DATA_WIDTH ( DATA_WIDTH ), //= 32,
-                .BE_WIDTH   ( BE_WIDTH   ), //= DATA_WIDTH/8,
-                .AUX_WIDTH  ( AUX_WIDTH  ), //=
-                .N_PERIPHS  ( N_PERIPHS  )  //= 2
-            ) DEMUX_AXI64 (
-                .clk                 ( clk                                      ),
-                .rst_n               ( rst_n                                    ),
-                .test_en_i           ( test_en_i                                ),
-
-                // CORE SIDE
-                .data_req_i          ( AXI_data_req_INT_64     [i]              ),
-                .data_add_i          ( AXI_data_add_INT_64     [i]              ),
-                .data_wen_i          ( AXI_data_wen_INT_64     [i]              ),
-                .data_wdata_i        ( AXI_data_wdata_INT_64   [i]              ),
-                .data_be_i           ( AXI_data_be_INT_64      [i]              ),
-                .data_aux_i          ( AXI_data_aux_INT_64     [i]              ),
-                .data_gnt_o          ( AXI_data_gnt_INT_64     [i]              ),
-                .data_r_aux_o        ( AXI_data_r_aux_INT_64   [i]              ),
-                .data_r_valid_o      ( AXI_data_r_valid_INT_64 [i]              ),
-                .data_r_rdata_o      ( AXI_data_r_rdata_INT_64 [i]              ),
-                .data_r_opc_o        ( AXI_data_r_opc_INT_64   [i]              ),
-
-                // Interleaved Region
-                .data_req_o_TDCM     ( TCDM_data_req_DEM_TO_XBAR      [N_CH0+i] ),
-                .data_add_o_TDCM     ( TCDM_data_add_DEM_TO_XBAR      [N_CH0+i] ),
-                .data_wen_o_TDCM     ( TCDM_data_wen_DEM_TO_XBAR      [N_CH0+i] ),
-                .data_wdata_o_TDCM   ( TCDM_data_wdata_DEM_TO_XBAR    [N_CH0+i] ),
-                .data_be_o_TDCM      ( TCDM_data_be_DEM_TO_XBAR       [N_CH0+i] ),
-                .data_gnt_i_TDCM     ( TCDM_data_gnt_DEM_TO_XBAR      [N_CH0+i] ),
-                .data_r_valid_i_TDCM ( TCDM_data_r_valid_DEM_TO_XBAR  [N_CH0+i] ),
-                .data_r_rdata_i_TDCM ( TCDM_data_r_rdata_DEM_TO_XBAR  [N_CH0+i] ),
-
-                // Memory Regions : Bridges
-                .data_req_o_PER      ( PER_data_req_DEM_2_L2_XBAR     [N_CH0+i] ),
-                .data_add_o_PER      ( PER_data_add_DEM_2_L2_XBAR     [N_CH0+i] ),
-                .data_wen_o_PER      ( PER_data_wen_DEM_2_L2_XBAR     [N_CH0+i] ),
-                .data_wdata_o_PER    ( PER_data_wdata_DEM_2_L2_XBAR   [N_CH0+i] ),
-                .data_be_o_PER       ( PER_data_be_DEM_2_L2_XBAR      [N_CH0+i] ),
-                .data_aux_o_PER      ( PER_data_aux_DEM_2_L2_XBAR     [N_CH0+i] ),
-                .data_gnt_i_PER      ( PER_data_gnt_DEM_2_L2_XBAR     [N_CH0+i] ),
-                .data_r_valid_i_PER  ( PER_data_r_valid_DEM_2_L2_XBAR [N_CH0+i] ),
-                .data_r_rdata_i_PER  ( PER_data_r_rdata_DEM_2_L2_XBAR [N_CH0+i] ),
-                .data_r_opc_i_PER    ( PER_data_r_opc_DEM_2_L2_XBAR   [N_CH0+i] ),
-                .data_r_aux_i_PER    ( PER_data_r_aux_DEM_2_L2_XBAR   [N_CH0+i] ),
-
-                .PER_START_ADDR      ( PER_START_ADDR                           ),
-                .PER_END_ADDR        ( PER_END_ADDR                             ),
-                .TCDM_START_ADDR     ( TCDM_START_ADDR                          ),
-                .TCDM_END_ADDR       ( TCDM_END_ADDR                            )
-            );
-        end
-    endgenerate
-
-// ███╗   ███╗███████╗███╗   ███╗         ██████╗██╗   ██╗████████╗
-// ████╗ ████║██╔════╝████╗ ████║        ██╔════╝██║   ██║╚══██╔══╝
-// ██╔████╔██║█████╗  ██╔████╔██║        ██║     ██║   ██║   ██║
-// ██║╚██╔╝██║██╔══╝  ██║╚██╔╝██║        ██║     ██║   ██║   ██║
-// ██║ ╚═╝ ██║███████╗██║ ╚═╝ ██║███████╗╚██████╗╚██████╔╝   ██║
-// ╚═╝     ╚═╝╚══════╝╚═╝     ╚═╝╚══════╝ ╚═════╝ ╚═════╝    ╚═╝
-    always_comb begin
-        for(int unsigned i=0;i<N_L2_BANKS;i++) begin
-            L2_D_o[i]   =  TCDM_data_wdata_TO_MEM[i];
-            L2_A_o[i]   =  TCDM_data_add_TO_MEM[i]-L2_OFFSET_PRI;
-            L2_CEN_o[i] = ~TCDM_data_req_TO_MEM[i];
-            L2_WEN_o[i] =  TCDM_data_wen_TO_MEM[i];
-            L2_BE_o[i]  =  TCDM_data_be_TO_MEM[i];
-            TCDM_data_rdata_TO_MEM[i] = L2_Q_i[i];
-        end
+    `TCDM_EXPLODE_ARRAY_DECLARE(master_ports_interleaved_only_checked, NR_MASTER_PORTS_INTERLEAVED_ONLY)
+    for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin
+        `TCDM_MASTER_EXPLODE(master_ports_interleaved_only_checked[i], master_ports_interleaved_only_checked, [i])
+        `TCDM_ASSIGN(interleaved_masters, [NR_MASTER_PORTS + i], master_ports_interleaved_only_checked, [i])
     end
 
-    always_ff @(posedge clk, negedge rst_n)
-    begin
-        if(rst_n == 1'b0) begin
-            for(int unsigned i=0;i<N_L2_BANKS;i++) begin
-                TCDM_data_rID_TO_MEM[i]       <= '0;
-                TCDM_data_rvalid_TO_MEM[i]    <= '0;
-            end
-        end
-        else begin
-            for (int unsigned  i=0;i<N_L2_BANKS;i++) begin
-                if(TCDM_data_req_TO_MEM[i]) begin
-                    TCDM_data_rID_TO_MEM[i]       <= TCDM_data_ID_TO_MEM[i];
-                    TCDM_data_rvalid_TO_MEM[i]    <= 1'b1;
-                end
-                else begin
-                    TCDM_data_rvalid_TO_MEM[i]    <= 1'b0;
-                end
-            end
-        end
+    interleaved_crossbar #(
+                           .NR_MASTER_PORTS(NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY),
+                           .NR_SLAVE_PORTS(NR_SLAVE_PORTS_INTERLEAVED)
+                           ) i_interleaved_xbar(
+                                                // Interfaces
+                                                .master_ports   (interleaved_masters),
+                                                .slave_ports    (interleaved_slaves),
+                                                // Inputs
+                                                .clk_i,
+                                                .rst_ni,
+                                                .test_en_i
+                                                );
+
+    /////////////////////////
+    // Contiguous Crossbar //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // This is a fully connected crossbar with combinational arbitration (logarithmic Inteconnect). Internally, there //
+    // is an address decoder that matches each master_port address against a number of address range to output port   //
+    // mapping rules. Addresses not matching any of the address mapping rules will end up on a default port that      //
+    // always grants the request, raises the opc line for one cycle and in the case of a read acces, responds with    //
+    // the word 0xBADACCE5. EVERY SLAVE IS EXPECTED TO HAVE CONSTANT LATENCY OF 1 CYCLE. Slaves that cannot respond   //
+    // within a single cycle must appropriately delay the assertion of the gnt (grant) signal. Asserting grant        //
+    // without asserting r_valid in the next cycle results in undefined behavior.                                     //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    XBAR_TCDM_BUS error_slave();
+    contiguous_crossbar #(
+                          .NR_MASTER_PORTS(NR_MASTER_PORTS),
+                          .NR_SLAVE_PORTS(NR_SLAVE_PORTS_CONTIG),
+                          .NR_ADDR_RULES(NR_ADDR_RULES_SLAVE_PORTS_CONTIG)
+                          ) i_contiguous_xbar(
+                                              // Interfaces
+                                              .master_ports     (l2_demux_2_contiguous_xbar),
+                                              .slave_ports      (contiguous_slaves),
+                                              .error_port       (error_slave),
+                                              .addr_rules       (addr_space_contiguous),
+                                              // Inputs
+                                              .clk_i,
+                                              .rst_ni,
+                                              .test_en_i
+                                              );
+    //Error Slave
+    // This dummy slave is responsible to generate the buserror described above
+    tcdm_error_slave #(
+      .ERROR_RESPONSE(32'hBADACCE5)
+    ) i_error_slave_contig_xbar (
+      .clk_i,
+      .rst_ni,
+      .slave(error_slave)
+      );
+
+
+    ////////////////////////
+    // TCDM to AXI Bridge //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Instantiate a TCDM to AXI protocol converter for each master port from the L2 demultiplexer. The converter //
+    // converts one 32-bit TCDM port to one 32-bit AXI port.                                                      //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(32),
+              .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_bridge_2_axi_xbar[NR_MASTER_PORTS]();
+    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_tcdm_2_axi_bridge
+        lint2axi_wrap #(
+                        .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
+                        .AXI_USER_WIDTH(AXI_USER_WIDTH)
+                        ) i_lint2axi_bridge (
+                                        .clk_i,
+                                        .rst_ni,
+                                        .master(l2_demux_2_axi_bridge[i]),
+                                        .slave(axi_bridge_2_axi_xbar[i])
+                                        );
     end
 
-// ██╗     ██╗███╗   ██╗████████╗     ██████╗          █████╗ ██████╗ ██████╗
-// ██║     ██║████╗  ██║╚══██╔══╝     ╚════██╗        ██╔══██╗██╔══██╗██╔══██╗
-// ██║     ██║██╔██╗ ██║   ██║         █████╔╝        ███████║██████╔╝██████╔╝
-// ██║     ██║██║╚██╗██║   ██║        ██╔═══╝         ██╔══██║██╔═══╝ ██╔══██╗
-// ███████╗██║██║ ╚████║   ██║███████╗███████╗███████╗██║  ██║██║     ██████╔╝
-// ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═════╝
-    lint_2_apb #(
-        .ADDR_WIDTH     ( ADDR_WIDTH                  ), // 32,
-        .DATA_WIDTH     ( DATA_WIDTH                  ), // 32,
-        .BE_WIDTH       ( BE_WIDTH                    ), // DATA_WIDTH/8,
-        .ID_WIDTH       ( PER_ID_WIDTH                ), // 10,
-        .AUX_WIDTH      ( AUX_WIDTH                   )  // 8
-    ) lint_2_apb_i (
-        .clk            ( clk                           ),
-        .rst_n          ( rst_n                         ),
-        .data_req_i     ( PER_data_req_TO_BRIDGE    [0] ),
-        .data_add_i     ( PER_data_add_TO_BRIDGE    [0] ),
-        .data_wen_i     ( PER_data_wen_TO_BRIDGE    [0] ),
-        .data_wdata_i   ( PER_data_wdata_TO_BRIDGE  [0] ),
-        .data_be_i      ( PER_data_be_TO_BRIDGE     [0] ),
-        .data_aux_i     ( PER_data_aux_TO_BRIDGE    [0] ),
-        .data_ID_i      ( PER_data_ID_TO_BRIDGE     [0] ),
-        .data_gnt_o     ( PER_data_gnt_TO_BRIDGE    [0] ),
-        // Resp
-        .data_r_valid_o ( PER_data_r_valid_TO_BRIDGE[0] ),
-        .data_r_rdata_o ( PER_data_r_rdata_TO_BRIDGE[0] ),
-        .data_r_opc_o   ( PER_data_r_opc_TO_BRIDGE  [0] ),
-        .data_r_aux_o   ( PER_data_r_aux_TO_BRIDGE  [0] ),
-        .data_r_ID_o    ( PER_data_r_ID_TO_BRIDGE   [0] ),
 
-        .master_PADDR   ( APB_PADDR_o                   ),
-        .master_PWDATA  ( APB_PWDATA_o                  ),
-        .master_PWRITE  ( APB_PWRITE_o                  ),
-        .master_PSEL    ( APB_PSEL_o                    ),
-        .master_PENABLE ( APB_PENABLE_o                 ),
-        .master_PRDATA  ( APB_PRDATA_i                  ),
-        .master_PREADY  ( APB_PREADY_i                  ),
-        .master_PSLVERR ( APB_PSLVERR_i                 )
-    );
+    ///////////////////
+    // AXI4 Crossbar //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // The AXI crossbar accepts a set of address to slave port mapping rules (addr_map_i) and decodes the transaction //
+    // address accordingly. Illegal addresses that do not map to any defined address space are anaswered with a       //
+    // decode error and Read Responses contain the data 0xBADCAB1E. Check the axi_xbar documentation for more         //
+    // information.                                                                                                   //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    localparam xbar_cfg_t AXI_XBAR_CFG = '{
+                                                    NoSlvPorts: NR_MASTER_PORTS,
+                                                    NoMstPorts: NR_AXI_SLAVE_PORTS,
+                                                    MaxMstTrans: 1,       //The TCDM ports do not support
+                                                    //outstanding transactiions anyways
+                                                    MaxSlvTrans: 4,       //Allow up to 4 in-flight transactions
+                                                    //per slave port
+                                                    FallThrough: 1,       //Use the reccomended default config
+                                                    LatencyMode: axi_pkg::CUT_MST_PORTS,
+                                                    AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
+                                                    AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
+                                                    AxiAddrWidth: BUS_ADDR_WIDTH,
+                                                    AxiDataWidth: BUS_DATA_WIDTH,
+                                                    NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS
+                                                    };
+
+    //Reverse interface array ordering since axi_xbar uses big-endian ordering of the arrays
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(32),
+              .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_bridge_2_axi_xbar_reversed[NR_MASTER_PORTS-1:0]();
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(32),
+              .AXI_ID_WIDTH(AXI_SLAVE_ID_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_slaves_reversed[NR_AXI_SLAVE_PORTS-1:0]();
+
+    for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
+        `AXI_ASSIGN(axi_bridge_2_axi_xbar_reversed[i], axi_bridge_2_axi_xbar[i])
+    end
+
+    for (genvar i = 0; i < NR_AXI_SLAVE_PORTS; i++) begin
+        `AXI_ASSIGN(axi_slaves[i], axi_slaves_reversed[i])
+    end
+
+    axi_xbar_intf #(
+                    .AXI_USER_WIDTH(AXI_USER_WIDTH),
+                    .Cfg(AXI_XBAR_CFG),
+                    .rule_t(addr_map_rule_t)
+                    ) i_axi_xbar (
+                    .clk_i,
+                    .rst_ni,
+                    .test_i(test_en_i),
+                    .slv_ports(axi_bridge_2_axi_xbar_reversed),
+                    .mst_ports(axi_slaves_reversed),
+                    .addr_map_i(addr_space_axi),
+                    .en_default_mst_port_i('0),
+                    .default_mst_port_i('0)
+                    );
 
 
-    lint_2_axi #(
-        .ADDR_WIDTH       ( ADDR_WIDTH        ),
-        .DATA_WIDTH       ( DATA_WIDTH        ),
-        .BE_WIDTH         ( BE_WIDTH          ),
-        .ID_WIDTH         ( PER_ID_WIDTH      ),
-        .USER_WIDTH       ( AXI_32_USER_WIDTH ),
-        .AUX_WIDTH        ( AUX_WIDTH         ),
-        .AXI_ID_WIDTH     ( AXI_32_ID_WIDTH   ),
-        .REGISTERED_GRANT ( "FALSE"           )  // "TRUE"|"FALSE"
-    ) i_lint_2_axi (
-        // Clock and Reset
-        .clk_i         ( clk                            ),
-        .rst_ni        ( rst_n                          ),
-
-        .data_req_i    ( PER_data_req_TO_BRIDGE    [1]  ),
-        .data_addr_i   ( PER_data_add_TO_BRIDGE    [1]  ),
-        .data_we_i     ( ~PER_data_wen_TO_BRIDGE   [1]  ),
-        .data_wdata_i  ( PER_data_wdata_TO_BRIDGE  [1]  ),
-        .data_be_i     ( PER_data_be_TO_BRIDGE     [1]  ),
-        .data_aux_i    ( PER_data_aux_TO_BRIDGE    [1]  ),
-        .data_ID_i     ( PER_data_ID_TO_BRIDGE     [1]  ),
-        .data_gnt_o    ( PER_data_gnt_TO_BRIDGE    [1]  ),
-
-        .data_rvalid_o ( PER_data_r_valid_TO_BRIDGE [1] ),
-        .data_rdata_o  ( PER_data_r_rdata_TO_BRIDGE [1] ),
-        .data_ropc_o   ( PER_data_r_opc_TO_BRIDGE   [1] ),
-        .data_raux_o   ( PER_data_r_aux_TO_BRIDGE   [1] ),
-        .data_rID_o    ( PER_data_r_ID_TO_BRIDGE    [1] ),
-        // ---------------------------------------------------------
-        // AXI TARG Port Declarations ------------------------------
-        // ---------------------------------------------------------
-        //AXI write address bus -------------- // USED// -----------
-        .aw_id_o       ( AXI_Master_aw_id_o             ),
-        .aw_addr_o     ( AXI_Master_aw_addr_o           ),
-        .aw_len_o      ( AXI_Master_aw_len_o            ),
-        .aw_size_o     ( AXI_Master_aw_size_o           ),
-        .aw_burst_o    ( AXI_Master_aw_burst_o          ),
-        .aw_lock_o     ( AXI_Master_aw_lock_o           ),
-        .aw_cache_o    ( AXI_Master_aw_cache_o          ),
-        .aw_prot_o     ( AXI_Master_aw_prot_o           ),
-        .aw_region_o   ( AXI_Master_aw_region_o         ),
-        .aw_user_o     ( AXI_Master_aw_user_o           ),
-        .aw_qos_o      ( AXI_Master_aw_qos_o            ),
-        .aw_valid_o    ( AXI_Master_aw_valid_o          ),
-        .aw_ready_i    ( AXI_Master_aw_ready_i          ),
-        // ---------------------------------------------------------
-
-        //AXI write data bus -------------- // USED// --------------
-        .w_data_o      ( AXI_Master_w_data_o            ),
-        .w_strb_o      ( AXI_Master_w_strb_o            ),
-        .w_last_o      ( AXI_Master_w_last_o            ),
-        .w_user_o      ( AXI_Master_w_user_o            ),
-        .w_valid_o     ( AXI_Master_w_valid_o           ),
-        .w_ready_i     ( AXI_Master_w_ready_i           ),
-        // ---------------------------------------------------------
-
-        //AXI write response bus -------------- // USED// ----------
-        .b_id_i        ( AXI_Master_b_id_i              ),
-        .b_resp_i      ( AXI_Master_b_resp_i            ),
-        .b_valid_i     ( AXI_Master_b_valid_i           ),
-        .b_user_i      ( AXI_Master_b_user_i            ),
-        .b_ready_o     ( AXI_Master_b_ready_o           ),
-        // ---------------------------------------------------------
-
-        //AXI read address bus -------------------------------------
-        .ar_id_o       ( AXI_Master_ar_id_o             ),
-        .ar_addr_o     ( AXI_Master_ar_addr_o           ),
-        .ar_len_o      ( AXI_Master_ar_len_o            ),
-        .ar_size_o     ( AXI_Master_ar_size_o           ),
-        .ar_burst_o    ( AXI_Master_ar_burst_o          ),
-        .ar_lock_o     ( AXI_Master_ar_lock_o           ),
-        .ar_cache_o    ( AXI_Master_ar_cache_o          ),
-        .ar_prot_o     ( AXI_Master_ar_prot_o           ),
-        .ar_region_o   ( AXI_Master_ar_region_o         ),
-        .ar_user_o     ( AXI_Master_ar_user_o           ),
-        .ar_qos_o      ( AXI_Master_ar_qos_o            ),
-        .ar_valid_o    ( AXI_Master_ar_valid_o          ),
-        .ar_ready_i    ( AXI_Master_ar_ready_i          ),
-        // ---------------------------------------------------------
-
-        //AXI read data bus ----------------------------------------
-        .r_id_i        ( AXI_Master_r_id_i              ),
-        .r_data_i      ( AXI_Master_r_data_i            ),
-        .r_resp_i      ( AXI_Master_r_resp_i            ),
-        .r_last_i      ( AXI_Master_r_last_i            ),
-        .r_user_i      ( AXI_Master_r_user_i            ),
-        .r_valid_i     ( AXI_Master_r_valid_i           ),
-        .r_ready_o     ( AXI_Master_r_ready_o           )
-        // ---------------------------------------------------------
-    );
-
-        //  █████╗ ██╗  ██╗██╗        ██████╗         ██╗     ██╗███╗   ██╗████████╗
-        // ██╔══██╗╚██╗██╔╝██║        ╚════██╗        ██║     ██║████╗  ██║╚══██╔══╝
-        // ███████║ ╚███╔╝ ██║         █████╔╝        ██║     ██║██╔██╗ ██║   ██║
-        // ██╔══██║ ██╔██╗ ██║        ██╔═══╝         ██║     ██║██║╚██╗██║   ██║
-        // ██║  ██║██╔╝ ██╗██║███████╗███████╗███████╗███████╗██║██║ ╚████║   ██║
-        // ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝
-    axi64_2_lint32 #(
-        .AXI_ADDR_WIDTH    ( AXI_ADDR_WIDTH ), //= 32,
-        .AXI_DATA_WIDTH    ( AXI_DATA_WIDTH ), //= 64,
-        .AXI_STRB_WIDTH    ( AXI_STRB_WIDTH ), //= 8,
-        .AXI_USER_WIDTH    ( AXI_USER_WIDTH ), //= 6,
-        .AXI_ID_WIDTH      ( AXI_ID_WIDTH   ), //= 7,
-        .BUFF_DEPTH_SLICES ( 4              ), //= 4,
-        .DATA_WIDTH        ( DATA_WIDTH     ), //= 64,
-        .BE_WIDTH          ( BE_WIDTH       ), //= DATA_WIDTH/8,
-        .ADDR_WIDTH        ( ADDR_WIDTH     ), //= 10
-        .AUX_WIDTH         ( AUX_WIDTH      )
-        ) axi64_2_lint32_i (
-        // AXI GLOBAL SIGNALS
-        .clk              ( clk                          ),
-        .rst_n            ( rst_n                        ),
-        .test_en_i        ( test_en_i                    ),
-        // AXI INTERFACE
-        .AW_ADDR_i        ( AXI_Slave_aw_addr_i          ),
-        .AW_PROT_i        ( AXI_Slave_aw_prot_i          ),
-        .AW_REGION_i      ( AXI_Slave_aw_region_i        ),
-        .AW_LEN_i         ( AXI_Slave_aw_len_i           ),
-        .AW_SIZE_i        ( AXI_Slave_aw_size_i          ),
-        .AW_BURST_i       ( AXI_Slave_aw_burst_i         ),
-        .AW_LOCK_i        ( AXI_Slave_aw_lock_i          ),
-        .AW_CACHE_i       ( AXI_Slave_aw_cache_i         ),
-        .AW_QOS_i         ( AXI_Slave_aw_qos_i           ),
-        .AW_ID_i          ( AXI_Slave_aw_id_i            ),
-        .AW_USER_i        ( AXI_Slave_aw_user_i          ),
-        .AW_VALID_i       ( AXI_Slave_aw_valid_i         ),
-        .AW_READY_o       ( AXI_Slave_aw_ready_o         ),
-        // ADDRESS READ CHANNEL
-        .AR_ADDR_i        ( AXI_Slave_ar_addr_i          ),
-        .AR_PROT_i        ( AXI_Slave_ar_prot_i          ),
-        .AR_REGION_i      ( AXI_Slave_ar_region_i        ),
-        .AR_LEN_i         ( AXI_Slave_ar_len_i           ),
-        .AR_SIZE_i        ( AXI_Slave_ar_size_i          ),
-        .AR_BURST_i       ( AXI_Slave_ar_burst_i         ),
-        .AR_LOCK_i        ( AXI_Slave_ar_lock_i          ),
-        .AR_CACHE_i       ( AXI_Slave_ar_cache_i         ),
-        .AR_QOS_i         ( AXI_Slave_ar_qos_i           ),
-        .AR_ID_i          ( AXI_Slave_ar_id_i            ),
-        .AR_USER_i        ( AXI_Slave_ar_user_i          ),
-        .AR_VALID_i       ( AXI_Slave_ar_valid_i         ),
-        .AR_READY_o       ( AXI_Slave_ar_ready_o         ),
-        // WRITE CHANNEL
-        .W_USER_i         ( AXI_Slave_w_user_i           ),
-        .W_DATA_i         ( AXI_Slave_w_data_i           ),
-        .W_STRB_i         ( AXI_Slave_w_strb_i           ),
-        .W_LAST_i         ( AXI_Slave_w_last_i           ),
-        .W_VALID_i        ( AXI_Slave_w_valid_i          ),
-        .W_READY_o        ( AXI_Slave_w_ready_o          ),
-        // WRITE RESPONSE CHANNEL
-        .B_ID_o           ( AXI_Slave_b_id_o             ),
-        .B_RESP_o         ( AXI_Slave_b_resp_o           ),
-        .B_USER_o         ( AXI_Slave_b_user_o           ),
-        .B_VALID_o        ( AXI_Slave_b_valid_o          ),
-        .B_READY_i        ( AXI_Slave_b_ready_i          ),
-        // READ CHANNEL
-        .R_ID_o           ( AXI_Slave_r_id_o             ),
-        .R_USER_o         ( AXI_Slave_r_user_o           ),
-        .R_DATA_o         ( AXI_Slave_r_data_o           ),
-        .R_RESP_o         ( AXI_Slave_r_resp_o           ),
-        .R_LAST_o         ( AXI_Slave_r_last_o           ),
-        .R_VALID_o        ( AXI_Slave_r_valid_o          ),
-        .R_READY_i        ( AXI_Slave_r_ready_i          ),
-
-        // LINT Interface - WRITE Request
-        .data_W_req_o     ( AXI_data_req_INT_64  [1:0]   ),
-        .data_W_gnt_i     ( AXI_data_gnt_INT_64  [1:0]   ),
-        .data_W_wdata_o   ( AXI_data_wdata_INT_64[1:0]   ),
-        .data_W_add_o     ( AXI_data_add_INT_64  [1:0]   ),
-        .data_W_wen_o     ( AXI_data_wen_INT_64  [1:0]   ),
-        .data_W_be_o      ( AXI_data_be_INT_64   [1:0]   ),
-        .data_W_aux_o     ( AXI_data_aux_INT_64  [1:0]   ),
-
-        // LINT Interface - Response
-        .data_W_r_valid_i ( AXI_data_r_valid_INT_64[1:0] ),
-        .data_W_r_rdata_i ( AXI_data_r_rdata_INT_64[1:0] ),
-        .data_W_r_opc_i   ( AXI_data_r_opc_INT_64  [1:0] ),
-        .data_W_r_aux_i   ( AXI_data_r_aux_INT_64  [1:0] ),
-
-        // LINT Interface - READ Request
-        .data_R_req_o     ( AXI_data_req_INT_64  [3:2]   ),
-        .data_R_gnt_i     ( AXI_data_gnt_INT_64  [3:2]   ),
-        .data_R_wdata_o   ( AXI_data_wdata_INT_64[3:2]   ),
-        .data_R_add_o     ( AXI_data_add_INT_64  [3:2]   ),
-        .data_R_wen_o     ( AXI_data_wen_INT_64  [3:2]   ),
-        .data_R_be_o      ( AXI_data_be_INT_64   [3:2]   ),
-        .data_R_aux_o     ( AXI_data_aux_INT_64  [3:2]   ),
-
-        // LINT Interface - Responseesponse
-        .data_R_r_valid_i ( AXI_data_r_valid_INT_64[3:2] ),
-        .data_R_r_rdata_i ( AXI_data_r_rdata_INT_64[3:2] ),
-        .data_R_r_opc_i   ( AXI_data_r_opc_INT_64  [3:2] ),
-        .data_R_r_aux_i   ( AXI_data_r_aux_INT_64  [3:2] )
-    );
-
-endmodule
+endmodule : soc_interconnect

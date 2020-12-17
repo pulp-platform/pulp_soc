@@ -17,9 +17,14 @@
 #  state of DETACHED HEAD. Before committing any additional
 #  work, make sure to checkout a branch.
 #
-
+common_cells:
+  commit: v1.20.0
+  domain: [cluster, soc]
 L2_tcdm_hybrid_interco:
   commit: pulpissimo-v1.0
+  domain: [soc]
+cluster_interconnect:
+  commit: v1.1.0
   domain: [soc]
 adv_dbg_if:
   commit: v0.0.1
@@ -34,7 +39,7 @@ apb/apb_fll_if:
   commit: pulpissimo-v1.0
   domain: [soc]
 apb/apb_gpio:
-  commit: v0.2.0
+  commit: 0e9f142f2f11278445c953ad011fce1c7ed85b66
   domain: [soc]
 apb/apb_node:
   commit: v0.1.1
@@ -43,11 +48,11 @@ apb_interrupt_cntrl:
   commit: v0.0.1
   domain: [soc]
 axi/axi:
-  commit: v0.7.1
+  commit: v0.24.1
   domain: [cluster, soc]
-axi/axi_node:
-  commit: v1.1.4
-  domain: [cluster, soc]
+# axi/axi_node:
+#   commit: v1.1.4
+#   domain: [cluster, soc]
 axi/axi_slice:
   commit: v1.1.4
   domain: [cluster, soc]
@@ -57,11 +62,8 @@ axi/axi_slice_dc:
 timer_unit:
   commit: v1.0.2
   domain: [cluster, soc]
-common_cells:
-  commit: v1.13.1
-  domain: [cluster, soc]
 fpnew:
-  commit: v0.6.4
+  commit: v0.6.5
   domain: [cluster, soc]
 jtag_pulp:
   commit: v0.1
@@ -119,4 +121,7 @@ hwpe-mac-engine:
   domain: [cluster, soc]
 riscv-dbg:
   commit: v0.2
+  domain: [soc]
+register_interface:
+  commit: b1bc9c22e0c2a5801107070c022904498dbae34b
   domain: [soc]
