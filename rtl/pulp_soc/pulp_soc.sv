@@ -238,7 +238,7 @@ module pulp_soc import dm::*; #(
     localparam NB_L2_BANKS = `NB_L2_CHANNELS;
     //The L2 parameter do not influence the size of the memories. Change them in the l2_ram_multibank. This parameters
     //are only here to save area in the uDMA by only storing relevant bits.
-    localparam L2_BANK_SIZE          = 29184;            // in 32-bit words
+    localparam L2_BANK_SIZE          = 32768;            // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
     localparam NB_L2_BANKS_PRI       = 2;
 
@@ -507,7 +507,8 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     l2_ram_multi_bank #(
-        .NB_BANKS              ( NB_L2_BANKS )
+        .NB_BANKS              ( NB_L2_BANKS  ),
+        .BANK_SIZE_INTL_SRAM   ( L2_BANK_SIZE )
     ) l2_ram_i (
         .clk_i           ( s_soc_clk          ),
         .rst_ni          ( s_soc_rstn         ),
