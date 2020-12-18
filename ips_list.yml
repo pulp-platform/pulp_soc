@@ -82,7 +82,7 @@ generic_FLL:
   commit: v0.1
   domain: [soc]
 tech_cells_generic:
-  commit: v0.1.6
+  commit: e1655889cf947b0f39c3f4e95410487d3505a771
   domain: [cluster, soc]
 udma/udma_core:
   commit: v1.0.0
