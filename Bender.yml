@@ -1,0 +1,110 @@
+package: 
+  name: pulp_soc
+  authors:
+    - "Robert Balas <balasr@iis.ee.ethz.ch>"
+    - "Pasquale Davide Schiavone <pschiavo@iis.ee.ethz.ch>"
+    - "Germain Haugou <haugoug@iis.ee.ethz.ch>"
+    - "Francesco Conti <f.conti@unibo.it>"
+    - "Pirmin Vogel <vogelpi@lowrisc.org>"
+    - "Stefan Mach <smach@iis.ee.ethz.ch>"
+    - "Antonio Pullini <pullinia@iis.ee.ethz.ch>"
+    - "Gianmarco Ottavi <gianmarco.ottavi2@unibo.it>"
+    - "Manuel Eggimann <meggiman@iis.ee.ethz.ch>"
+    - "Luca Valente <luca.valente2@unibo.it>"
+
+dependencies:
+  L2_tcdm_hybrid_interco: { git: "git@github.com:pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
+  adv_dbg_if:             { git: "git@github.com:pulp-platform/adv_dbg_if.git", version: 0.0.2 }
+  apb2per:                { git: "git@github.com:pulp-platform/apb2per.git", version: 0.1.0 }
+  apb_adv_timer:          { git: "git@github.com:pulp-platform/apb_adv_timer.git", version: 1.0.3 }
+  apb_fll_if:             { git: "git@github.com:pulp-platform/apb_fll_if.git", version: 0.1.3 }
+  apb_gpio:               { git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0 } # todo
+  apb_node:               { git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1 }
+  apb_interrupt_cntrl:    { git: "git@github.com:pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
+  axi:                    { git: "git@github.com:pulp-platform/axi.git", version: 0.24.1 }
+  # axi_node:               { git: "git@github.com:pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
+  axi_slice:              { git: "git@github.com:pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
+  axi_slice_dc:           { git: "git@github.com:pulp-platform/axi_slice_dc.git", version: 1.1.3 } # deprecated, replaced by axi_cdc (in axi repo)
+  timer_unit:             { git: "git@github.com:pulp-platform/timer_unit.git", version: 1.0.2 }
+  common_cells:           { git: "git@github.com:pulp-platform/common_cells.git", version: 1.20.0 }
+  cluster_interconnect:   { git: "git@github.com:pulp-platform/cluster_interconnect.git", version: 1.1.0 }
+  fpnew:                  { git: "git@github.com:pulp-platform/fpnew.git", version: 0.6.5 }
+  jtag_pulp:              { git: "git@github.com:pulp-platform/jtag_pulp.git", rev: "v0.1" }
+  riscv:                  { git: "git@github.com:micprog/cv32e40p.git", rev: "pulpissimo-v3.4.1"} # To be updated to openhwgroup repository
+  ibex:                   { git: "git@github.com:lowRISC/ibex.git", rev: "b148f3af51066ac3537c7c6eb4acbc17004bf868" }
+  scm:                    { git: "git@github.com:pulp-platform/scm.git", version: 1.0.1}
+  generic_FLL:            { git: "git@github.com:pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
+  tech_cells_generic:     { git: "git@github.com:pulp-platform/tech_cells_generic.git", rev: "e1655889cf947b0f39c3f4e95410487d3505a771" }
+  udma_core:              { git: "git@github.com:pulp-platform/udma_core.git", rev: "c36a405f33275576700746b0d90eab0ce278e600" }
+  udma_uart:              { git: "git@github.com:pulp-platform/udma_uart.git", version: 1.0.1 }
+  udma_i2c:               { git: "git@github.com:pulp-platform/udma_i2c.git", rev: "v1.0" }
+  udma_i2s:               { git: "git@github.com:pulp-platform/udma_i2s.git", version: 1.1.1 }
+  udma_qspi:              { git: "git@github.com:pulp-platform/udma_qspi.git", version: 1.0.3 }
+  udma_sdio:              { git: "git@github.com:pulp-platform/udma_sdio.git", rev: "v1.1" }
+  udma_camera:            { git: "git@github.com:pulp-platform/udma_camera.git", version: 1.1.1 }
+  udma_filter:            { git: "git@github.com:pulp-platform/udma_filter.git", version: 1.0.2 }
+  udma_external_per:      { git: "git@github.com:pulp-platform/udma_external_per.git", rev: "71a397519fbab1e36c37daf8f84178ca59d2fb70" }
+  hwpe-mac-engine:        { git: "git@github.com:micprog/hwpe-mac-engine.git", rev: "v1.2-bender" } # To be updated with pulp-platform dependency
+  riscv-dbg:              { git: "git@github.com:pulp-platform/riscv-dbg.git", rev: "v0.2" }
+  register_interface:     { git: "git@github.com:pulp-platform/register_interface.git", rev: "b1bc9c22e0c2a5801107070c022904498dbae34b" }
+  # apb for interface?
+
+sources:
+  # pulp_soc
+  - includes:
+      - rtl/include
+    files:
+      - rtl/pulp_soc/pkg_soc_interconnect.sv
+      - rtl/pulp_soc/axi64_2_lint32_wrap.sv
+      - rtl/pulp_soc/lint_2_axi_wrap.sv
+      - rtl/pulp_soc/contiguous_crossbar.sv
+      - rtl/pulp_soc/interleaved_crossbar.sv
+      - rtl/pulp_soc/tcdm_demux.sv
+      - rtl/pulp_soc/boot_rom.sv
+      - rtl/pulp_soc/l2_ram_multi_bank.sv
+      - rtl/pulp_soc/lint_jtag_wrap.sv
+      - rtl/pulp_soc/periph_bus_wrap.sv
+      - rtl/pulp_soc/soc_clk_rst_gen.sv
+      - rtl/pulp_soc/soc_event_arbiter.sv
+      - rtl/pulp_soc/soc_event_generator.sv
+      - rtl/pulp_soc/soc_event_queue.sv
+      - rtl/pulp_soc/tcdm_error_slave.sv
+      - rtl/pulp_soc/soc_interconnect.sv
+      - rtl/pulp_soc/soc_interconnect_wrap.sv
+      - rtl/pulp_soc/soc_peripherals.sv
+      - rtl/pulp_soc/pulp_soc.sv
+  # udma_subsystem
+  - files: 
+      - rtl/udma_subsystem/udma_subsystem.sv
+  # fc
+  - target: rtl
+    defines:
+      TRACE_EXECUTION: ~
+    files: 
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/fc_hwpe.sv
+  - target: not(rtl)
+    files: 
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/fc_hwpe.sv
+  # components
+  - files: 
+      - rtl/components/apb_clkdiv.sv
+      - rtl/components/apb_soc_ctrl.sv
+      - rtl/components/memory_models.sv
+      - rtl/components/pulp_interfaces.sv
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/scm_2048x32.sv
+      - rtl/components/scm_512x32.sv
+      - rtl/components/tcdm_arbiter_2x1.sv
+  # components_rtl
+  - files: 
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/apb_dummy.sv
+    target: rtl
+  # components_behav
+  - files: 
+      - rtl/components/freq_meter.sv
+    target: all(rtl, not(synthesis))

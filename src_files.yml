@@ -55,7 +55,6 @@ components:
   ]
   files: [
     rtl/components/apb_clkdiv.sv,
-    rtl/components/apb_timer_unit.sv,
     rtl/components/apb_soc_ctrl.sv,
     rtl/components/memory_models.sv,
     rtl/components/pulp_interfaces.sv,
