@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+## [2.0.1] - 2021-01-11
+### Added
+### Changed
+- Changed address aliasing rules to be identical to the behavior of the legacy
+  interconnect.
+### Removed
+### Fixed
+- Fix wrong address part select in SRAM wrappers that caused part of the
+  memories to be inaccessible and alias into lower address ranges.
+
+
 ## [2.0.0] - 2020-12-11
 ### Added
 - Completely replaced `soc_interconnect` with a new parametric version
