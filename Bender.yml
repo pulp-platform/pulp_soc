@@ -18,7 +18,7 @@ dependencies:
   apb2per:                { git: "git@github.com:pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "git@github.com:pulp-platform/apb_adv_timer.git", version: 1.0.3 }
   apb_fll_if:             { git: "git@github.com:pulp-platform/apb_fll_if.git", version: 0.1.3 }
-  apb_gpio:               { git: "git@github.com:pulp-platform/apb_gpio.git", version: 0.2.0 } # todo
+  apb_gpio:               { git: "git@github.com:pulp-platform/apb_gpio.git", rev: "0e9f142f2f11278445c953ad011fce1c7ed85b66" }
   apb_node:               { git: "git@github.com:pulp-platform/apb_node.git", version: 0.1.1 }
   apb_interrupt_cntrl:    { git: "git@github.com:pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
   axi:                    { git: "git@github.com:pulp-platform/axi.git", version: 0.24.1 }
@@ -51,7 +51,7 @@ dependencies:
 
 sources:
   # pulp_soc
-  - includes:
+  - include_dirs:
       - rtl/include
     files:
       - rtl/pulp_soc/pkg_soc_interconnect.sv
