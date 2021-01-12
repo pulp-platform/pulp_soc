@@ -24,7 +24,7 @@ L2_tcdm_hybrid_interco:
   commit: v1.0.0
   domain: [soc]
 cluster_interconnect:
-  commit: v1.1.0
+  commit: v1.1.1
   domain: [soc]
 adv_dbg_if:
   commit: v0.0.2
@@ -85,31 +85,31 @@ tech_cells_generic:
   commit: e1655889cf947b0f39c3f4e95410487d3505a771
   domain: [cluster, soc]
 udma/udma_core:
-  commit: v1.0.0
+  commit: v1.0.2
   domain: [soc]
 udma/udma_uart:
-  commit: v1.0.0
+  commit: v1.0.1
   domain: [soc]
 udma/udma_i2c:
-  commit: vega_v1.0.0
+  commit: v1.0.0
   domain: [soc]
 udma/udma_i2s:
-  commit: v1.1.0
+  commit: v1.1.1
   domain: [soc]
 udma/udma_qspi:
-  commit: v1.0.0
+  commit: v1.0.3
   domain: [soc]
 udma/udma_sdio:
-  commit: vega_v1.0.5
+  commit: v1.1.0
   domain: [soc]
 udma/udma_camera:
-  commit: v1.0.0
+  commit: v1.1.1
   domain: [soc]
 udma/udma_filter:
-  commit: v1.0.0
+  commit: v1.0.2
   domain: [soc]
 udma/udma_external_per:
-  commit: v1.0.0
+  commit: v1.0.3
   domain: [soc]
 hwpe-mac-engine:
   commit: v1.2

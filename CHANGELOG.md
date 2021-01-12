@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `Bender.yml` file for bender compatibility
+
 ### Changed
+- change from deprecated `generic_memory` to `tc_sram` tech cell, bump `tech_cells_generic` accordingly
+- Expose L2 Bank sizes to improve consistency
+
 ### Removed
 ### Fixed
 
