@@ -12,7 +12,7 @@
 // Description: Module to adapt CV32E40P to the PULP memory system.
 //              It blocks multiple outstanding requests to the memory until the first one is served.
 
-module pulp_obi_adapter (
+module obi_pulp_adapter (
   input  logic rst_ni,
   input  logic clk_i,
   // Master (core) interface
