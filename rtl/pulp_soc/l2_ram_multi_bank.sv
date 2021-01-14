@@ -10,11 +10,11 @@
 
 
 module l2_ram_multi_bank #(
-  parameter NB_BANKS                   = 4,
-  parameter NB_BANKS_PRI               = 2,
-  parameter BANK_SIZE                  = 29184,
-  parameter MEM_ADDR_WIDTH             = 14,
-  parameter MEM_ADDR_WIDTH_PRI         = 13
+  parameter int unsigned NB_BANKS                   = 4,
+  parameter int unsigned NB_BANKS_PRI               = 2,
+  parameter int unsigned BANK_SIZE                  = 32768,
+  parameter int unsigned MEM_ADDR_WIDTH             = 14,
+  parameter int unsigned MEM_ADDR_WIDTH_PRI         = 13
 ) (
   input logic             clk_i,
   input logic             rst_ni,
@@ -24,17 +24,15 @@ module l2_ram_multi_bank #(
   UNICAD_MEM_BUS_32.Slave mem_pri_slave[NB_BANKS_PRI-1:0]
 );
   // Used in testbenches
-  localparam  BANK_SIZE_PRI1       = 8192;
-  localparam  BANK_SIZE_PRI0_SRAM  = 6144;
-  localparam  BANK_SIZE_PRI0_SCM   = 2048;
+  localparam int unsigned BANK_SIZE_PRI1 = 8192;
+  localparam int unsigned BANK_SIZE_PRI0 = 8192;
 
-  localparam  BANK_SIZE_INTL_SRAM  = 28672;
-  localparam  BANK_SIZE_INTL_SCM   = 512;
+  localparam int unsigned BANK_SIZE_INTL_SRAM = 32768;
 
   // INTERLEAVED
-  for (genvar i=0; i<NB_BANKS; i++) begin : CUTS
+  for (genvar i = 0; i < NB_BANKS; i++) begin : CUTS
 `ifndef PULP_FPGA_EMUL
-    model_sram_28672x32_scm_512x32 bank_i (
+    model_sram_32768x32 bank_i (
       .CLK   ( clk_i                                ),
       .RSTN  ( rst_ni                               ),
       .D     ( mem_slave[i].wdata                   ),
@@ -56,7 +54,7 @@ module l2_ram_multi_bank #(
       .addr_i(mem_slave[i].add[MEM_ADDR_WIDTH-1:0]),
       .wdata_i(mem_slave[i].wdata),
       .rdata_o(mem_slave[i].rdata)
-      );
+    );
 `endif
   end
 
