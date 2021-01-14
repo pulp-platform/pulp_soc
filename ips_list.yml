@@ -110,7 +110,7 @@ udma/udma_external_per:
   commit: v1.0.0
   domain: [soc]
 hwpe-mac-engine:
-  commit: v1.3
+  commit: v1.3.1
   domain: [cluster, soc]
 riscv-dbg:
   commit: v0.2
