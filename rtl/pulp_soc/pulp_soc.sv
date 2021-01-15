@@ -233,8 +233,6 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
 );
 
-    localparam FLL_ADDR_WIDTH        = 32;
-    localparam FLL_DATA_WIDTH        = 32;
     localparam NB_L2_BANKS = `NB_L2_CHANNELS;
     //The L2 parameter do not influence the size of the memories. Change them in the l2_ram_multibank. This parameters
     //are only here to save area in the uDMA by only storing relevant bits.
@@ -415,20 +413,11 @@ module pulp_soc import dm::*; #(
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_soc_fll_master ();
+    FLL_BUS s_soc_fll_master ();
 
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_per_fll_master ();
+    FLL_BUS s_per_fll_master ();
 
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_cluster_fll_master ();
+    FLL_BUS s_cluster_fll_master ();
 
     APB_BUS s_apb_periph_bus ();
 
@@ -758,26 +747,26 @@ module pulp_soc import dm::*; #(
 
         .soc_fll_slave_req_i        ( s_soc_fll_master.req          ),
         .soc_fll_slave_wrn_i        ( s_soc_fll_master.wrn          ),
-        .soc_fll_slave_add_i        ( s_soc_fll_master.add[1:0]     ),
-        .soc_fll_slave_data_i       ( s_soc_fll_master.data         ),
+        .soc_fll_slave_add_i        ( s_soc_fll_master.addr[1:0]     ),
+        .soc_fll_slave_data_i       ( s_soc_fll_master.wdata         ),
         .soc_fll_slave_ack_o        ( s_soc_fll_master.ack          ),
-        .soc_fll_slave_r_data_o     ( s_soc_fll_master.r_data       ),
+        .soc_fll_slave_r_data_o     ( s_soc_fll_master.rdata       ),
         .soc_fll_slave_lock_o       ( s_soc_fll_master.lock         ),
 
         .per_fll_slave_req_i        ( s_per_fll_master.req          ),
         .per_fll_slave_wrn_i        ( s_per_fll_master.wrn          ),
-        .per_fll_slave_add_i        ( s_per_fll_master.add[1:0]     ),
-        .per_fll_slave_data_i       ( s_per_fll_master.data         ),
+        .per_fll_slave_add_i        ( s_per_fll_master.addr[1:0]     ),
+        .per_fll_slave_data_i       ( s_per_fll_master.wdata         ),
         .per_fll_slave_ack_o        ( s_per_fll_master.ack          ),
-        .per_fll_slave_r_data_o     ( s_per_fll_master.r_data       ),
+        .per_fll_slave_r_data_o     ( s_per_fll_master.rdata       ),
         .per_fll_slave_lock_o       ( s_per_fll_master.lock         ),
 
         .cluster_fll_slave_req_i    ( s_cluster_fll_master.req      ),
         .cluster_fll_slave_wrn_i    ( s_cluster_fll_master.wrn      ),
-        .cluster_fll_slave_add_i    ( s_cluster_fll_master.add[1:0] ),
-        .cluster_fll_slave_data_i   ( s_cluster_fll_master.data     ),
+        .cluster_fll_slave_add_i    ( s_cluster_fll_master.addr[1:0] ),
+        .cluster_fll_slave_data_i   ( s_cluster_fll_master.wdata     ),
         .cluster_fll_slave_ack_o    ( s_cluster_fll_master.ack      ),
-        .cluster_fll_slave_r_data_o ( s_cluster_fll_master.r_data   ),
+        .cluster_fll_slave_r_data_o ( s_cluster_fll_master.rdata   ),
         .cluster_fll_slave_lock_o   ( s_cluster_fll_master.lock     ),
 
         .clk_soc_o                  ( s_soc_clk                     ),

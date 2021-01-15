@@ -58,11 +58,11 @@ module soc_peripherals #(
     XBAR_TCDM_BUS.Master               l2_rx_master,
     XBAR_TCDM_BUS.Master               l2_tx_master,
     // MASTER PORT TO SOC FLL
-    FLL_BUS.Master                     soc_fll_master,
+    FLL_BUS.out                        soc_fll_master,
     // MASTER PORT TO PER FLL
-    FLL_BUS.Master                     per_fll_master,
+    FLL_BUS.out                        per_fll_master,
     // MASTER PORT TO CLUSTER FLL
-    FLL_BUS.Master                     cluster_fll_master,
+    FLL_BUS.out                        cluster_fll_master,
 /*
     input  logic                       jtag_req_valid_i,
     output logic                       debug_req_ready_o,
@@ -306,26 +306,26 @@ module soc_peripherals #(
 
         .fll1_req_o    ( soc_fll_master.req      ),
         .fll1_wrn_o    ( soc_fll_master.wrn      ),
-        .fll1_add_o    ( soc_fll_master.add[1:0] ),
-        .fll1_data_o   ( soc_fll_master.data     ),
+        .fll1_add_o    ( soc_fll_master.addr[1:0] ),
+        .fll1_data_o   ( soc_fll_master.wdata     ),
         .fll1_ack_i    ( soc_fll_master.ack      ),
-        .fll1_r_data_i ( soc_fll_master.r_data   ),
+        .fll1_r_data_i ( soc_fll_master.rdata   ),
         .fll1_lock_i   ( soc_fll_master.lock     ),
 
         .fll2_req_o    ( per_fll_master.req      ),
         .fll2_wrn_o    ( per_fll_master.wrn      ),
-        .fll2_add_o    ( per_fll_master.add[1:0] ),
-        .fll2_data_o   ( per_fll_master.data     ),
+        .fll2_add_o    ( per_fll_master.addr[1:0] ),
+        .fll2_data_o   ( per_fll_master.wdata     ),
         .fll2_ack_i    ( per_fll_master.ack      ),
-        .fll2_r_data_i ( per_fll_master.r_data   ),
+        .fll2_r_data_i ( per_fll_master.rdata   ),
         .fll2_lock_i   ( per_fll_master.lock     ),
 
         .fll3_req_o    ( cluster_fll_master.req      ),
         .fll3_wrn_o    ( cluster_fll_master.wrn      ),
-        .fll3_add_o    ( cluster_fll_master.add[1:0] ),
-        .fll3_data_o   ( cluster_fll_master.data     ),
+        .fll3_add_o    ( cluster_fll_master.addr[1:0] ),
+        .fll3_data_o   ( cluster_fll_master.wdata     ),
         .fll3_ack_i    ( cluster_fll_master.ack      ),
-        .fll3_r_data_i ( cluster_fll_master.r_data   ),
+        .fll3_r_data_i ( cluster_fll_master.rdata   ),
         .fll3_lock_i   ( cluster_fll_master.lock     ),
 
         .bbgen_req_o   (),
