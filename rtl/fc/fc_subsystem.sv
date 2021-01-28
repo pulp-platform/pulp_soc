@@ -48,7 +48,7 @@ module fc_subsystem #(
 );
 
     localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
-    localparam IBEX_RV32M = CORE_TYPE == 1;
+    localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
     localparam IBEX_RV32E = CORE_TYPE == 2;
 
     // Interrupt signals
@@ -198,7 +198,7 @@ module fc_subsystem #(
         .MHPMCounterNum   ( 10                  ),
         .MHPMCounterWidth ( 40                  ),
         .RV32E            ( IBEX_RV32E          ),
-        .RV32M            ( IBEX_RV32M ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone ),
+        .RV32M            ( IBEX_RV32M          ),
         .RV32B            ( ibex_pkg::RV32BNone ),
         .RegFile          ( ibex_pkg::RegFileFF ),
         .BranchTargetALU  ( 1'b0                ),
@@ -249,7 +249,7 @@ module fc_subsystem #(
         .irq_x_ack_o           ( core_irq_ack      ),
         .irq_x_ack_id_o        ( core_irq_ack_id   ),
 
-        .external_perf_i       ( {{16- N_EXT_PERF_COUNTERS {'0}}, perf_counters_int} ),
+        .external_perf_i       ( { {16 - N_EXT_PERF_COUNTERS {'0}}, perf_counters_int } ),
 
         .debug_req_i           ( debug_req_i       ),
 
