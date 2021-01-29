@@ -61,6 +61,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2
 ) (
+    input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
     input  logic                          slow_clk_i,
     input  logic                          test_clk_i,
@@ -261,8 +262,9 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
 );
 
-    localparam FLL_ADDR_WIDTH        = 32;
-    localparam FLL_DATA_WIDTH        = 32;
+    localparam int unsigned CLK_CTRL_ADDR_WIDTH = 32;
+    localparam int unsigned CLK_CTRL_DATA_WIDTH = 32;
+
     localparam NB_L2_BANKS           = `NB_L2_CHANNELS;
     localparam L2_BANK_SIZE          = 29184;            // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
@@ -364,7 +366,7 @@ module pulp_soc import dm::*; #(
     logic                  s_cluster_clk;
     logic                  s_cluster_rstn;
     logic                  s_cluster_rstn_soc_ctrl;
-    logic                  s_sel_fll_clk;
+    logic                  s_sel_clk;
 
     logic                  s_dma_pe_evt;
     logic                  s_dma_pe_irq;
@@ -414,6 +416,7 @@ module pulp_soc import dm::*; #(
     APB_BUS                s_apb_eu_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
+    APB_BUS                s_apb_clk_ctrl_bus();
 
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -470,21 +473,6 @@ module pulp_soc import dm::*; #(
     ) soc_to_external ();
 
     //assign s_data_out_bus.aw_atop = 6'b0;
-
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_soc_fll_master ();
-
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_per_fll_master ();
-
-    FLL_BUS #(
-        .FLL_ADDR_WIDTH ( FLL_ADDR_WIDTH ),
-        .FLL_DATA_WIDTH ( FLL_DATA_WIDTH )
-    ) s_cluster_fll_master ();
 
     APB_BUS s_apb_periph_bus ();
 
@@ -706,8 +694,7 @@ module pulp_soc import dm::*; #(
         .clk_i                  ( s_soc_clk              ),
         .periph_clk_i           ( s_periph_clk           ),
         .rst_ni                 ( s_soc_rstn             ),
-        .sel_fll_clk_i          ( s_sel_fll_clk          ),
-        .ref_clk_i              ( ref_clk_i              ),
+        .sel_clk_i              ( s_sel_clk              ),
         .slow_clk_i             ( slow_clk_i             ),
 
         .dft_test_mode_i        ( dft_test_mode_i        ),
@@ -726,6 +713,7 @@ module pulp_soc import dm::*; #(
         .apb_eu_master          ( s_apb_eu_bus           ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
+        .apb_clk_ctrl_master    ( s_apb_clk_ctrl_bus     ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
@@ -739,10 +727,6 @@ module pulp_soc import dm::*; #(
         .dma_pe_evt_i           ( s_dma_pe_evt           ),
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
         .pf_evt_i               ( s_pf_evt               ),
-
-        .soc_fll_master         ( s_soc_fll_master       ),
-        .per_fll_master         ( s_per_fll_master       ),
-        .cluster_fll_master     ( s_cluster_fll_master   ),
 
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
@@ -898,9 +882,10 @@ module pulp_soc import dm::*; #(
     );
 
     soc_clk_rst_gen i_clk_rst_gen (
+        .sys_clk_i                  ( sys_clk_i                     ),
         .ref_clk_i                  ( ref_clk_i                     ),
         .test_clk_i                 ( test_clk_i                    ),
-        .sel_fll_clk_i              ( s_sel_fll_clk                 ),
+        .sel_clk_i                  ( s_sel_clk                     ),
 
         .rstn_glob_i                ( rstn_glob_i                   ),
         .rstn_soc_sync_o            ( s_soc_rstn                    ),
@@ -910,29 +895,7 @@ module pulp_soc import dm::*; #(
         .test_mode_i                ( dft_test_mode_i               ),
         .shift_enable_i             ( 1'b0                          ),
 
-        .soc_fll_slave_req_i        ( s_soc_fll_master.req          ),
-        .soc_fll_slave_wrn_i        ( s_soc_fll_master.wrn          ),
-        .soc_fll_slave_add_i        ( s_soc_fll_master.add[1:0]     ),
-        .soc_fll_slave_data_i       ( s_soc_fll_master.data         ),
-        .soc_fll_slave_ack_o        ( s_soc_fll_master.ack          ),
-        .soc_fll_slave_r_data_o     ( s_soc_fll_master.r_data       ),
-        .soc_fll_slave_lock_o       ( s_soc_fll_master.lock         ),
-
-        .per_fll_slave_req_i        ( s_per_fll_master.req          ),
-        .per_fll_slave_wrn_i        ( s_per_fll_master.wrn          ),
-        .per_fll_slave_add_i        ( s_per_fll_master.add[1:0]     ),
-        .per_fll_slave_data_i       ( s_per_fll_master.data         ),
-        .per_fll_slave_ack_o        ( s_per_fll_master.ack          ),
-        .per_fll_slave_r_data_o     ( s_per_fll_master.r_data       ),
-        .per_fll_slave_lock_o       ( s_per_fll_master.lock         ),
-
-        .cluster_fll_slave_req_i    ( s_cluster_fll_master.req      ),
-        .cluster_fll_slave_wrn_i    ( s_cluster_fll_master.wrn      ),
-        .cluster_fll_slave_add_i    ( s_cluster_fll_master.add[1:0] ),
-        .cluster_fll_slave_data_i   ( s_cluster_fll_master.data     ),
-        .cluster_fll_slave_ack_o    ( s_cluster_fll_master.ack      ),
-        .cluster_fll_slave_r_data_o ( s_cluster_fll_master.r_data   ),
-        .cluster_fll_slave_lock_o   ( s_cluster_fll_master.lock     ),
+        .apb_slave                  ( s_apb_clk_ctrl_bus            ),
 
         .clk_soc_o                  ( s_soc_clk                     ),
         .clk_per_o                  ( s_periph_clk                  )
@@ -1072,7 +1035,7 @@ module pulp_soc import dm::*; #(
         .dbg_axi_scan_out_i       ( s_jtag_axireg_tdo  ),
         .soc_jtag_reg_i           ( soc_jtag_reg_soc   ),
         .soc_jtag_reg_o           ( soc_jtag_reg_tap   ),
-        .sel_fll_clk_o            ( s_sel_fll_clk      )
+        .sel_clk_o                ( s_sel_clk          )
     );
 
     lint_jtag_wrap i_lint_jtag (

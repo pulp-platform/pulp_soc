@@ -18,7 +18,7 @@ module periph_bus_wrap #(
     input logic    clk_i,
     input logic    rst_ni,
     APB_BUS.Slave  apb_slave,
-    APB_BUS.Master fll_master,
+    APB_BUS.Master clk_ctrl_master,
     APB_BUS.Master gpio_master,
     APB_BUS.Master udma_master,
     APB_BUS.Master soc_ctrl_master,
@@ -51,9 +51,9 @@ module periph_bus_wrap #(
 
     `APB_ASSIGN_SLAVE(s_slave, apb_slave);
 
-    `APB_ASSIGN_MASTER(s_masters[0], fll_master);
-    assign s_start_addr[0] = `FLL_START_ADDR;
-    assign s_end_addr[0]   = `FLL_END_ADDR;
+    `APB_ASSIGN_MASTER(s_masters[0], clk_ctrl_master);
+    assign s_start_addr[0] = `CLK_CTRL_START_ADDR;
+    assign s_end_addr[0]   = `CLK_CTRL_END_ADDR;
 
     `APB_ASSIGN_MASTER(s_masters[1], gpio_master);
     assign s_start_addr[1] = `GPIO_START_ADDR;

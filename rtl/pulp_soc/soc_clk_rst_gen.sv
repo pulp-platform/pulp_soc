@@ -12,242 +12,332 @@
 `include "pulp_soc_defines.sv"
 
 module soc_clk_rst_gen (
-    input  logic        ref_clk_i,
-    input  logic        test_clk_i,
-    input  logic        rstn_glob_i,
-    input  logic        test_mode_i,
-    input  logic        sel_fll_clk_i,
-    input  logic        shift_enable_i,
-    input  logic        soc_fll_slave_req_i,
-    input  logic        soc_fll_slave_wrn_i,
-    input  logic [1:0]  soc_fll_slave_add_i,
-    input  logic [31:0] soc_fll_slave_data_i,
-    output logic        soc_fll_slave_ack_o,
-    output logic [31:0] soc_fll_slave_r_data_o,
-    output logic        soc_fll_slave_lock_o,
+    input logic  sys_clk_i,  // 800 Mhz
+    input logic  ref_clk_i,  // guaranteed 100 Mhz
+    input logic  test_clk_i,
+    input logic  rstn_glob_i,
+    input logic  test_mode_i,
+    input logic  sel_clk_i,
+    input logic  shift_enable_i,
 
-    input  logic        per_fll_slave_req_i,
-    input  logic        per_fll_slave_wrn_i,
-    input  logic [1:0]  per_fll_slave_add_i,
-    input  logic [31:0] per_fll_slave_data_i,
-    output logic        per_fll_slave_ack_o,
-    output logic [31:0] per_fll_slave_r_data_o,
-    output logic        per_fll_slave_lock_o,
+    output logic rstn_soc_sync_o,
+    output logic rstn_cluster_sync_o,
 
-    input  logic        cluster_fll_slave_req_i,
-    input  logic        cluster_fll_slave_wrn_i,
-    input  logic [1:0]  cluster_fll_slave_add_i,
-    input  logic [31:0] cluster_fll_slave_data_i,
-    output logic        cluster_fll_slave_ack_o,
-    output logic [31:0] cluster_fll_slave_r_data_o,
-    output logic        cluster_fll_slave_lock_o,
+    APB_BUS.Slave apb_slave,  // TODO: shrink
 
-    output logic        rstn_soc_sync_o,
-    output logic        rstn_cluster_sync_o,
-
-    output logic        clk_soc_o,
-    output logic        clk_per_o,
-    output logic        clk_cluster_o
+    output logic clk_soc_o,
+    output logic clk_per_o,
+    output logic clk_cluster_o
 );
 
     logic s_clk_soc;
     logic s_clk_per;
     logic s_clk_cluster;
 
-    logic s_clk_fll_soc;
-    logic s_clk_fll_per;
-    logic s_clk_fll_cluster;
+    logic s_clk_for_soc;
+    logic s_clk_for_per;
+    logic s_clk_for_cluster;
 
     logic s_rstn_soc;
 
     logic s_rstn_soc_sync;
     logic s_rstn_cluster_sync;
 
+`ifndef SYNTHESIS
     //synopsys translate_off
-    freq_meter #(.FLL_NAME("SOC_FLL"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_fll_soc));
-    freq_meter #(.FLL_NAME("PER_FLL"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_fll_per));
-    freq_meter #(.FLL_NAME("CLUSTER_FLL"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_fll_cluster));
+    freq_meter #(.FLL_NAME("SOC_FLL"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_for_soc));
+    freq_meter #(.FLL_NAME("PER_FLL"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_for_per));
+    freq_meter #(.FLL_NAME("CLUSTER_FLL"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_for_cluster));
     //synopsys translate_on
+`endif
 
-    // currently, FLLs are not supported for FPGA emulation
-    `ifndef PULP_FPGA_EMUL
-        gf22_FLL i_fll_soc
-        (
-            .FLLCLK ( s_clk_fll_soc            ),
-            .FLLOE  ( 1'b1                     ),
-            .REFCLK ( ref_clk_i                ),
-            .LOCK   ( soc_fll_slave_lock_o     ),
-            .CFGREQ ( soc_fll_slave_req_i      ),
-            .CFGACK ( soc_fll_slave_ack_o      ),
-            .CFGAD  ( soc_fll_slave_add_i[1:0] ),
-            .CFGD   ( soc_fll_slave_data_i     ),
-            .CFGQ   ( soc_fll_slave_r_data_o   ),
-            .CFGWEB ( soc_fll_slave_wrn_i      ),
-            .RSTB   ( rstn_glob_i              ),
-            .PWD    ( 1'b0                     ),
-            .RET    ( 1'b0                     ),
-            .TM     ( test_mode_i              ),
-            .TE     ( shift_enable_i           ),
-            .TD     ( 1'b0                     ), //TO FIX DFT
-            .TQ     (                          ), //TO FIX DFT
-            .JTD    ( 1'b0                     ), //TO FIX DFT
-            .JTQ    (                          )  //TO FIX DFT
-        );
 
-        gf22_FLL i_fll_per (
-            .FLLCLK ( s_clk_fll_per            ),
-            .FLLOE  ( 1'b1                     ),
-            .REFCLK ( ref_clk_i                ),
-            .LOCK   ( per_fll_slave_lock_o     ),
-            .CFGREQ ( per_fll_slave_req_i      ),
-            .CFGACK ( per_fll_slave_ack_o      ),
-            .CFGAD  ( per_fll_slave_add_i[1:0] ),
-            .CFGD   ( per_fll_slave_data_i     ),
-            .CFGQ   ( per_fll_slave_r_data_o   ),
-            .CFGWEB ( per_fll_slave_wrn_i      ),
-            .RSTB   ( rstn_glob_i              ),
-            .PWD    ( 1'b0                     ),
-            .RET    ( 1'b0                     ),
-            .TM     ( test_mode_i              ),
-            .TE     ( shift_enable_i           ),
-            .TD     ( 1'b0                     ), //TO FIX DFT
-            .TQ     (                          ), //TO FIX DFT
-            .JTD    ( 1'b0                     ), //TO FIX DFT
-            .JTQ    (                          )  //TO FIX DFT
-        );
+`ifndef SYNTHESIS
+    assert property (@(posedge sys_clk_i)
+        !(apb_slave.psel == 1'b1
+         && apb_slave.penable == 1'b1
+         && (apb_slave.paddr[11:0] >= 12'h0 && apb_slave.paddr[11:0] <= 12'h30)))
+        else $info("[soc_clk_rst_gen]  %t - Detected legacy FLL program request", $time);
+`endif
 
-        gf22_FLL i_fll_cluster (
-            .FLLCLK ( s_clk_fll_cluster            ),
-            .FLLOE  ( 1'b1                         ),
-            .REFCLK ( ref_clk_i                    ),
-            .LOCK   ( cluster_fll_slave_lock_o     ),
-            .CFGREQ ( cluster_fll_slave_req_i      ),
-            .CFGACK ( cluster_fll_slave_ack_o      ),
-            .CFGAD  ( cluster_fll_slave_add_i[1:0] ),
-            .CFGD   ( cluster_fll_slave_data_i     ),
-            .CFGQ   ( cluster_fll_slave_r_data_o   ),
-            .CFGWEB ( cluster_fll_slave_wrn_i      ),
-            .RSTB   ( rstn_glob_i                  ),
-            .PWD    ( 1'b0                         ),
-            .RET    ( 1'b0                         ),
-            .TM     ( test_mode_i                  ),
-            .TE     ( shift_enable_i               ),
-            .TD     ( 1'b0                         ), //TO FIX DFT
-            .TQ     (                              ), //TO FIX DFT
-            .JTD    ( 1'b0                         ), //TO FIX DFT
-            .JTQ    (                              )  //TO FIX DFT
-        );
+`ifndef PULP_FPGA_EMUL
+    // global address map
+    // CLK_CTRL_START_ADDR      32'h1A10_0000
+    // CLK_CTRL_END_ADDR        32'h1A10_0FFF
+    // register offsets
+    // 12'f00 - soc clk div value
+    // 12'f08 - cluster clk div value
+    // 12'f10 - periph clk div value
+
+    logic soc_div_access, soc_div_valid, soc_div_ready;
+    logic cluster_div_access, cluster_div_valid, cluster_div_ready;
+    logic periph_div_access, periph_div_valid, periph_div_ready;
+    logic dummy_access;
+
+    typedef enum logic [1:0] {
+         IDLE, ACCESS, WRITE_ACK
+    } state_e;
+
+    state_e state_q, state_d;
+
+    // address decoder
+    always_comb begin
+        soc_div_access = 1'b0;
+        cluster_div_access = 1'b0;
+        periph_div_access = 1'b0;
+
+        dummy_access = 1'b0;
+
+        if (apb_slave.psel && apb_slave.penable) begin
+            unique case(apb_slave.paddr[11:0])
+                12'hf00: soc_div_access = 1'b1;
+                12'hf08: cluster_div_access = 1'b1;
+                12'hf10: periph_div_access = 1'b1;
+                default: dummy_access = 1'b1; // slverr is not supported so we
+                                              // have to complete any write
+                                              // request.
+            endcase // unique case (apb_slave.paddr)
+        end
+    end
+
+
+    // Combinatorial response from/to clock dividers
+    //
+    // The apb requests that are incoming are not fully apb compliant: they
+    // raise penable concurrently with psel/pwrite/pwdata instead of delying it
+    // by one cycle. This forces us to start or logic only when psel and penable
+    // are concurrently asserted.
+    always_comb begin
+        soc_div_valid = 1'b0;
+        cluster_div_valid = 1'b0;
+        periph_div_valid = 1'b0;
+
+        apb_slave.pready = 1'b0;
+
+        state_d = state_q;
+
+        unique case(state_q)
+            IDLE: begin
+                apb_slave.pready = 1'b0;
+
+                if (soc_div_access || cluster_div_access || periph_div_access || dummy_access)
+                    state_d = ACCESS;
+
+                if (apb_slave.pwrite) begin
+                    if (soc_div_access)
+                        soc_div_valid = 1'b1;
+                    if (cluster_div_access)
+                        cluster_div_valid = 1'b1;
+                    if (periph_div_access)
+                        periph_div_valid = 1'b1;
+                end
+            end
+            ACCESS: begin
+                if (apb_slave.pwrite) begin
+                    // handle writes
+                    apb_slave.pready = 1'b0;
+
+                    if (soc_div_access)
+                        soc_div_valid = 1'b1;
+                    if (cluster_div_access)
+                        cluster_div_valid = 1'b1;
+                    if (periph_div_access)
+                        periph_div_valid = 1'b1;
+
+                    if (soc_div_ready || cluster_div_ready || periph_div_ready || dummy_access)
+                        state_d = WRITE_ACK;
+                end else begin // if (apb_slave.pwrite)
+                    // handle reads
+                    apb_slave.pready = 1'b1;
+                    state_d = IDLE;
+                end
+            end
+            WRITE_ACK: begin
+                apb_slave.pready = 1'b1;
+
+                soc_div_valid = 1'b0;
+                cluster_div_valid = 1'b0;
+                periph_div_valid  = 1'b0;
+
+                if (!apb_slave.penable) begin // deasserted at end of a transfer
+                    apb_slave.pready = 1'b0;
+                    state_d = IDLE;
+                end
+            end
+            default:;
+        endcase // unique case (state_q)
+    end
+
+    // We just return garbage data on read
+    assign apb_slave.prdata = 32'hdeadda7a;
+
+    // We don't support pslverr. At some point this should be routed to an
+    // interrupt.
+    assign apb_slave.pslverr = 1'b0;
+
+
+    // sys_clk -> divider -> soc
+    clock_divider #(
+        .DIV_INIT   (0),
+        .BYPASS_INIT(1)
+    ) i_soc_clk_divider (
+        .clk_i (sys_clk_i),
+        .rstn_i (rstn_glob_i),
+        .test_mode_i (test_mode_i),
+        .clk_gate_async_i(1'b1), // TODO: maybe we can map this to reg
+        .clk_div_data_i(apb_slave.pwdata[7:0]),
+        .clk_div_valid_i(soc_div_valid),
+        .clk_div_ack_o(soc_div_ready),
+        .clk_o(s_clk_for_soc)
+    );
+
+    // sys_clk -> divider -> cluster
+    clock_divider #(
+        .DIV_INIT   (0),
+        .BYPASS_INIT(1)
+    ) i_cluster_clk_divider (
+        .clk_i (sys_clk_i),
+        .rstn_i (rstn_glob_i),
+        .test_mode_i (test_mode_i),
+        .clk_gate_async_i(1'b1), // TODO: maybe we map this to reg
+        .clk_div_data_i(apb_slave.pwdata[7:0]),
+        .clk_div_valid_i(cluster_div_valid),
+        .clk_div_ack_o(cluster_div_ready),
+        .clk_o(s_clk_for_cluster)
+    );
+
+    // ref_clk -> divider -> peripherals
+    clock_divider #(
+        .DIV_INIT   (0),
+        .BYPASS_INIT(1)
+    ) i_periph_clk_divider (
+        .clk_i (ref_clk_i),
+        .rstn_i (rstn_glob_i),
+        .test_mode_i (test_mode_i),
+        .clk_gate_async_i(1'b1), // TODO: maybe we map this to reg
+        .clk_div_data_i(apb_slave.pwdata[7:0]), // 8 bit might not be enough for periph
+        .clk_div_valid_i(periph_div_valid),
+        .clk_div_ack_o(periph_div_ready),
+        .clk_o(s_clk_for_per)
+    );
+
+    always_ff @(posedge sys_clk_i, negedge rstn_glob_i) begin
+        if (!rstn_glob_i) begin
+            state_q <= IDLE;
+        end else begin
+            state_q <= state_d;
+        end
+    end
 
     pulp_clock_mux2 clk_mux_fll_soc_i (
-      `ifdef TEST_FLL
-                                       .clk0_i    ( 1'bz           ),
-      `else
-                                       .clk0_i    ( s_clk_fll_soc  ),
-      `endif
-                                       .clk1_i    ( ref_clk_i      ),
-                                       .clk_sel_i ( sel_fll_clk_i  ),
-                                       .clk_o     ( s_clk_soc      )
-                                       );
+`ifdef TEST_FLL
+        .clk0_i    ( 1'bz           ),
+`else
+        .clk0_i    ( s_clk_for_soc  ),
+`endif
+        .clk1_i    ( ref_clk_i      ),
+        .clk_sel_i ( sel_clk_i      ),
+        .clk_o     ( s_clk_soc      )
+    );
 
     pulp_clock_mux2 clk_mux_fll_per_i (
-      `ifdef TEST_FLL
-                                       .clk0_i    ( 1'bz           ),
-      `else
-                                       .clk0_i    ( s_clk_fll_per  ),
-      `endif
-                                       .clk1_i    ( ref_clk_i      ),
-                                       .clk_sel_i ( sel_fll_clk_i  ),
-                                       .clk_o     ( s_clk_per      )
-                                       );
+`ifdef TEST_FLL
+        .clk0_i    ( 1'bz           ),
+`else
+        .clk0_i    ( s_clk_for_per  ),
+`endif
+        .clk1_i    ( ref_clk_i      ),
+        .clk_sel_i ( sel_clk_i      ),
+        .clk_o     ( s_clk_per      )
+    );
 
     pulp_clock_mux2 clk_mux_fll_cluster_i (
-      `ifdef TEST_FLL
-                                           .clk0_i    ( 1'bz               ),
-      `else
-                                           .clk0_i    ( s_clk_fll_cluster  ),
-      `endif
-                                           .clk1_i    ( ref_clk_i          ),
-                                           .clk_sel_i ( sel_fll_clk_i      ),
-                                           .clk_o     ( s_clk_cluster      )
-                                           );
+`ifdef TEST_FLL
+        .clk0_i    ( 1'bz               ),
+`else
+        .clk0_i    ( s_clk_for_cluster  ),
+`endif
+        .clk1_i    ( ref_clk_i          ),
+        .clk_sel_i ( sel_clk_i          ),
+        .clk_o     ( s_clk_cluster      )
+    );
 
-    `else // !`ifndef PULP_FPGA_EMUL
+`else // !`ifndef PULP_FPGA_EMUL
 
     // Use FPGA dependent clock generation module for both clocks
     // For the FPGA port we remove the clock multiplexers since it doesn't make
     // much sense to clock the circuit directly with the board reference clock
     // (e.g. 200MHz for genesys2 board).
 
-       fpga_clk_gen i_fpga_clk_gen (
-                        .ref_clk_i,
-                        .rstn_glob_i,
-                        .test_mode_i,
-                        .shift_enable_i,
-                        .soc_clk_o(s_clk_fll_soc),
-                        .per_clk_o(s_clk_fll_per),
-                        .cluster_clk_o(s_clk_cluster),
-                        .soc_cfg_lock_o(soc_fll_slave_lock_o),
-                        .soc_cfg_req_i(soc_fll_slave_req_i),
-                        .soc_cfg_ack_o(soc_fll_slave_ack_o),
-                        .soc_cfg_add_i(soc_fll_slave_add_i),
-                        .soc_cfg_data_i(soc_fll_slave_data_i),
-                        .soc_cfg_r_data_o(soc_fll_slave_r_data_o),
-                        .soc_cfg_wrn_i(soc_fll_slave_wrn_i),
-                        .per_cfg_lock_o(per_fll_slave_lock_o),
-                        .per_cfg_req_i(per_fll_slave_req_i),
-                        .per_cfg_ack_o(per_fll_slave_ack_o),
-                        .per_cfg_add_i(per_fll_slave_add_i),
-                        .per_cfg_data_i(per_fll_slave_data_i),
-                        .per_cfg_r_data_o(per_fll_slave_r_data_o),
-                        .per_cfg_wrn_i(per_fll_slave_wrn_i),
-                        .cluster_cfg_lock_o(cluster_fll_slave_lock_o),
-                        .cluster_cfg_req_i(cluster_fll_slave_req_i),
-                        .cluster_cfg_ack_o(cluster_fll_slave_ack_o),
-                        .cluster_cfg_add_i(cluster_fll_slave_add_i),
-                        .cluster_cfg_data_i(cluster_fll_slave_data_i),
-                        .cluster_cfg_r_data_o(cluster_fll_slave_r_data_o),
-                        .cluster_cfg_wrn_i(cluster_fll_slave_wrn_i)
-                        );
+    fpga_clk_gen i_fpga_clk_gen (
+        .ref_clk_i,
+        .rstn_glob_i,
+        .test_mode_i,
+        .shift_enable_i,
+        .soc_clk_o(s_clk_for_soc),
+        .per_clk_o(s_clk_for_per),
+        .cluster_clk_o(s_clk_cluster),
+        .soc_cfg_lock_o(soc_fll_slave_lock_o),
+        .soc_cfg_req_i(soc_fll_slave_req_i),
+        .soc_cfg_ack_o(soc_fll_slave_ack_o),
+        .soc_cfg_add_i(soc_fll_slave_add_i),
+        .soc_cfg_data_i(soc_fll_slave_data_i),
+        .soc_cfg_r_data_o(soc_fll_slave_r_data_o),
+        .soc_cfg_wrn_i(soc_fll_slave_wrn_i),
+        .per_cfg_lock_o(per_fll_slave_lock_o),
+        .per_cfg_req_i(per_fll_slave_req_i),
+        .per_cfg_ack_o(per_fll_slave_ack_o),
+        .per_cfg_add_i(per_fll_slave_add_i),
+        .per_cfg_data_i(per_fll_slave_data_i),
+        .per_cfg_r_data_o(per_fll_slave_r_data_o),
+        .per_cfg_wrn_i(per_fll_slave_wrn_i),
+        .cluster_cfg_lock_o(cluster_fll_slave_lock_o),
+        .cluster_cfg_req_i(cluster_fll_slave_req_i),
+        .cluster_cfg_ack_o(cluster_fll_slave_ack_o),
+        .cluster_cfg_add_i(cluster_fll_slave_add_i),
+        .cluster_cfg_data_i(cluster_fll_slave_data_i),
+        .cluster_cfg_r_data_o(cluster_fll_slave_r_data_o),
+        .cluster_cfg_wrn_i(cluster_fll_slave_wrn_i)
+    );
 
-    assign s_clk_soc     = s_clk_fll_soc;
-    assign s_clk_cluster = s_clk_fll_soc; //s_clk_fll_cluster
-    assign s_clk_per     = s_clk_fll_per;
+    assign s_clk_soc     = s_clk_for_soc;
+    assign s_clk_cluster = s_clk_for_soc; //s_clk_fll_cluster
+    assign s_clk_per     = s_clk_for_per;
 
-    `endif
+`endif
 
 
 
     assign s_rstn_soc = rstn_glob_i;
 
-    `ifndef PULP_FPGA_EMUL
+`ifndef PULP_FPGA_EMUL
+    rstgen i_soc_rstgen (
+        .clk_i       ( clk_soc_o       ),
+        .rst_ni      ( s_rstn_soc      ),
 
-        rstgen i_soc_rstgen (
-            .clk_i       ( clk_soc_o       ),
-            .rst_ni      ( s_rstn_soc      ),
+        .test_mode_i ( test_mode_i     ),
 
-            .test_mode_i ( test_mode_i     ),
-
-            .rst_no      ( s_rstn_soc_sync ), //to be used by logic clocked with ref clock in AO domain
-            .init_no     (                 )                    //not used
-        );
-    `else
-        assign s_rstn_soc_sync = s_rstn_soc;
-    `endif
+        .rst_no      ( s_rstn_soc_sync ), //to be used by logic clocked with ref clock in AO domain
+        .init_no     (                 )                    //not used
+    );
+`else
+   assign s_rstn_soc_sync = s_rstn_soc;
+`endif
 
 
-    `ifndef PULP_FPGA_EMUL
-        rstgen i_cluster_rstgen (
-            .clk_i       ( clk_cluster_o       ),
-            .rst_ni      ( s_rstn_soc          ),
+`ifndef PULP_FPGA_EMUL
+    rstgen i_cluster_rstgen (
+        .clk_i       ( clk_cluster_o       ),
+        .rst_ni      ( s_rstn_soc          ),
 
-            .test_mode_i ( test_mode_i         ),
+        .test_mode_i ( test_mode_i         ),
 
-            .rst_no      ( s_rstn_cluster_sync ), //to be used by logic clocked with ref clock in AO domain
-            .init_no     (                     )                    //not used
-        );
-    `else
-        assign s_rstn_cluster_sync = s_rstn_soc;
-    `endif
+        .rst_no      ( s_rstn_cluster_sync ), //to be used by logic clocked with ref clock in AO domain
+        .init_no     (                     )                    //not used
+    );
+`else
+    assign s_rstn_cluster_sync = s_rstn_soc;
+`endif
 
     assign clk_soc_o       = s_clk_soc;
     assign clk_per_o       = s_clk_per;
@@ -256,10 +346,13 @@ module soc_clk_rst_gen (
     assign rstn_soc_sync_o = s_rstn_soc_sync;
     assign rstn_cluster_sync_o = s_rstn_cluster_sync;
 
-    `ifdef DO_NOT_USE_FLL
-        assert property (
-            @(posedge clk) (soc_fll_slave_req_i == 1'b0 && per_fll_slave_req_i == 1'b0)  ) else $display("There should be no FLL request (%t)", $time);
-    `endif
-
-
 endmodule
+
+// Local Variables:
+// verilog-cexp-indent: 4
+// verilog-case-indent: 4
+// verilog-indent-level-behavioral: 4
+// verilog-indent-level-declaration: 4
+// verilog-indent-level-module: 4
+// verilog-indent-level: 4
+// End:

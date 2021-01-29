@@ -30,10 +30,9 @@ module soc_peripherals #(
     input  logic                       periph_clk_i,
     input  logic                       rst_ni,
     //check the reset
-    input  logic                       ref_clk_i,
     input  logic                       slow_clk_i,
 
-    input  logic                       sel_fll_clk_i,
+    input  logic                       sel_clk_i,
     input  logic                       dft_test_mode_i,
     input  logic                       dft_cg_enable_i,
     output logic [31:0]                fc_bootaddr_o,
@@ -53,26 +52,13 @@ module soc_peripherals #(
     APB_BUS.Master                     apb_eu_master,
     APB_BUS.Master                     apb_hwpe_master,
     APB_BUS.Master                     apb_debug_master,
+    // MASTER PORT TO SOC CLK CTRL
+    APB_BUS.Master                     apb_clk_ctrl_master,
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,
     XBAR_TCDM_BUS.Master               l2_tx_master,
-    // MASTER PORT TO SOC FLL
-    FLL_BUS.Master                     soc_fll_master,
-    // MASTER PORT TO PER FLL
-    FLL_BUS.Master                     per_fll_master,
-    // MASTER PORT TO CLUSTER FLL
-    FLL_BUS.Master                     cluster_fll_master,
-/*
-    input  logic                       jtag_req_valid_i,
-    output logic                       debug_req_ready_o,
-    input  logic                       jtag_resp_ready_i,
-    output logic                       jtag_resp_valid_o,
-    input  dm::dmi_req_t               jtag_dmi_req_i,
-    output dm::dmi_resp_t              debug_resp_o,
-    output logic                       ndmreset_o,
-    output logic                       dm_debug_req_o,
-*/
+
     input  logic                       dma_pe_evt_i,
     input  logic                       dma_pe_irq_i,
     input  logic                       pf_evt_i,
@@ -160,7 +146,6 @@ module soc_peripherals #(
 
     localparam USE_IBEX = CORE_TYPE == 1 || CORE_TYPE == 2;
 
-    APB_BUS s_fll_bus ();
 
     APB_BUS s_gpio_bus ();
     APB_BUS s_udma_bus ();
@@ -291,7 +276,7 @@ module soc_peripherals #(
 
         .apb_slave           ( apb_slave          ),
 
-        .fll_master          ( s_fll_bus          ),
+        .clk_ctrl_master     ( apb_clk_ctrl_master),
         .gpio_master         ( s_gpio_bus         ),
         .udma_master         ( s_udma_bus         ),
         .soc_ctrl_master     ( s_soc_ctrl_bus     ),
@@ -310,54 +295,6 @@ module soc_peripherals #(
         assign s_stdout_bus.pslverr = 'h0;
         assign s_stdout_bus.prdata  = 'h0;
     `endif
-
-
-    /////////////////////////////////////////////////////////////////////////
-    //  █████╗ ██████╗ ██████╗     ███████╗██╗     ██╗         ██╗███████╗ //
-    // ██╔══██╗██╔══██╗██╔══██╗    ██╔════╝██║     ██║         ██║██╔════╝ //
-    // ███████║██████╔╝██████╔╝    █████╗  ██║     ██║         ██║█████╗   //
-    // ██╔══██║██╔═══╝ ██╔══██╗    ██╔══╝  ██║     ██║         ██║██╔══╝   //
-    // ██║  ██║██║     ██████╔╝    ██║     ███████╗███████╗    ██║██║      //
-    // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚═╝     ╚══════╝╚══════╝    ╚═╝╚═╝      //
-    /////////////////////////////////////////////////////////////////////////
-    apb_fll_if #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)
-    ) i_apb_fll_if (
-        .HCLK        ( clk_i                   ),
-        .HRESETn     ( rst_ni                  ),
-
-        .PADDR       ( s_fll_bus.paddr         ),
-        .PWDATA      ( s_fll_bus.pwdata        ),
-        .PWRITE      ( s_fll_bus.pwrite        ),
-        .PSEL        ( s_fll_bus.psel          ),
-        .PENABLE     ( s_fll_bus.penable       ),
-        .PRDATA      ( s_fll_bus.prdata        ),
-        .PREADY      ( s_fll_bus.pready        ),
-        .PSLVERR     ( s_fll_bus.pslverr       ),
-
-        .fll1_req    ( soc_fll_master.req      ),
-        .fll1_wrn    ( soc_fll_master.wrn      ),
-        .fll1_add    ( soc_fll_master.add[1:0] ),
-        .fll1_data   ( soc_fll_master.data     ),
-        .fll1_ack    ( soc_fll_master.ack      ),
-        .fll1_r_data ( soc_fll_master.r_data   ),
-        .fll1_lock   ( soc_fll_master.lock     ),
-
-        .fll2_req    ( per_fll_master.req      ),
-        .fll2_wrn    ( per_fll_master.wrn      ),
-        .fll2_add    ( per_fll_master.add[1:0] ),
-        .fll2_data   ( per_fll_master.data     ),
-        .fll2_ack    ( per_fll_master.ack      ),
-        .fll2_r_data ( per_fll_master.r_data   ),
-        .fll2_lock   ( per_fll_master.lock     ),
-
-        .fll3_req    ( cluster_fll_master.req      ),
-        .fll3_wrn    ( cluster_fll_master.wrn      ),
-        .fll3_add    ( cluster_fll_master.add[1:0] ),
-        .fll3_data   ( cluster_fll_master.data     ),
-        .fll3_ack    ( cluster_fll_master.ack      ),
-        .fll3_r_data ( cluster_fll_master.r_data   ),
-        .fll3_lock   ( cluster_fll_master.lock     )
-    );
 
     ///////////////////////////////////////////////////////////////
     //  █████╗ ██████╗ ██████╗      ██████╗ ██████╗ ██╗ ██████╗  //
@@ -526,7 +463,7 @@ module soc_peripherals #(
         .PREADY              ( s_soc_ctrl_bus.pready  ),
         .PSLVERR             ( s_soc_ctrl_bus.pslverr ),
 
-        .sel_fll_clk_i       ( sel_fll_clk_i          ),
+        .sel_clk_i           ( sel_clk_i              ),
         .bootsel_i           ( bootsel_i              ),
         .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
         .fc_fetch_en_i       ( fc_fetch_en_i          ),
