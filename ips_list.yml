@@ -72,7 +72,7 @@ riscv:
   commit: pulpissimo-v3.4.0
   domain: [cluster, soc]
 ibex:
-  commit: e65a27e14dda7bb3b09cadc4e9232305fd451cec
+  commit: pulpissimo-v6.1.1
   group: lowRISC
   domain: [soc]
 scm:
