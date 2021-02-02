@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [2.1.0] - 2021-02-02
+### Added
 - Added `Bender.yml` file for bender compatibility
 - Added `obi_pulp_adapter`
 
