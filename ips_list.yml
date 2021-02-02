@@ -72,7 +72,7 @@ cv32e40p:
   commit: pulpissimo-v3.4.0-rev1
   domain: [cluster, soc]
 ibex:
-  commit: b148f3af51066ac3537c7c6eb4acbc17004bf868
+  commit: pulpissimo-v6.1.1
   group: lowRISC
   domain: [soc]
 scm:

@@ -22,6 +22,8 @@ module boot_rom #(
      input logic             test_mode_i
     );
 
+    assign mem_slave.r_opc = 1'b0;
+
     //Perform TCDM handshaking for constant 1 cycle latency
     assign mem_slave.gnt     = mem_slave.req;
     always_ff @(posedge clk_i, negedge rst_ni) begin
