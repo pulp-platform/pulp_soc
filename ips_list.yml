@@ -118,5 +118,5 @@ riscv-dbg:
   commit: v0.2
   domain: [soc]
 register_interface:
-  commit: b1bc9c22e0c2a5801107070c022904498dbae34b
+  commit: 2289fe025c27a39fd50f6578411e2f1af26fb442
   domain: [soc]
