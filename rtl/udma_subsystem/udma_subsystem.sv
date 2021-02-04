@@ -289,6 +289,8 @@ module udma_subsystem
     logic s_hyper_sys_clk;
     logic s_hyper_periph_clk;
     logic [N_CH_HYPER-1:0] s_evt_eot_hyper;
+    logic is_hyper_read_q;
+    logic is_hyper_read_d;
 
     integer i;
 
@@ -944,14 +946,38 @@ module udma_subsystem
 
 
 
+
+
     assign s_hyper_sys_clk = |s_clk_periphs_core[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER];
     assign s_hyper_periph_clk = |s_clk_periphs_per[PER_ID_HYPER+N_CH_HYPER : PER_ID_HYPER];
 
     //PER_ID 9
     assign s_events[4*PER_ID_HYPER]            = s_rx_ch_events[CH_ID_RX_HYPER];
     assign s_events[4*PER_ID_HYPER+1]          = s_tx_ch_events[CH_ID_TX_HYPER];
-    assign s_events[4*PER_ID_HYPER+2]          = 1'b0;
-    assign s_events[4*PER_ID_HYPER+3]          = |s_evt_eot_hyper;
+    assign s_events[4*PER_ID_HYPER+2]          = |s_evt_eot_hyper & is_hyper_read_d ;
+    assign s_events[4*PER_ID_HYPER+3]          = |s_evt_eot_hyper & !is_hyper_read_d;
+
+    always @(posedge s_clk_periphs_core[PER_ID_HYPER], negedge sys_resetn_i) begin
+       if(!sys_resetn_i) 
+             is_hyper_read_q = 0;
+       else
+             is_hyper_read_q = is_hyper_read_d;
+    end 
+    always_comb begin
+           if(is_hyper_read_q) begin
+                if ( s_tx_ch_events[CH_ID_TX_HYPER] & !s_rx_ch_events[CH_ID_RX_HYPER]) begin
+                      is_hyper_read_d =0;
+                end
+                else  is_hyper_read_d =1;
+           end 
+           else if(!is_hyper_read_q) begin
+                if ( s_rx_ch_events[CH_ID_RX_HYPER] & !s_tx_ch_events[CH_ID_TX_HYPER]) begin
+                      is_hyper_read_d =1;
+                end
+                else  is_hyper_read_d =0;
+           end
+    end
+
 
     assign s_rx_cfg_stream[CH_ID_RX_HYPER]     = 'h0;
     assign s_rx_cfg_stream_id[CH_ID_RX_HYPER]  = 'h0;
