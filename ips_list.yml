@@ -115,7 +115,7 @@ hwpe-mac-engine:
   commit: v1.3.3
   domain: [cluster, soc]
 riscv-dbg:
-  commit: v0.2
+  commit: v0.2.0
   domain: [soc]
 register_interface:
   commit: v0.2.1
