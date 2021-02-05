@@ -66,7 +66,6 @@ module pulp_soc import dm::*; #(
     output logic                          cluster_rstn_o,
     output logic                          cluster_irq_o,
     // AXI4 SLAVE
-   // input  logic [7:0]                    data_slave_aw_writetoken_i,
     input  logic [AXI_ADDR_WIDTH-1:0]     data_slave_aw_addr_i,
     input  logic [2:0]                    data_slave_aw_prot_i,
     input  logic [3:0]                    data_slave_aw_region_i,
@@ -79,8 +78,8 @@ module pulp_soc import dm::*; #(
     input  logic [3:0]                    data_slave_aw_qos_i,
     input  logic [AXI_ID_IN_WIDTH-1:0]    data_slave_aw_id_i,
     input  logic [AXI_USER_WIDTH-1:0]     data_slave_aw_user_i,
-    //output logic [7:0]                    data_slave_aw_readpointer_o,
-    //input  logic [7:0]                    data_slave_ar_writetoken_i,
+    input  logic                          data_slave_aw_valid_i,
+    output logic                          data_slave_aw_ready_o,
     input  logic [AXI_ADDR_WIDTH-1:0]     data_slave_ar_addr_i,
     input  logic [2:0]                    data_slave_ar_prot_i,
     input  logic [3:0]                    data_slave_ar_region_i,
@@ -92,25 +91,26 @@ module pulp_soc import dm::*; #(
     input  logic [3:0]                    data_slave_ar_qos_i,
     input  logic [AXI_ID_IN_WIDTH-1:0]    data_slave_ar_id_i,
     input  logic [AXI_USER_WIDTH-1:0]     data_slave_ar_user_i,
-   //output logic [7:0]                    data_slave_ar_readpointer_o,
-    //input  logic [7:0]                    data_slave_w_writetoken_i,
+    input  logic                          data_slave_ar_valid_i,
+    output logic                          data_slave_ar_ready_o,
     input  logic [AXI_DATA_IN_WIDTH-1:0]  data_slave_w_data_i,
     input  logic [AXI_STRB_WIDTH_IN-1:0]  data_slave_w_strb_i,
     input  logic [AXI_USER_WIDTH-1:0]     data_slave_w_user_i,
     input  logic                          data_slave_w_last_i,
-    //output logic [7:0]                    data_slave_w_readpointer_o,
-    //output logic [7:0]                    data_slave_r_writetoken_o,
+    input  logic                          data_slave_w_valid_i,
+    output logic                          data_slave_w_ready_o,
     output logic [AXI_DATA_IN_WIDTH-1:0]  data_slave_r_data_o,
     output logic [1:0]                    data_slave_r_resp_o,
     output logic                          data_slave_r_last_o,
     output logic [AXI_ID_IN_WIDTH-1:0]    data_slave_r_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_slave_r_user_o,
-    //input  logic [7:0]                    data_slave_r_readpointer_i,
-    //output logic [7:0]                    data_slave_b_writetoken_o,
+    output logic                          data_slave_r_valid_o,
+    input  logic                          data_slave_r_ready_i,
     output logic [1:0]                    data_slave_b_resp_o,
     output logic [AXI_ID_IN_WIDTH-1:0]    data_slave_b_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_slave_b_user_o,
-    //input  logic [7:0]                    data_slave_b_readpointer_i,
+    output logic                          data_slave_b_valid_o,
+    input  logic                          data_slave_b_ready_i,
 
     // AXI4 MASTER
     output logic [7:0]                    data_master_aw_writetoken_o,
@@ -479,37 +479,17 @@ module pulp_soc import dm::*; #(
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
-    // cluster to soc
-   /*
-    axi_slice_dc_master_wrap  #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH      )
-    ) dc_fifo_dataout_bus_i (
-        .clk_i           ( s_soc_clk                ),
-        .rst_ni          ( s_cluster_rstn           ),
-        .isolate_i       ( s_cluster_isolate_dc     ),
-        .test_cgbypass_i ( 1'b0                     ),
-        .clock_down_i    ( 1'b0                     ),
-        .incoming_req_o  (                          ),
-        .axi_master      ( s_data_in_bus            ),
-        .axi_slave_async ( s_data_slave             )
-    );
-*/
     // CLUSTER TO SOC
     axi_cdc_intf #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-        //.BUFFER_WIDTH   ( BUFFER_WIDTH       )
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .LOG_DEPTH      ( 3                  )
     ) dc_fifo_dataout_bus_i (
         .src_clk_i            ( cluster_clk_o           ),
         .src_rst_ni           ( cluster_rstn_o          ),
-        //.test_cgbypass_i    ( 1'b0                    ),
-        //.isolate_i          ( s_cluster_isolate_dc    ), // AND with all valid signals
+        //.isolate_i          ( s_cluster_isolate_dc    ), // TODO AND with all valid signals
         .src                  ( s_data_slave            ),
         .dst_clk_i            ( s_soc_clk               ),
         .dst_rst_ni           ( s_rstn_cluster_sync_soc ),
@@ -1035,7 +1015,6 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     // AXI DATA SLAVE
-  //  assign s_data_slave.aw_writetoken  = data_slave_aw_writetoken_i  ;
     assign s_data_slave.aw_addr        = data_slave_aw_addr_i        ;
     assign s_data_slave.aw_prot        = data_slave_aw_prot_i        ;
     assign s_data_slave.aw_region      = data_slave_aw_region_i      ;
@@ -1048,9 +1027,9 @@ module pulp_soc import dm::*; #(
     assign s_data_slave.aw_qos         = data_slave_aw_qos_i         ;
     assign s_data_slave.aw_id          = data_slave_aw_id_i          ;
     assign s_data_slave.aw_user        = data_slave_aw_user_i        ;
-  // assign data_slave_aw_readpointer_o = s_data_slave.aw_readpointer ;
+    assign s_data_slave.aw_valid       = data_slave_aw_valid_i        ;
+    assign data_slave_aw_ready_o       = s_data_slave.aw_ready        ;
 
-  //  assign s_data_slave.ar_writetoken  = data_slave_ar_writetoken_i  ;
     assign s_data_slave.ar_addr        = data_slave_ar_addr_i        ;
     assign s_data_slave.ar_prot        = data_slave_ar_prot_i        ;
     assign s_data_slave.ar_region      = data_slave_ar_region_i      ;
@@ -1062,28 +1041,30 @@ module pulp_soc import dm::*; #(
     assign s_data_slave.ar_qos         = data_slave_ar_qos_i         ;
     assign s_data_slave.ar_id          = data_slave_ar_id_i          ;
     assign s_data_slave.ar_user        = data_slave_ar_user_i        ;
-    //assign data_slave_ar_readpointer_o = s_data_slave.ar_readpointer ;
+    assign s_data_slave.ar_valid        = data_slave_ar_valid_i        ;
+    assign data_slave_ar_ready_o        = s_data_slave.ar_ready        ;
 
- //   assign s_data_slave.w_writetoken   = data_slave_w_writetoken_i   ;
     assign s_data_slave.w_data         = data_slave_w_data_i         ;
     assign s_data_slave.w_strb         = data_slave_w_strb_i         ;
     assign s_data_slave.w_user         = data_slave_w_user_i         ;
     assign s_data_slave.w_last         = data_slave_w_last_i         ;
-  //  assign data_slave_w_readpointer_o  = s_data_slave.w_readpointer  ;
+    assign s_data_slave.w_valid        = data_slave_w_valid_i        ;
+    assign data_slave_w_ready_o        = s_data_slave.w_ready        ;
 
- //   assign data_slave_r_writetoken_o   = s_data_slave.r_writetoken   ;
     assign data_slave_r_data_o         = s_data_slave.r_data         ;
     assign data_slave_r_resp_o         = s_data_slave.r_resp         ;
     assign data_slave_r_last_o         = s_data_slave.r_last         ;
     assign data_slave_r_id_o           = s_data_slave.r_id           ;
     assign data_slave_r_user_o         = s_data_slave.r_user         ;
-  //  assign s_data_slave.r_readpointer  = data_slave_r_readpointer_i  ;
+    assign data_slave_r_valid_o        = s_data_slave.r_valid        ;
+    assign s_data_slave.r_ready        = data_slave_r_ready_i        ;
 
-  //  assign data_slave_b_writetoken_o   = s_data_slave.b_writetoken   ;
     assign data_slave_b_resp_o         = s_data_slave.b_resp         ;
     assign data_slave_b_id_o           = s_data_slave.b_id           ;
     assign data_slave_b_user_o         = s_data_slave.b_user         ;
-  //  assign s_data_slave.b_readpointer  = data_slave_b_readpointer_i  ;
+    assign data_slave_b_valid_o        = s_data_slave.b_valid        ;
+    assign s_data_slave.b_ready        = data_slave_b_ready_i        ;
+
 
     //********************************************************
     //*** AXI DATA MASTER INTERFACE UNPACK *******************
