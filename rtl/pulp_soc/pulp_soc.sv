@@ -113,7 +113,6 @@ module pulp_soc import dm::*; #(
     input  logic                          data_slave_b_ready_i,
 
     // AXI4 MASTER
-    output logic [7:0]                    data_master_aw_writetoken_o,
     output logic [AXI_ADDR_WIDTH-1:0]     data_master_aw_addr_o,
     output logic [2:0]                    data_master_aw_prot_o,
     output logic [3:0]                    data_master_aw_region_o,
@@ -126,8 +125,8 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    data_master_aw_qos_o,
     output logic [AXI_ID_OUT_WIDTH-1:0]   data_master_aw_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_aw_user_o,
-    input  logic [7:0]                    data_master_aw_readpointer_i,
-    output logic [7:0]                    data_master_ar_writetoken_o,
+    output logic                          data_master_aw_valid_o,
+    input  logic                          data_master_aw_ready_i,
     output logic [AXI_ADDR_WIDTH-1:0]     data_master_ar_addr_o,
     output logic [2:0]                    data_master_ar_prot_o,
     output logic [3:0]                    data_master_ar_region_o,
@@ -139,25 +138,26 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    data_master_ar_qos_o,
     output logic [AXI_ID_OUT_WIDTH-1:0]   data_master_ar_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_ar_user_o,
-    input  logic [7:0]                    data_master_ar_readpointer_i,
-    output logic [7:0]                    data_master_w_writetoken_o,
+    output logic                          data_master_ar_valid_o,
+    input  logic                          data_master_ar_ready_i,
     output logic [AXI_DATA_OUT_WIDTH-1:0] data_master_w_data_o,
     output logic [AXI_STRB_WIDTH_OUT-1:0] data_master_w_strb_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_w_user_o,
     output logic                          data_master_w_last_o,
-    input  logic [7:0]                    data_master_w_readpointer_i,
-    input  logic [7:0]                    data_master_r_writetoken_i,
+    output logic                          data_master_w_valid_o,
+    input  logic                          data_master_w_ready_i,
     input  logic [AXI_DATA_OUT_WIDTH-1:0] data_master_r_data_i,
     input  logic [1:0]                    data_master_r_resp_i,
     input  logic                          data_master_r_last_i,
     input  logic [AXI_ID_OUT_WIDTH-1:0]   data_master_r_id_i,
     input  logic [AXI_USER_WIDTH-1:0]     data_master_r_user_i,
-    output logic [7:0]                    data_master_r_readpointer_o,
-    input  logic [7:0]                    data_master_b_writetoken_i,
+    input  logic                          data_master_r_valid_i,
+    output logic                          data_master_r_ready_o,
     input  logic [1:0]                    data_master_b_resp_i,
     input  logic [AXI_ID_OUT_WIDTH-1:0]   data_master_b_id_i,
     input  logic [AXI_USER_WIDTH-1:0]     data_master_b_user_i,
-    output logic [7:0]                    data_master_b_readpointer_o,
+    input  logic                          data_master_b_valid_i,
+    output logic                          data_master_b_ready_o,
 
     output logic [BUFFER_WIDTH-1:0]       cluster_events_wt_o,
     input  logic [BUFFER_WIDTH-1:0]       cluster_events_rp_i,
@@ -393,12 +393,11 @@ module pulp_soc import dm::*; #(
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
 
-    AXI_BUS_ASYNC #(
+    AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_data_master ();
 
     AXI_BUS #(
@@ -406,7 +405,6 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-        //.BUFFER_WIDTH   ( BUFFER_WIDTH       )
     ) s_data_slave ();
 
     AXI_BUS #(
@@ -497,19 +495,20 @@ module pulp_soc import dm::*; #(
     );
 
     // SOC TO CLUSTER
-    axi_slice_dc_slave_wrap #(
+    axi_cdc_intf #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
+        .LOG_DEPTH      ( 3                  )
     ) dc_fifo_datain_bus_i (
-        .clk_i            ( s_soc_clk               ),
-        .rst_ni           ( s_rstn_cluster_sync_soc ),
-        .test_cgbypass_i  ( 1'b0                    ),
-        .isolate_i        ( s_cluster_isolate_dc    ),
-        .axi_slave        ( s_data_out_bus          ),
-        .axi_master_async ( s_data_master           )
+        .src_clk_i            ( s_soc_clk               ),
+        .src_rst_ni           ( s_rstn_cluster_sync_soc ),
+        //.isolate_i          ( s_cluster_isolate_dc    ), // TODO AND with all valid signals
+        .src                  ( s_data_out_bus           ),
+        .dst_clk_i            ( cluster_clk_o            ),
+        .dst_rst_ni           ( cluster_rstn_o           ),
+        .dst                  ( s_data_master            )
     );
 
     //********************************************************
@@ -1070,7 +1069,6 @@ module pulp_soc import dm::*; #(
     //*** AXI DATA MASTER INTERFACE UNPACK *******************
     //********************************************************
 
-    assign data_master_aw_writetoken_o  = s_data_master.aw_writetoken ;
     assign data_master_aw_addr_o        = s_data_master.aw_addr       ;
     assign data_master_aw_prot_o        = s_data_master.aw_prot       ;
     assign data_master_aw_region_o      = s_data_master.aw_region     ;
@@ -1083,9 +1081,9 @@ module pulp_soc import dm::*; #(
     assign data_master_aw_qos_o         = s_data_master.aw_qos        ;
     assign data_master_aw_id_o          = s_data_master.aw_id         ;
     assign data_master_aw_user_o        = s_data_master.aw_user       ;
-    assign s_data_master.aw_readpointer = data_master_aw_readpointer_i;
+    assign data_master_aw_valid_o       = s_data_master.aw_valid      ;
+    assign s_data_master.aw_ready       = data_master_aw_ready_i      ;
 
-    assign data_master_ar_writetoken_o  = s_data_master.ar_writetoken ;
     assign data_master_ar_addr_o        = s_data_master.ar_addr       ;
     assign data_master_ar_prot_o        = s_data_master.ar_prot       ;
     assign data_master_ar_region_o      = s_data_master.ar_region     ;
@@ -1097,27 +1095,30 @@ module pulp_soc import dm::*; #(
     assign data_master_ar_qos_o         = s_data_master.ar_qos        ;
     assign data_master_ar_id_o          = s_data_master.ar_id         ;
     assign data_master_ar_user_o        = s_data_master.ar_user       ;
-    assign s_data_master.ar_readpointer = data_master_ar_readpointer_i;
+    assign data_master_ar_valid_o       = s_data_master.ar_valid      ;
+    assign s_data_master.ar_ready       = data_master_ar_ready_i      ;
 
-    assign data_master_w_writetoken_o   = s_data_master.w_writetoken  ;
+
     assign data_master_w_data_o         = s_data_master.w_data        ;
     assign data_master_w_strb_o         = s_data_master.w_strb        ;
     assign data_master_w_user_o         = s_data_master.w_user        ;
     assign data_master_w_last_o         = s_data_master.w_last        ;
-    assign s_data_master.w_readpointer  = data_master_w_readpointer_i ;
+    assign data_master_w_valid_o       = s_data_master.w_valid      ;
+    assign s_data_master.w_ready       = data_master_w_ready_i      ;
 
-    assign s_data_master.r_writetoken   = data_master_r_writetoken_i  ;
+
     assign s_data_master.r_data         = data_master_r_data_i        ;
     assign s_data_master.r_resp         = data_master_r_resp_i        ;
     assign s_data_master.r_last         = data_master_r_last_i        ;
     assign s_data_master.r_id           = data_master_r_id_i          ;
     assign s_data_master.r_user         = data_master_r_user_i        ;
-    assign data_master_r_readpointer_o  = s_data_master.r_readpointer ;
+    assign s_data_master.r_valid        = data_master_r_valid_i       ;
+    assign data_master_r_ready_o        = s_data_master.r_ready       ;
 
-    assign s_data_master.b_writetoken   = data_master_b_writetoken_i  ;
     assign s_data_master.b_resp         = data_master_b_resp_i        ;
     assign s_data_master.b_id           = data_master_b_id_i          ;
     assign s_data_master.b_user         = data_master_b_user_i        ;
-    assign data_master_b_readpointer_o  = s_data_master.b_readpointer ;
+    assign s_data_master.b_valid        = data_master_b_valid_i       ;
+    assign data_master_b_ready_o        = s_data_master.b_ready       ;
 
 endmodule
