@@ -121,6 +121,10 @@ module tcdm_arbiter_2x1
           tcdm_bus_o.wdata     = tcdm_bus_1_i.wdata;
           tcdm_bus_o.be        = tcdm_bus_1_i.be;
           offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_1;
+        end // case: WAIT_VALID_1
+
+        default: begin
+          offset_fsm_ns = IDLE;
         end
 
       endcase
