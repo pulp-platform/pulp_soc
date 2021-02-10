@@ -10,6 +10,8 @@
 
 
 `include "pulp_soc_defines.sv"
+`include "axi/typedef.svh"
+`include "axi/assign.svh"
 
 module pulp_soc import dm::*; #(
     parameter CORE_TYPE               = 0,
@@ -43,19 +45,19 @@ module pulp_soc import dm::*; #(
                                           // disabling the connection. For PULPissimo (MCU without a cluster) this should be set
                                           // to 0.
 ) (
-    input  logic                          ref_clk_i,
-    input  logic                          slow_clk_i,
-    input  logic                          test_clk_i,
-    input  logic                          rstn_glob_i,
+    input logic                           ref_clk_i,
+    input logic                           slow_clk_i,
+    input logic                           test_clk_i,
+    input logic                           rstn_glob_i,
 
-    input  logic                          dft_test_mode_i,
-    input  logic                          dft_cg_enable_i,
-    input  logic                          mode_select_i,
-    input  logic                          boot_l2_i,
-    input  logic [1:0]                    bootsel_i,
+    input logic                           dft_test_mode_i,
+    input logic                           dft_cg_enable_i,
+    input logic                           mode_select_i,
+    input logic                           boot_l2_i,
+    input logic [1:0]                     bootsel_i,
 
-    input  logic                          fc_fetch_en_valid_i,
-    input  logic                          fc_fetch_en_i,
+    input logic                           fc_fetch_en_valid_i,
+    input logic                           fc_fetch_en_i,
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -66,51 +68,21 @@ module pulp_soc import dm::*; #(
     output logic                          cluster_rstn_o,
     output logic                          cluster_irq_o,
     // AXI4 SLAVE
-    input  logic [7:0]                    data_slave_aw_writetoken_i,
-    input  logic [AXI_ADDR_WIDTH-1:0]     data_slave_aw_addr_i,
-    input  logic [2:0]                    data_slave_aw_prot_i,
-    input  logic [3:0]                    data_slave_aw_region_i,
-    input  logic [7:0]                    data_slave_aw_len_i,
-    input  logic [2:0]                    data_slave_aw_size_i,
-    //input  logic [5:0]                    data_slave_aw_atop_i,
-    input  logic [1:0]                    data_slave_aw_burst_i,
-    input  logic                          data_slave_aw_lock_i,
-    input  logic [3:0]                    data_slave_aw_cache_i,
-    input  logic [3:0]                    data_slave_aw_qos_i,
-    input  logic [AXI_ID_IN_WIDTH-1:0]    data_slave_aw_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]     data_slave_aw_user_i,
-    output logic [7:0]                    data_slave_aw_readpointer_o,
-    input  logic [7:0]                    data_slave_ar_writetoken_i,
-    input  logic [AXI_ADDR_WIDTH-1:0]     data_slave_ar_addr_i,
-    input  logic [2:0]                    data_slave_ar_prot_i,
-    input  logic [3:0]                    data_slave_ar_region_i,
-    input  logic [7:0]                    data_slave_ar_len_i,
-    input  logic [2:0]                    data_slave_ar_size_i,
-    input  logic [1:0]                    data_slave_ar_burst_i,
-    input  logic                          data_slave_ar_lock_i,
-    input  logic [3:0]                    data_slave_ar_cache_i,
-    input  logic [3:0]                    data_slave_ar_qos_i,
-    input  logic [AXI_ID_IN_WIDTH-1:0]    data_slave_ar_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]     data_slave_ar_user_i,
-    output logic [7:0]                    data_slave_ar_readpointer_o,
-    input  logic [7:0]                    data_slave_w_writetoken_i,
-    input  logic [AXI_DATA_IN_WIDTH-1:0]  data_slave_w_data_i,
-    input  logic [AXI_STRB_WIDTH_IN-1:0]  data_slave_w_strb_i,
-    input  logic [AXI_USER_WIDTH-1:0]     data_slave_w_user_i,
-    input  logic                          data_slave_w_last_i,
-    output logic [7:0]                    data_slave_w_readpointer_o,
-    output logic [7:0]                    data_slave_r_writetoken_o,
-    output logic [AXI_DATA_IN_WIDTH-1:0]  data_slave_r_data_o,
-    output logic [1:0]                    data_slave_r_resp_o,
-    output logic                          data_slave_r_last_o,
-    output logic [AXI_ID_IN_WIDTH-1:0]    data_slave_r_id_o,
-    output logic [AXI_USER_WIDTH-1:0]     data_slave_r_user_o,
-    input  logic [7:0]                    data_slave_r_readpointer_i,
-    output logic [7:0]                    data_slave_b_writetoken_o,
-    output logic [1:0]                    data_slave_b_resp_o,
-    output logic [AXI_ID_IN_WIDTH-1:0]    data_slave_b_id_o,
-    output logic [AXI_USER_WIDTH-1:0]     data_slave_b_user_o,
-    input  logic [7:0]                    data_slave_b_readpointer_i,
+    input logic [7:0]                    async_data_slave_aw_writetoken_i,
+    input logic [7:0][79:0]              async_data_slave_aw_data_i,
+    output logic [7:0]                   async_data_slave_aw_readpointer_o,
+    input logic [7:0]                    async_data_slave_ar_writetoken_i,
+    input logic [7:0][73:0]              async_data_slave_ar_data_i,
+    output logic [7:0]                   async_data_slave_ar_readpointer_o,
+    input logic [7:0]                    async_data_slave_w_writetoken_i,
+    input logic [7:0][78:0]              async_data_slave_w_data_i,
+    output logic [7:0]                   async_data_slave_w_readpointer_o,
+    output logic [7:0]                   async_data_slave_r_writetoken_o,
+    output logic [7:0][79:0]             async_data_slave_r_data_o,
+    input logic [7:0]                    async_data_slave_r_readpointer_i,
+    output logic [7:0]                   async_data_slave_b_writetoken_o,
+    output logic [7:0][14:0]             async_data_slave_b_data_o,
+    input logic [7:0]                    async_data_slave_b_readpointer_i,
 
     // AXI4 MASTER
     output logic [7:0]                    data_master_aw_writetoken_o,
@@ -126,7 +98,7 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    data_master_aw_qos_o,
     output logic [AXI_ID_OUT_WIDTH-1:0]   data_master_aw_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_aw_user_o,
-    input  logic [7:0]                    data_master_aw_readpointer_i,
+    input logic [7:0]                     data_master_aw_readpointer_i,
     output logic [7:0]                    data_master_ar_writetoken_o,
     output logic [AXI_ADDR_WIDTH-1:0]     data_master_ar_addr_o,
     output logic [2:0]                    data_master_ar_prot_o,
@@ -139,70 +111,70 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    data_master_ar_qos_o,
     output logic [AXI_ID_OUT_WIDTH-1:0]   data_master_ar_id_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_ar_user_o,
-    input  logic [7:0]                    data_master_ar_readpointer_i,
+    input logic [7:0]                     data_master_ar_readpointer_i,
     output logic [7:0]                    data_master_w_writetoken_o,
     output logic [AXI_DATA_OUT_WIDTH-1:0] data_master_w_data_o,
     output logic [AXI_STRB_WIDTH_OUT-1:0] data_master_w_strb_o,
     output logic [AXI_USER_WIDTH-1:0]     data_master_w_user_o,
     output logic                          data_master_w_last_o,
-    input  logic [7:0]                    data_master_w_readpointer_i,
-    input  logic [7:0]                    data_master_r_writetoken_i,
-    input  logic [AXI_DATA_OUT_WIDTH-1:0] data_master_r_data_i,
-    input  logic [1:0]                    data_master_r_resp_i,
-    input  logic                          data_master_r_last_i,
-    input  logic [AXI_ID_OUT_WIDTH-1:0]   data_master_r_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]     data_master_r_user_i,
+    input logic [7:0]                     data_master_w_readpointer_i,
+    input logic [7:0]                     data_master_r_writetoken_i,
+    input logic [AXI_DATA_OUT_WIDTH-1:0]  data_master_r_data_i,
+    input logic [1:0]                     data_master_r_resp_i,
+    input logic                           data_master_r_last_i,
+    input logic [AXI_ID_OUT_WIDTH-1:0]    data_master_r_id_i,
+    input logic [AXI_USER_WIDTH-1:0]      data_master_r_user_i,
     output logic [7:0]                    data_master_r_readpointer_o,
-    input  logic [7:0]                    data_master_b_writetoken_i,
-    input  logic [1:0]                    data_master_b_resp_i,
-    input  logic [AXI_ID_OUT_WIDTH-1:0]   data_master_b_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]     data_master_b_user_i,
+    input logic [7:0]                     data_master_b_writetoken_i,
+    input logic [1:0]                     data_master_b_resp_i,
+    input logic [AXI_ID_OUT_WIDTH-1:0]    data_master_b_id_i,
+    input logic [AXI_USER_WIDTH-1:0]      data_master_b_user_i,
     output logic [7:0]                    data_master_b_readpointer_o,
 
     output logic [BUFFER_WIDTH-1:0]       cluster_events_wt_o,
-    input  logic [BUFFER_WIDTH-1:0]       cluster_events_rp_i,
+    input logic [BUFFER_WIDTH-1:0]        cluster_events_rp_i,
     output logic [EVNT_WIDTH-1:0]         cluster_events_da_o,
     output logic                          cluster_clk_o,
-    input  logic                          cluster_busy_i,
+    input logic                           cluster_busy_i,
     output logic                          dma_pe_evt_ack_o,
-    input  logic                          dma_pe_evt_valid_i,
+    input logic                           dma_pe_evt_valid_i,
     output logic                          dma_pe_irq_ack_o,
-    input  logic                          dma_pe_irq_valid_i,
+    input logic                           dma_pe_irq_valid_i,
     output logic                          pf_evt_ack_o,
-    input  logic                          pf_evt_valid_i,
+    input logic                           pf_evt_valid_i,
     ///////////////////////////////////////////////////
     //      To I/O Controller and padframe           //
     ///////////////////////////////////////////////////
     output logic [127:0]                  pad_mux_o,
     output logic [383:0]                  pad_cfg_o,
-    input  logic [NGPIO-1:0]              gpio_in_i,
+    input logic [NGPIO-1:0]               gpio_in_i,
     output logic [NGPIO-1:0]              gpio_out_o,
     output logic [NGPIO-1:0]              gpio_dir_o,
     output logic [191:0]                  gpio_cfg_o,
     output logic                          uart_tx_o,
-    input  logic                          uart_rx_i,
-    input  logic                          cam_clk_i,
-    input  logic [7:0]                    cam_data_i,
-    input  logic                          cam_hsync_i,
-    input  logic                          cam_vsync_i,
+    input logic                           uart_rx_i,
+    input logic                           cam_clk_i,
+    input logic [7:0]                     cam_data_i,
+    input logic                           cam_hsync_i,
+    input logic                           cam_vsync_i,
     output logic [3:0]                    timer_ch0_o,
     output logic [3:0]                    timer_ch1_o,
     output logic [3:0]                    timer_ch2_o,
     output logic [3:0]                    timer_ch3_o,
 
-    input  logic [N_I2C-1:0]              i2c_scl_i,
+    input logic [N_I2C-1:0]               i2c_scl_i,
     output logic [N_I2C-1:0]              i2c_scl_o,
     output logic [N_I2C-1:0]              i2c_scl_oe_o,
-    input  logic [N_I2C-1:0]              i2c_sda_i,
+    input logic [N_I2C-1:0]               i2c_sda_i,
     output logic [N_I2C-1:0]              i2c_sda_o,
     output logic [N_I2C-1:0]              i2c_sda_oe_o,
 
-    input  logic                          i2s_slave_sd0_i,
-    input  logic                          i2s_slave_sd1_i,
-    input  logic                          i2s_slave_ws_i,
+    input logic                           i2s_slave_sd0_i,
+    input logic                           i2s_slave_sd1_i,
+    input logic                           i2s_slave_ws_i,
     output logic                          i2s_slave_ws_o,
     output logic                          i2s_slave_ws_oe,
-    input  logic                          i2s_slave_sck_i,
+    input logic                           i2s_slave_sck_i,
     output logic                          i2s_slave_sck_o,
     output logic                          i2s_slave_sck_oe,
 
@@ -210,35 +182,35 @@ module pulp_soc import dm::*; #(
     output logic [N_SPI-1:0][3:0]         spi_csn_o,
     output logic [N_SPI-1:0][3:0]         spi_oen_o,
     output logic [N_SPI-1:0][3:0]         spi_sdo_o,
-    input  logic [N_SPI-1:0][3:0]         spi_sdi_i,
+    input logic [N_SPI-1:0][3:0]          spi_sdi_i,
 
     output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
-    input  logic                          sdio_cmd_i,
+    input logic                           sdio_cmd_i,
     output logic                          sdio_cmd_oen_o,
-    output logic                    [3:0] sdio_data_o,
-    input  logic                    [3:0] sdio_data_i,
-    output logic                    [3:0] sdio_data_oen_o,
+    output logic [3:0]                    sdio_data_o,
+    input logic [3:0]                     sdio_data_i,
+    output logic [3:0]                    sdio_data_oen_o,
 
-    output logic                    [1:0] hyper_cs_no,
+    output logic [1:0]                    hyper_cs_no,
     output logic                          hyper_ck_o,
     output logic                          hyper_ck_no,
-    output logic                    [1:0] hyper_rwds_o,
-    input  logic                          hyper_rwds_i,
-    output logic                    [1:0] hyper_rwds_oe_o,
-    input  logic                   [15:0] hyper_dq_i,
-    output logic                   [15:0] hyper_dq_o,
-    output logic                    [1:0] hyper_dq_oe_o,
+    output logic [1:0]                    hyper_rwds_o,
+    input logic                           hyper_rwds_i,
+    output logic [1:0]                    hyper_rwds_oe_o,
+    input logic [15:0]                    hyper_dq_i,
+    output logic [15:0]                   hyper_dq_o,
+    output logic [1:0]                    hyper_dq_oe_o,
     output logic                          hyper_reset_no,
 
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
     ///////////////////////////////////////////////////
-    input  logic                          jtag_tck_i,
-    input  logic                          jtag_trst_ni,
-    input  logic                          jtag_tms_i,
-    input  logic                          jtag_tdi_i,
+    input logic                           jtag_tck_i,
+    input logic                           jtag_trst_ni,
+    input logic                           jtag_tms_i,
+    input logic                           jtag_tdi_i,
     output logic                          jtag_tdo_o,
     output logic [NB_CORES-1:0]           cluster_dbg_irq_valid_o
     ///////////////////////////////////////////////////
@@ -478,13 +450,13 @@ module pulp_soc import dm::*; #(
     assign s_cluster_isolate_dc = ISOLATE_CLUSTER_CDC;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
-
+/*
     // cluster to soc
     axi_slice_dc_master_wrap  #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    ),
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ), //32
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ), //64
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ), //7
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    ), //6
         .BUFFER_WIDTH   ( BUFFER_WIDTH      )
     ) dc_fifo_dataout_bus_i (
         .clk_i           ( s_soc_clk                ),
@@ -496,7 +468,112 @@ module pulp_soc import dm::*; #(
         .axi_master      ( s_data_in_bus            ),
         .axi_slave_async ( s_data_slave             )
     );
+*/
+   typedef logic [AXI_ID_IN_WIDTH-1:0]      id_t  ;
+   typedef logic [AXI_ADDR_WIDTH-1:0]       addr_t;
+   typedef logic [AXI_DATA_IN_WIDTH-1:0]    data_t;
+   typedef logic [AXI_DATA_IN_WIDTH/8-1:0]  strb_t;
+   typedef logic [AXI_USER_WIDTH-1:0]       user_t;   
+   `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+   `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+   `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+   `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+   `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
 
+   `AXI_TYPEDEF_REQ_T(req_t, aw_chan_t, w_chan_t, ar_chan_t)
+   `AXI_TYPEDEF_RESP_T(resp_t, b_chan_t, r_chan_t)
+
+   req_t  dst_req;
+   resp_t dst_resp;
+   //synchrnous slave assignment
+   `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
+   `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
+   //asynchronous slave assignment
+ /*  `AXI_TO_AW(assign,dst_req_async.aw,s_data_slave)
+   `AXI_TO_W(assign,dst_req_async.w,s_data_slave)   
+   `AXI_TO_AR(assign,dst_req_async.ar,s_data_slave)   
+   `AXI_FROM_B(assign,s_data_slave,dst_resp_async.b)   
+   `AXI_FROM_R(assign,s_data_slave,dst_resp_async.r)
+*/
+   // CLUSTER TO SOC
+   cdc_fifo_gray_dst #(
+        .T(logic [$bits(aw_chan_t)-1:0]),
+        .LOG_DEPTH(3)
+    ) cdc_fifo_gray_dst_aw (
+        .dst_rst_ni           ( s_rstn_cluster_sync_soc      ),
+        .dst_clk_i            ( s_soc_clk                    ),
+        .dst_data_o           ( dst_req.aw                   ),
+        .dst_valid_o          ( dst_req.aw_valid             ),
+        .dst_ready_i          ( dst_resp.aw_ready            ),
+        .async_data_i         ( async_data_slave_aw_data_i         ),
+        .async_wptr_i         ( async_data_slave_aw_writetoken_i   ),
+        .async_rptr_o         ( async_data_slave_aw_readpointer_o  )
+    );
+
+
+   // CLUSTER TO SOC
+   cdc_fifo_gray_dst #(
+        .T(logic [$bits(w_chan_t)-1:0]),
+        .LOG_DEPTH(3)
+    ) cdc_fifo_gray_dst_w (
+        .dst_rst_ni           ( s_rstn_cluster_sync_soc      ),
+        .dst_clk_i            ( s_soc_clk                    ),
+        .dst_data_o           ( dst_req.w                    ),
+        .dst_valid_o          ( dst_req.w_valid              ),
+        .dst_ready_i          ( dst_resp.w_ready             ),
+        .async_data_i         ( async_data_slave_w_data_i          ),
+        .async_wptr_i         ( async_data_slave_w_writetoken_i    ),
+        .async_rptr_o         ( async_data_slave_w_readpointer_o   )
+    );
+
+
+   // CLUSTER TO SOC
+   cdc_fifo_gray_src #(
+        .T(logic [$bits(b_chan_t)-1:0]),
+        .LOG_DEPTH(3)
+    ) cdc_fifo_gray_src_b (
+        .src_rst_ni           ( s_rstn_cluster_sync_soc      ),
+        .src_clk_i            ( s_soc_clk                    ),
+        .src_data_i           ( dst_resp.b                    ),
+        .src_valid_i          ( dst_resp.b_valid              ),
+        .src_ready_o          ( dst_req.b_ready             ),
+        .async_data_o         ( async_data_slave_b_data_o              ),
+        .async_wptr_o         ( async_data_slave_b_writetoken_o    ),
+        .async_rptr_i         ( async_data_slave_b_readpointer_i   )
+    );
+
+
+   // CLUSTER TO SOC
+   cdc_fifo_gray_src #(
+        .T(logic [$bits(r_chan_t)-1:0]),
+        .LOG_DEPTH(3)
+    ) cdc_fifo_gray_src_r (
+        .src_rst_ni           ( s_rstn_cluster_sync_soc      ),
+        .src_clk_i            ( s_soc_clk                    ),
+        .src_data_i           ( dst_resp.r                    ),
+        .src_valid_i          ( dst_resp.r_valid              ),
+        .src_ready_o          ( dst_req.r_ready             ),
+        .async_data_o         ( async_data_slave_r_data_o          ),
+        .async_wptr_o         ( async_data_slave_r_writetoken_o    ),
+        .async_rptr_i         ( async_data_slave_r_readpointer_i   )
+    );
+
+   // CLUSTER TO SOC
+   cdc_fifo_gray_dst #(
+        .T(logic [$bits(ar_chan_t)-1:0]),
+        .LOG_DEPTH(3)
+    ) cdc_fifo_gray_dst_ar (
+        .dst_rst_ni           ( s_rstn_cluster_sync_soc      ),
+        .dst_clk_i            ( s_soc_clk                    ),
+        .dst_data_o           ( dst_req.ar                   ),
+        .dst_valid_o          ( dst_req.ar_valid             ),
+        .dst_ready_i          ( dst_resp.ar_ready            ),
+        .async_data_i         ( async_data_slave_ar_data_i         ),
+        .async_wptr_i         ( async_data_slave_ar_writetoken_i   ),
+        .async_rptr_o         ( async_data_slave_ar_readpointer_o  )
+    );
+
+   
     // SOC TO CLUSTER
     axi_slice_dc_slave_wrap #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -1016,56 +1093,6 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     // AXI DATA SLAVE
-    assign s_data_slave.aw_writetoken  = data_slave_aw_writetoken_i  ;
-    assign s_data_slave.aw_addr        = data_slave_aw_addr_i        ;
-    assign s_data_slave.aw_prot        = data_slave_aw_prot_i        ;
-    assign s_data_slave.aw_region      = data_slave_aw_region_i      ;
-    assign s_data_slave.aw_len         = data_slave_aw_len_i         ;
-    assign s_data_slave.aw_size        = data_slave_aw_size_i        ;
-    assign s_data_slave.aw_burst       = data_slave_aw_burst_i       ;
-     //assign s_data_slave.aw_atop        = data_slave_aw_atop_i        ;
-    assign s_data_slave.aw_lock        = data_slave_aw_lock_i        ;
-    assign s_data_slave.aw_cache       = data_slave_aw_cache_i       ;
-    assign s_data_slave.aw_qos         = data_slave_aw_qos_i         ;
-    assign s_data_slave.aw_id          = data_slave_aw_id_i          ;
-    assign s_data_slave.aw_user        = data_slave_aw_user_i        ;
-    assign data_slave_aw_readpointer_o = s_data_slave.aw_readpointer ;
-
-    assign s_data_slave.ar_writetoken  = data_slave_ar_writetoken_i  ;
-    assign s_data_slave.ar_addr        = data_slave_ar_addr_i        ;
-    assign s_data_slave.ar_prot        = data_slave_ar_prot_i        ;
-    assign s_data_slave.ar_region      = data_slave_ar_region_i      ;
-    assign s_data_slave.ar_len         = data_slave_ar_len_i         ;
-    assign s_data_slave.ar_size        = data_slave_ar_size_i        ;
-    assign s_data_slave.ar_burst       = data_slave_ar_burst_i       ;
-    assign s_data_slave.ar_lock        = data_slave_ar_lock_i        ;
-    assign s_data_slave.ar_cache       = data_slave_ar_cache_i       ;
-    assign s_data_slave.ar_qos         = data_slave_ar_qos_i         ;
-    assign s_data_slave.ar_id          = data_slave_ar_id_i          ;
-    assign s_data_slave.ar_user        = data_slave_ar_user_i        ;
-    assign data_slave_ar_readpointer_o = s_data_slave.ar_readpointer ;
-
-    assign s_data_slave.w_writetoken   = data_slave_w_writetoken_i   ;
-    assign s_data_slave.w_data         = data_slave_w_data_i         ;
-    assign s_data_slave.w_strb         = data_slave_w_strb_i         ;
-    assign s_data_slave.w_user         = data_slave_w_user_i         ;
-    assign s_data_slave.w_last         = data_slave_w_last_i         ;
-    assign data_slave_w_readpointer_o  = s_data_slave.w_readpointer  ;
-
-    assign data_slave_r_writetoken_o   = s_data_slave.r_writetoken   ;
-    assign data_slave_r_data_o         = s_data_slave.r_data         ;
-    assign data_slave_r_resp_o         = s_data_slave.r_resp         ;
-    assign data_slave_r_last_o         = s_data_slave.r_last         ;
-    assign data_slave_r_id_o           = s_data_slave.r_id           ;
-    assign data_slave_r_user_o         = s_data_slave.r_user         ;
-    assign s_data_slave.r_readpointer  = data_slave_r_readpointer_i  ;
-
-    assign data_slave_b_writetoken_o   = s_data_slave.b_writetoken   ;
-    assign data_slave_b_resp_o         = s_data_slave.b_resp         ;
-    assign data_slave_b_id_o           = s_data_slave.b_id           ;
-    assign data_slave_b_user_o         = s_data_slave.b_user         ;
-    assign s_data_slave.b_readpointer  = data_slave_b_readpointer_i  ;
-
     //********************************************************
     //*** AXI DATA MASTER INTERFACE UNPACK *******************
     //********************************************************
