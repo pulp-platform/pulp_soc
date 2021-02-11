@@ -1,4 +1,4 @@
-package: 
+package:
   name: pulp_soc
   authors:
     - "Robert Balas <balasr@iis.ee.ethz.ch>"
@@ -75,23 +75,23 @@ sources:
       - rtl/pulp_soc/soc_peripherals.sv
       - rtl/pulp_soc/pulp_soc.sv
   # udma_subsystem
-  - files: 
+  - files:
       - rtl/udma_subsystem/udma_subsystem.sv
   # fc
   - target: rtl
     defines:
       TRACE_EXECUTION: ~
-    files: 
+    files:
       - rtl/fc/fc_demux.sv
       - rtl/fc/fc_subsystem.sv
       - rtl/fc/fc_hwpe.sv
   - target: not(rtl)
-    files: 
+    files:
       - rtl/fc/fc_demux.sv
       - rtl/fc/fc_subsystem.sv
       - rtl/fc/fc_hwpe.sv
   # components
-  - files: 
+  - files:
       - rtl/components/apb_clkdiv.sv
       - rtl/components/apb_soc_ctrl.sv
       - rtl/components/memory_models.sv
@@ -102,11 +102,11 @@ sources:
       - rtl/components/tcdm_arbiter_2x1.sv
       - rtl/components/obi_pulp_adapter.sv
   # components_rtl
-  - files: 
+  - files:
       - rtl/components/glitch_free_clk_mux.sv
       - rtl/components/apb_dummy.sv
     target: rtl
   # components_behav
-  - files: 
+  - files:
       - rtl/components/freq_meter.sv
     target: all(rtl, not(synthesis))
