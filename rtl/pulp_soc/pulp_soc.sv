@@ -444,6 +444,7 @@ module pulp_soc import dm::*; #(
      .dst_rst_ni                       ( s_cluster_rstn             ),
      .dst_clk_i                        ( s_soc_clk                  ),
      .dst                              ( s_data_in_bus              ),
+     .isolate_i                        ( s_cluster_isolate_dc       ),
      .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),   
      .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
      .async_data_slave_aw_data_i       ( async_data_slave_aw_data_i ),
@@ -469,9 +470,10 @@ module pulp_soc import dm::*; #(
     .AXI_ID_WIDTH    ( AXI_ID_OUT_WIDTH        ), 
     .LogDepth        ( LOG_DEPTH               )
     ) axi_master_cdc_i (
-     .src_rst_ni                       ( s_rstn_cluster_sync_soc    ),
-     .src_clk_i                        ( s_soc_clk                  ),
-     .src                              ( s_data_out_bus             ),
+     .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
+     .src_clk_i                        ( s_soc_clk                   ),
+     .src                              ( s_data_out_bus              ),
+     .isolate_i                        ( s_cluster_isolate_dc        ),
      .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),   
      .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
      .async_data_master_aw_data_o      ( async_data_master_aw_data_o ),
