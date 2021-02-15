@@ -76,9 +76,6 @@ ibex:
 scm:
   commit: v1.0.1
   domain: [cluster, soc]
-generic_FLL:
-  commit: v0.1
-  domain: [soc]
 tech_cells_generic:
   commit: v0.1.6
   domain: [cluster, soc]
