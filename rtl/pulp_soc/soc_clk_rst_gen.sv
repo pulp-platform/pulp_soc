@@ -27,12 +27,14 @@ module soc_clk_rst_gen (
 
     output logic clk_soc_o,
     output logic clk_per_o,
-    output logic clk_cluster_o
+    output logic clk_cluster_o,
+    output logic clk_slow_o  // 32 Khz reference for timer
 );
 
     logic s_clk_soc;
     logic s_clk_per;
     logic s_clk_cluster;
+    logic s_clk_slow;
 
     logic s_clk_for_soc;
     logic s_clk_for_per;
@@ -221,6 +223,19 @@ module soc_clk_rst_gen (
         .clk_o(s_clk_for_per)
     );
 
+    // ref_clk -> divider -> 32 Khz timer clock
+    // fixed division by integer factor
+    clk_div #(
+        .RATIO (3125) // TODO: ADJUST RATIO to match ref clk
+                      // 100 Mhz / 32 Khz = 3125
+    ) i_clk_div_timer (
+        .clk_i(ref_clk_i),
+        .rst_ni(rstn_glob_i),
+        .testmode_i(test_mode_i),
+        .en_i(1'b1), // TODO: maybe we can map this to reg
+        .clk_o(s_clk_slow)
+    );
+
     always_ff @(posedge sys_clk_i, negedge rstn_glob_i) begin
         if (!rstn_glob_i) begin
             state_q <= IDLE;
@@ -300,6 +315,22 @@ module soc_clk_rst_gen (
         .cluster_cfg_wrn_i(cluster_fll_slave_wrn_i)
     );
 
+    //Don't use the supplied clock directly for the FPGA target. On some boards
+    //the reference clock is a very fast (e.g. 200MHz) clock that cannot be used
+    //directly as the "slow_clk". Therefore we slow it down if a FPGA/board
+    //dependent module fpga_slow_clk_gen. Dividing the fast reference clock
+    //internally instead of doing so in the toplevel prevents unecessary clock
+    //division just to generate a faster clock once again in the SoC and
+    //Peripheral clock PLLs in soc_domain.sv. Instead all PLL use directly the
+    //board reference clock as input.
+
+    fpga_slow_clk_gen i_slow_clk_gen (
+        .rst_ni(s_rstn_sync),
+        .ref_clk_i(ref_clk_i),
+        .slow_clk_o(s_clk_slow)
+    );
+
+
     assign s_clk_soc     = s_clk_for_soc;
     assign s_clk_cluster = s_clk_for_soc; //s_clk_fll_cluster
     assign s_clk_per     = s_clk_for_per;
@@ -342,6 +373,7 @@ module soc_clk_rst_gen (
     assign clk_soc_o       = s_clk_soc;
     assign clk_per_o       = s_clk_per;
     assign clk_cluster_o   = s_clk_cluster;
+    assign clk_slow_o      = s_clk_slow;
 
     assign rstn_soc_sync_o = s_rstn_soc_sync;
     assign rstn_cluster_sync_o = s_rstn_cluster_sync;

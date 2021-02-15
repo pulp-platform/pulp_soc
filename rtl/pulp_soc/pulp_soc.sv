@@ -63,7 +63,6 @@ module pulp_soc import dm::*; #(
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
-    input  logic                          slow_clk_i,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
@@ -358,6 +357,8 @@ module pulp_soc import dm::*; #(
     logic                  s_supervisor_mode;
 
     logic [31:0]           s_fc_bootaddr;
+
+    logic                  s_slow_clk;
 
     logic                  s_periph_clk;
     logic                  s_periph_rstn;
@@ -695,7 +696,7 @@ module pulp_soc import dm::*; #(
         .periph_clk_i           ( s_periph_clk           ),
         .rst_ni                 ( s_soc_rstn             ),
         .sel_clk_i              ( s_sel_clk              ),
-        .slow_clk_i             ( slow_clk_i             ),
+        .slow_clk_i             ( s_slow_clk             ),
 
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( 1'b0                   ),
@@ -898,7 +899,8 @@ module pulp_soc import dm::*; #(
         .apb_slave                  ( s_apb_clk_ctrl_bus            ),
 
         .clk_soc_o                  ( s_soc_clk                     ),
-        .clk_per_o                  ( s_periph_clk                  )
+        .clk_per_o                  ( s_periph_clk                  ),
+        .clk_slow_o                 ( s_slow_clk                    )
     );
 
     soc_interconnect_wrap #(
