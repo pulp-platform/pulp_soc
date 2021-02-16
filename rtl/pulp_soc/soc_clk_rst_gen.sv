@@ -63,6 +63,98 @@ module soc_clk_rst_gen (
 `endif
 
 `ifndef PULP_FPGA_EMUL
+
+
+    typedef enum logic [1:0] {
+        SOC_APB_IDLE, SOC_APB_REQ, SOC_APB_ACK, SOC_APB_READY
+    } from_soc_state_e;
+
+    from_soc_state_e from_soc_state_q, from_soc_state_d;
+
+    logic four_req;
+    logic four_ack;
+
+    logic [7:0]  soc_pwdata_q, soc_pwdata_d;
+    logic        soc_pwrite_q, soc_pwrite_d;
+    logic [11:0] soc_paddr_q, soc_paddr_d;
+
+    // Accept the APB request in the soc clock domain and do a four-phase
+    // handshake (req, ack) with the state machine doing the communication with
+    // the clock dividers which live in the sys clock domain. These clock
+    // domains are synchronous so we don't need to deal with metastability,
+    // just that we might miss transactions due to the different sampling rate
+    // of signals
+
+
+    // Note that the apb requests that are incoming are not fully apb compliant:
+    // they raise penable concurrently with psel/pwrite/pwdata instead of
+    // delying it by one cycle. This forces us to start or logic only when psel
+    // and penable are concurrently asserted.
+    always_comb begin
+        // Note: Don't use default assignments for four_req, instead do the
+        // assignment in the states. This is because some simulators, while
+        // executing the always_comb block, treat the default assignment and the
+        // subsequent (potential) override of the value in the state as "event"
+        // that wakes other always_comb blocks that are sensitive to it. If you
+        // do this default assignment state in two always_comb blocks then you
+        // get a "fake" combinatory loop.
+        // four_req = 1'b0; <- tl;dr: don't do this
+
+        soc_pwdata_d = soc_pwdata_q;
+        soc_pwrite_d = soc_pwrite_q;
+        soc_paddr_d  = soc_paddr_q;
+
+        from_soc_state_d = from_soc_state_q;
+        apb_slave.pready = 1'b0;
+
+        unique case (from_soc_state_q)
+            SOC_APB_IDLE: begin
+                four_req = 1'b0;
+                if (apb_slave.psel && apb_slave.penable) begin
+                    // sample apb request
+                    from_soc_state_d = SOC_APB_REQ;
+                    soc_pwdata_d = apb_slave.pwdata[7:0]; // clock div supports
+                                                          // 8 bit div value
+                    soc_pwrite_d = apb_slave.pwrite;
+                    soc_paddr_d  = apb_slave.paddr[11:0]; //
+                end
+            end
+            SOC_APB_REQ: begin
+                four_req = 1'b1;
+                if (four_ack)
+                    from_soc_state_d = SOC_APB_ACK;
+            end
+            SOC_APB_ACK: begin
+                four_req = 1'b0;
+                if (!four_ack)
+                    from_soc_state_d = SOC_APB_READY;
+            end
+            SOC_APB_READY: begin
+                four_req = 1'b0;
+                apb_slave.pready = 1'b1; // pulse for one cycle
+                from_soc_state_d = SOC_APB_IDLE;
+            end
+            default:
+                four_req = 1'b0;
+        endcase // unique case (from_soc_state_q)
+    end
+
+    // in soc clock domain
+    always_ff @(posedge clk_soc_o, negedge rstn_glob_i) begin
+        if (!rstn_glob_i) begin
+            from_soc_state_q <= SOC_APB_IDLE;
+            soc_pwdata_q <= '0;
+            soc_pwrite_q <= '0;
+            soc_paddr_q  <= '0;
+        end else begin
+            from_soc_state_q <= from_soc_state_d;
+            soc_pwdata_q <= soc_pwdata_d;
+            soc_pwrite_q <= soc_pwrite_d;
+            soc_paddr_q  <= soc_paddr_d;
+        end
+    end
+
+
     // global address map
     // CLK_CTRL_START_ADDR      32'h1A10_0000
     // CLK_CTRL_END_ADDR        32'h1A10_0FFF
@@ -77,10 +169,10 @@ module soc_clk_rst_gen (
     logic dummy_access;
 
     typedef enum logic [1:0] {
-         IDLE, ACCESS, WRITE_ACK
-    } state_e;
+        CLK_DIV_IDLE, CLK_DIV_REQ, CLK_DIV_ACK
+    } clk_div_state_e;
 
-    state_e state_q, state_d;
+    clk_div_state_e clk_div_state_q, clk_div_state_d;
 
     // address decoder
     always_comb begin
@@ -102,43 +194,27 @@ module soc_clk_rst_gen (
         end
     end
 
-
-    // Combinatorial response from/to clock dividers
-    //
-    // The apb requests that are incoming are not fully apb compliant: they
-    // raise penable concurrently with psel/pwrite/pwdata instead of delying it
-    // by one cycle. This forces us to start or logic only when psel and penable
-    // are concurrently asserted.
+    // Access clock dividers. This is the other part of the four phase handshake
+    // that lives in the soc clock domain.
     always_comb begin
         soc_div_valid = 1'b0;
         cluster_div_valid = 1'b0;
         periph_div_valid = 1'b0;
 
-        apb_slave.pready = 1'b0;
+        clk_div_state_d = clk_div_state_q;
 
-        state_d = state_q;
+        unique case(clk_div_state_q)
+            CLK_DIV_IDLE: begin
+                four_ack = 1'b0;
 
-        unique case(state_q)
-            IDLE: begin
-                apb_slave.pready = 1'b0;
-
-                if (soc_div_access || cluster_div_access || periph_div_access || dummy_access)
-                    state_d = ACCESS;
-
-                if (apb_slave.pwrite) begin
-                    if (soc_div_access)
-                        soc_div_valid = 1'b1;
-                    if (cluster_div_access)
-                        cluster_div_valid = 1'b1;
-                    if (periph_div_access)
-                        periph_div_valid = 1'b1;
-                end
+                if (four_req)
+                    clk_div_state_d = CLK_DIV_REQ;
             end
-            ACCESS: begin
-                if (apb_slave.pwrite) begin
-                    // handle writes
-                    apb_slave.pready = 1'b0;
+            CLK_DIV_REQ: begin
+                four_ack = 1'b0;
 
+                if (soc_pwrite_q) begin
+                    // handle writes
                     if (soc_div_access)
                         soc_div_valid = 1'b1;
                     if (cluster_div_access)
@@ -147,27 +223,30 @@ module soc_clk_rst_gen (
                         periph_div_valid = 1'b1;
 
                     if (soc_div_ready || cluster_div_ready || periph_div_ready || dummy_access)
-                        state_d = WRITE_ACK;
-                end else begin // if (apb_slave.pwrite)
-                    // handle reads
-                    apb_slave.pready = 1'b1;
-                    state_d = IDLE;
+                        clk_div_state_d = CLK_DIV_ACK;
+                end else begin // if (soc_pwrite_q)
+                    // handle reads: just progress
+                    clk_div_state_d = CLK_DIV_ACK;
                 end
             end
-            WRITE_ACK: begin
-                apb_slave.pready = 1'b1;
+            CLK_DIV_ACK: begin
+                four_ack = 1'b1;
 
-                soc_div_valid = 1'b0;
-                cluster_div_valid = 1'b0;
-                periph_div_valid  = 1'b0;
-
-                if (!apb_slave.penable) begin // deasserted at end of a transfer
-                    apb_slave.pready = 1'b0;
-                    state_d = IDLE;
-                end
+                if (!four_req)
+                    clk_div_state_d = CLK_DIV_IDLE;
             end
-            default:;
-        endcase // unique case (state_q)
+            default:
+                four_ack = 1'b0;
+        endcase // unique case (clk_div_state_q)
+    end
+
+    // in sys clock domain
+    always_ff @(posedge sys_clk_i, negedge rstn_glob_i) begin
+        if (!rstn_glob_i) begin
+            clk_div_state_q <= CLK_DIV_IDLE;
+        end else begin
+            clk_div_state_q <= clk_div_state_d;
+        end
     end
 
     // We just return garbage data on read
@@ -187,7 +266,7 @@ module soc_clk_rst_gen (
         .rstn_i (rstn_glob_i),
         .test_mode_i (test_mode_i),
         .clk_gate_async_i(1'b1), // TODO: maybe we can map this to reg
-        .clk_div_data_i(apb_slave.pwdata[7:0]),
+        .clk_div_data_i(soc_pwdata_q),
         .clk_div_valid_i(soc_div_valid),
         .clk_div_ack_o(soc_div_ready),
         .clk_o(s_clk_for_soc)
@@ -202,7 +281,7 @@ module soc_clk_rst_gen (
         .rstn_i (rstn_glob_i),
         .test_mode_i (test_mode_i),
         .clk_gate_async_i(1'b1), // TODO: maybe we map this to reg
-        .clk_div_data_i(apb_slave.pwdata[7:0]),
+        .clk_div_data_i(soc_pwdata_q),
         .clk_div_valid_i(cluster_div_valid),
         .clk_div_ack_o(cluster_div_ready),
         .clk_o(s_clk_for_cluster)
@@ -217,7 +296,7 @@ module soc_clk_rst_gen (
         .rstn_i (rstn_glob_i),
         .test_mode_i (test_mode_i),
         .clk_gate_async_i(1'b1), // TODO: maybe we map this to reg
-        .clk_div_data_i(apb_slave.pwdata[7:0]), // 8 bit might not be enough for periph
+        .clk_div_data_i(soc_pwdata_q), // 8 bit might not be enough for periph
         .clk_div_valid_i(periph_div_valid),
         .clk_div_ack_o(periph_div_ready),
         .clk_o(s_clk_for_per)
@@ -235,14 +314,6 @@ module soc_clk_rst_gen (
         .en_i(1'b1), // TODO: maybe we can map this to reg
         .clk_o(s_clk_slow)
     );
-
-    always_ff @(posedge sys_clk_i, negedge rstn_glob_i) begin
-        if (!rstn_glob_i) begin
-            state_q <= IDLE;
-        end else begin
-            state_q <= state_d;
-        end
-    end
 
     pulp_clock_mux2 clk_mux_fll_soc_i (
 `ifdef TEST_FLL
