@@ -432,18 +432,37 @@ module pulp_soc import dm::*; #(
     assign s_cluster_isolate_dc = ISOLATE_CLUSTER_CDC;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
-  
+   
+   `AXI_TYPEDEF_AW_CHAN_T(c2s_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_W_CHAN_T(c2s_w_chan_t,logic[AXI_DATA_IN_WIDTH-1:0],logic[AXI_DATA_IN_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_B_CHAN_T(c2s_b_chan_t,logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_AR_CHAN_T(c2s_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_R_CHAN_T(c2s_r_chan_t,logic[AXI_DATA_IN_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   
+  `AXI_TYPEDEF_REQ_T(c2s_req_t,c2s_aw_chan_t,c2s_w_chan_t,c2s_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(c2s_resp_t,c2s_b_chan_t,c2s_r_chan_t)
+
+   c2s_req_t   dst_req ;
+   c2s_resp_t  dst_resp;   
+   
+  `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
+  `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
+ 
   // CLUSTER TO SOC AXI   
-  axi_dc_dst_wrap #(
-    .AXI_ADDR_WIDTH  ( AXI_ADDR_WIDTH         ), 
-    .AXI_DATA_WIDTH  ( AXI_DATA_IN_WIDTH      ), 
-    .AXI_USER_WIDTH  ( AXI_USER_WIDTH         ), 
-    .AXI_ID_WIDTH    ( AXI_ID_IN_WIDTH        ), 
-    .LogDepth        ( 3                      )
+  axi_cdc_dst #(
+     .aw_chan_t (c2s_aw_chan_t),
+     .w_chan_t  (c2s_w_chan_t ),
+     .b_chan_t  (c2s_b_chan_t ),     
+     .r_chan_t  (c2s_r_chan_t ),
+     .ar_chan_t (c2s_ar_chan_t),
+     .axi_req_t (c2s_req_t    ),
+     .axi_resp_t(c2s_resp_t   ),
+     .LogDepth        ( 3                      )
     ) axi_slave_cdc_i (
      .dst_rst_ni                       ( s_cluster_rstn             ),
      .dst_clk_i                        ( s_soc_clk                  ),
-     .dst                              ( s_data_in_bus              ),
+     .dst_req_o                        ( dst_req                    ),
+     .dst_resp_i                       ( dst_resp                   ),
      .isolate_i                        ( s_cluster_isolate_dc       ),
      .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),   
      .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
@@ -461,18 +480,39 @@ module pulp_soc import dm::*; #(
      .async_data_slave_r_rptr_i        ( async_data_slave_r_rptr_i  ),
      .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )  
     );
+
+   
+   `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_DATA_OUT_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   
+  `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
+
+   s2c_req_t   src_req ;
+   s2c_resp_t  src_resp;   
+   
+  `AXI_ASSIGN_TO_REQ(src_req,s_data_out_bus)
+  `AXI_ASSIGN_FROM_RESP(s_data_out_bus,src_resp)
+
    
     // SOC TO CLUSTER
-     axi_dc_src_wrap #(
-    .AXI_ADDR_WIDTH  ( AXI_ADDR_WIDTH          ), 
-    .AXI_DATA_WIDTH  ( AXI_DATA_OUT_WIDTH      ), 
-    .AXI_USER_WIDTH  ( AXI_USER_WIDTH          ), 
-    .AXI_ID_WIDTH    ( AXI_ID_OUT_WIDTH        ), 
+    axi_cdc_src #(
+     .aw_chan_t (s2c_aw_chan_t),
+     .w_chan_t  (s2c_w_chan_t),
+     .b_chan_t  (s2c_b_chan_t),     
+     .r_chan_t  (s2c_r_chan_t),
+     .ar_chan_t (s2c_ar_chan_t),
+     .axi_req_t (s2c_req_t              ),
+     .axi_resp_t(s2c_resp_t             ),
     .LogDepth        ( LOG_DEPTH               )
     ) axi_master_cdc_i (
      .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
      .src_clk_i                        ( s_soc_clk                   ),
-     .src                              ( s_data_out_bus              ),
+     .src_req_i                        ( src_req                     ),
+     .src_resp_o                       ( src_resp                    ),   
      .isolate_i                        ( s_cluster_isolate_dc        ),
      .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),   
      .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
