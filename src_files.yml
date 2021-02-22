@@ -38,7 +38,6 @@ fc:
   files: [
     rtl/fc/fc_demux.sv,
     rtl/fc/fc_subsystem.sv,
-    rtl/fc/fc_hwpe.sv,
   ]
 
 components:
