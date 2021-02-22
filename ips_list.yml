@@ -69,10 +69,6 @@ jtag_pulp:
 riscv:
   commit: pulpissimo-v3.4.0
   domain: [cluster, soc]
-ibex:
-  commit: 13313952cd50ff04489f6cf3dba9ba05c2011a8b
-  group: lowRISC
-  domain: [soc]
 scm:
   commit: v1.0.1
   domain: [cluster, soc]
