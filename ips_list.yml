@@ -115,7 +115,7 @@ udma_hyper:
   group: hayate
   domain: [soc]
 hwpe-mac-engine:
-  commit: v1.2
+  commit: v1.3.2
   domain: [cluster, soc]
 riscv-dbg:
   commit: v0.2
