@@ -59,7 +59,10 @@ module pulp_soc import dm::*; #(
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
-    parameter int unsigned N_I2C  = 2
+    parameter int unsigned N_I2C  = 2,
+
+    parameter int unsigned N_L2_BANKS = 0,
+    parameter int unsigned N_L2_BANKS_PRI = 0
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
@@ -264,10 +267,11 @@ module pulp_soc import dm::*; #(
     localparam int unsigned CLK_CTRL_ADDR_WIDTH = 32;
     localparam int unsigned CLK_CTRL_DATA_WIDTH = 32;
 
-    localparam NB_L2_BANKS           = `NB_L2_CHANNELS;
+    // TODO: remove
+    localparam NB_L2_BANKS           = N_L2_BANKS;
     localparam L2_BANK_SIZE          = 29184;            // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
-    localparam NB_L2_BANKS_PRI       = 2;
+    localparam NB_L2_BANKS_PRI       = N_L2_BANKS_PRI;
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
