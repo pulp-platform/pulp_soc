@@ -86,6 +86,10 @@ module pulp_soc import dm::*; #(
 
     AXI_BUS.Slave                         axi_sms_slv,   // from security subsystem
 
+    // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
+    UNICAD_MEM_BUS_32.Master              tcdm_interleaved_l2_bus[N_L2_BANKS-1:0],
+    UNICAD_MEM_BUS_32.Master              tcdm_private_l2_bus[N_L2_BANKS_PRI-1:0],
+
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
     output logic [63:0]                   cluster_boot_addr_o,
@@ -483,9 +487,6 @@ module pulp_soc import dm::*; #(
 
     UNICAD_MEM_BUS_32 s_mem_rom_bus ();
 
-    UNICAD_MEM_BUS_32  s_mem_l2_bus[NB_L2_BANKS-1:0]();
-    UNICAD_MEM_BUS_32  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
-
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
     XBAR_TCDM_BUS s_lint_riscv_jtag_bus();
@@ -645,21 +646,7 @@ module pulp_soc import dm::*; #(
     //********************* SOC L2 RAM ***********************
     //********************************************************
 
-    l2_ram_multi_bank #(
-        .MEM_ADDR_WIDTH        ( L2_MEM_ADDR_WIDTH     ),
-        .NB_BANKS              ( NB_L2_BANKS           ),
-        .BANK_SIZE             ( L2_BANK_SIZE          ),
-        .MEM_ADDR_WIDTH_PRI    ( L2_MEM_ADDR_WIDTH_PRI ),
-        .NB_BANKS_PRI          ( NB_L2_BANKS_PRI       )
-    ) l2_ram_i (
-        .clk_i           ( s_soc_clk          ),
-        .rst_ni          ( s_soc_rstn         ),
-        .init_ni         ( 1'b1               ),
-        .test_mode_i     ( dft_test_mode_i    ),
-        .mem_slave       ( s_mem_l2_bus       ),
-        .mem_pri_slave   ( s_mem_l2_pri_bus   )
-    );
-
+    // NOTE: The L2 memories are outside the control-pulp module!
 
     //********************************************************
     //******              SOC BOOT ROM             ***********
@@ -940,10 +927,10 @@ module pulp_soc import dm::*; #(
         .axi_to_cluster   ( s_data_out_bus      ),
         .axi_to_external  ( soc_to_external     ),
 
-        .apb_periph_bus   ( s_apb_periph_bus    ),
-        .mem_l2_bus       ( s_mem_l2_bus        ),
-        .mem_l2_pri_bus   ( s_mem_l2_pri_bus    ),
-        .mem_rom_bus      ( s_mem_rom_bus       )
+        .apb_periph_bus   ( s_apb_periph_bus        ),
+        .mem_l2_bus       ( tcdm_interleaved_l2_bus ),
+        .mem_l2_pri_bus   ( tcdm_private_l2_bus     ),
+        .mem_rom_bus      ( s_mem_rom_bus           )
     );
 
     // Debug Subsystem
