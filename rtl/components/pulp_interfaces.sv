@@ -1371,6 +1371,7 @@ endinterface // CORE_PREF_BUS
 /// order to be attached to the interconnect and sharing mechanism. See the file
 /// apu_template.sv for an example as how to create a module that implements the
 /// interface.
+/*`ifndef PULP_FPGA_EMUL
 interface marx_apu_if #(
 												parameter WOP      = 1,
 												parameter NARGS    = 2,
@@ -1485,3 +1486,4 @@ interface cpu_marx_if #(
 	               );
 
 endinterface
+`endif */
