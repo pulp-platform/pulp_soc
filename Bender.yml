@@ -15,6 +15,7 @@ package:
 dependencies:
   L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
   adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.5 }
+  apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.1.0 }
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
   apb_gpio:               { git: "https://github.com/pulp-platform/apb_gpio.git", rev: "control-pulp" }

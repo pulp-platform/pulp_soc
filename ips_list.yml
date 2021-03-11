@@ -24,6 +24,9 @@ L2_tcdm_hybrid_interco:
 adv_dbg_if:
   commit: v0.0.1
   domain: [cluster, soc]
+apb/apb:
+  commit: v0.1.0
+  domain: [soc]
 apb/apb2per:
   commit: v0.0.1
   domain: [soc]
