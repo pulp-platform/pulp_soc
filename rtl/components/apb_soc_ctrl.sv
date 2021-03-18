@@ -475,6 +475,8 @@ module apb_soc_ctrl #(
               end
           `REG_FCBOOT:
             PRDATA = r_bootaddr;
+          `REG_FCFETCH:
+            PRDATA = r_fetchen;
           `REG_INFO:
             PRDATA = {n_cores,n_clusters};
           `REG_CORESTATUS:
