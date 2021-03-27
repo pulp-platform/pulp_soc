@@ -37,25 +37,12 @@ module pulp_soc import dm::*; #(
                                       //downstreams are not parametrci
     parameter NBIT_PADMUX        = 2,
 
-    parameter int unsigned AXI_ID_INP_WIDTH_C07 = 6,
-    parameter int unsigned AXI_ID_OUP_WIDTH_C07 = 6,
-    parameter int unsigned AXI_USER_WIDTH_C07 = 6,
-    parameter int unsigned AXI_STRB_WIDTH_C07 = 64/8,
-    parameter int unsigned AXI_ADDR_WIDTH_C07 = 32,
-    parameter int unsigned AXI_DATA_WIDTH_C07 = 64,
-
-    parameter int unsigned AXI_ID_INP_WIDTH_NOCR07 = 6,
-    parameter int unsigned AXI_ID_OUP_WIDTH_NOCR07 = 6,
-    parameter int unsigned AXI_USER_WIDTH_NOCR07 = 6,
-    parameter int unsigned AXI_STRB_WIDTH_NOCR07 = 64/8,
-    parameter int unsigned AXI_ADDR_WIDTH_NOCR07 = 32,
-    parameter int unsigned AXI_DATA_WIDTH_NOCR07 = 64,
-
-    parameter int unsigned AXI_ID_WIDTH_SMS = 6,
-    parameter int unsigned AXI_USER_WIDTH_SMS = 6,
-    parameter int unsigned AXI_STRB_WIDTH_SMS = 64/8,
-    parameter int unsigned AXI_ADDR_WIDTH_SMS = 32,
-    parameter int unsigned AXI_DATA_WIDTH_SMS = 64,
+    parameter int unsigned AXI_ID_INP_WIDTH_PMS = 6,
+    parameter int unsigned AXI_ID_OUP_WIDTH_PMS = 6,
+    parameter int unsigned AXI_USER_WIDTH_PMS = 6,
+    parameter int unsigned AXI_STRB_WIDTH_PMS = 64/8,
+    parameter int unsigned AXI_ADDR_WIDTH_PMS = 32,
+    parameter int unsigned AXI_DATA_WIDTH_PMS = 64,
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
@@ -80,13 +67,8 @@ module pulp_soc import dm::*; #(
     input  logic                          fc_fetch_en_i,
 
     // AXI interfaces to outside of control pulp
-    AXI_BUS.Slave                         axi_c07_slv,  // from c07
-    AXI_BUS.Master                        axi_c07_mst,
-
-    AXI_BUS.Slave                         axi_nocr07_slv, // from NoC
-    AXI_BUS.Master                        axi_nocr07_mst,
-
-    AXI_BUS.Slave                         axi_sms_slv,   // from security subsystem
+    AXI_BUS.Slave                         axi_ext_slv,  // from nci_cp_top
+    AXI_BUS.Master                        axi_ext_mst,
 
     // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
     UNICAD_MEM_BUS_32.Master              tcdm_interleaved_l2_bus[N_L2_BANKS-1:0],
@@ -552,12 +534,8 @@ module pulp_soc import dm::*; #(
 
     // data width conversions of AXI to 32-bit. Currently we fail here if we have
     // a mismatch.
-    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_C07)
-        $fatal(1, "AXI data width mismatch on c07");
-    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_NOCR07)
-        $fatal(1, "AXI data width mismatch on nocr07");
-    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_SMS)
-        $fatal(1, "AXI data width mismatch on sms");
+    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_PMS)
+        $fatal(1, "AXI data width mismatch on nci_cp_top");
     /* axi_data_width_converter AUTO_TEMPLATE "_\([a-z]+\)" (
      .slv (axi_in[]),
      .mst (axi[]),
@@ -565,12 +543,8 @@ module pulp_soc import dm::*; #(
      */
 
     // Addr width conversion of AXI. Currently we fail here if we have a mismatch.
-    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_C07)
-        $fatal(1, "AXI address width mismatch on c07");
-    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_NOCR07)
-        $fatal(1, "AXI address width mismatch on nocr07");
-    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_SMS)
-        $fatal(1, "AXI address width mismatch on sms");
+    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_PMS)
+        $fatal(1, "AXI address width mismatch on nci_cp_top");
 
     //
     // AXI soc node
@@ -594,25 +568,12 @@ module pulp_soc import dm::*; #(
         .AXI_ADDR_WIDTH_CLUSTER  (AXI_ADDR_WIDTH),
         .AXI_DATA_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH),
 
-        .AXI_ID_INP_WIDTH_C07    (AXI_ID_INP_WIDTH_C07),
-        .AXI_ID_OUP_WIDTH_C07    (AXI_ID_OUP_WIDTH_C07),
-        .AXI_USER_WIDTH_C07      (AXI_USER_WIDTH_C07),
-        .AXI_STRB_WIDTH_C07      (AXI_STRB_WIDTH_C07),
-        .AXI_ADDR_WIDTH_C07      (AXI_ADDR_WIDTH_C07),
-        .AXI_DATA_WIDTH_C07      (AXI_DATA_WIDTH_C07),
-
-        .AXI_ID_INP_WIDTH_NOCR07 (AXI_ID_INP_WIDTH_NOCR07),
-        .AXI_ID_OUP_WIDTH_NOCR07 (AXI_ID_OUP_WIDTH_NOCR07),
-        .AXI_USER_WIDTH_NOCR07   (AXI_USER_WIDTH_NOCR07),
-        .AXI_STRB_WIDTH_NOCR07   (AXI_STRB_WIDTH_NOCR07),
-        .AXI_ADDR_WIDTH_NOCR07   (AXI_ADDR_WIDTH_NOCR07),
-        .AXI_DATA_WIDTH_NOCR07   (AXI_DATA_WIDTH_NOCR07),
-
-        .AXI_ID_INP_WIDTH_SMS    (AXI_ID_WIDTH_SMS),
-        .AXI_USER_WIDTH_SMS      (AXI_USER_WIDTH_SMS),
-        .AXI_STRB_WIDTH_SMS      (AXI_STRB_WIDTH_SMS),
-        .AXI_ADDR_WIDTH_SMS      (AXI_ADDR_WIDTH_SMS),
-        .AXI_DATA_WIDTH_SMS      (AXI_DATA_WIDTH_SMS),
+        .AXI_ID_INP_WIDTH_PMS    (AXI_ID_INP_WIDTH_PMS),
+        .AXI_ID_OUP_WIDTH_PMS    (AXI_ID_OUP_WIDTH_PMS),
+        .AXI_USER_WIDTH_PMS      (AXI_USER_WIDTH_PMS),
+        .AXI_STRB_WIDTH_PMS      (AXI_STRB_WIDTH_PMS),
+        .AXI_ADDR_WIDTH_PMS      (AXI_ADDR_WIDTH_PMS),
+        .AXI_DATA_WIDTH_PMS      (AXI_DATA_WIDTH_PMS),
 
         // this is the soc nodes axi config. All connections' parameters will be
         // checked against this
@@ -628,11 +589,8 @@ module pulp_soc import dm::*; #(
         .cl_slv          (s_data_in_bus),
         .soc_slv         (soc_to_external),
         .soc_mst         (soc_in_mst),
-        .c07_slv         (axi_c07_slv),
-        .c07_mst         (axi_c07_mst),
-        .nocr07_slv      (axi_nocr07_slv),
-        .nocr07_mst      (axi_nocr07_mst),
-        .sms_slv         (axi_sms_slv),
+        .ext_slv         (axi_ext_slv),
+        .ext_mst         (axi_ext_mst),
         // Inputs
         .clk_i           (s_soc_clk),
         .rst_ni          (s_soc_rstn)

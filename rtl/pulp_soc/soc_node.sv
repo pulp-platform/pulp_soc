@@ -17,22 +17,19 @@
 
 package automatic soc_node_pkg;
 
-  localparam int unsigned N_SLAVES_EXT = `AXI_SOC_NODE_SLAVES_EXT; // 4
+  localparam int unsigned N_SLAVES_EXT = `AXI_SOC_NODE_SLAVES_EXT; // 2
   localparam int unsigned N_MASTERS_EXT = `AXI_SOC_NODE_MASTERS_EXT; // 1
 
   localparam int unsigned N_SLAVES_SOC = `AXI_SOC_NODE_SLAVES_SOC;
   localparam int unsigned N_MASTERS_SOC = `AXI_SOC_NODE_MASTERS_SOC;
 
-  // SoC peripherals + l2 map from the point of view of nocr07, c07 and sms (external)
+  // SoC peripherals + l2 map from the point of view of nci_cp_top (external)
   localparam logic [31:0] SOC_EXT_VIEW_START_ADDR = `MASTER_2_START_ADDR; // 32'h1A00_0000
   localparam logic [31:0] SOC_EXT_VIEW_END_ADDR = `MASTER_2_END_ADDR; // 32'h1FFF_FFFF
 
-  // c07 and nocr07 from the viewpoint of the soc
-  localparam logic [31:0] C07_SOC_VIEW_START_ADDR = `AXI_SOC_NODE_C07_START_ADDR; // 32'h2000_0000
-  localparam logic [31:0] C07_SOC_VIEW_END_ADDR = `AXI_SOC_NODE_C07_END_ADDR; // 32'h3FFF_FFFF
-
-  localparam logic [31:0] NOCR07_SOC_VIEW_START_ADDR = `AXI_SOC_NODE_NOCR07_START_ADDR; // 32'h4000_0000
-  localparam logic [31:0] NOCR07_SOC_VIEW_END_ADDR = `AXI_SOC_NODE_NOCR07_END_ADDR; // 32'hFFFF_FFFF
+  // nci_cp_top from the viewpoint of the soc
+  localparam logic [31:0] EXT_SOC_VIEW_START_ADDR = `AXI_SOC_NODE_EXT_START_ADDR; // 32'h2000_0000
+  localparam logic [31:0] EXT_SOC_VIEW_END_ADDR = `AXI_SOC_NODE_EXT_END_ADDR; // 32'h3FFF_FFFF
 
   // localparam int unsigned AXI_SOC_NODE_AW = 32;
   // localparam int unsigned AXI_SOC_NODE_DW = 64;
@@ -65,25 +62,12 @@ module soc_node #(
   parameter int unsigned AXI_ADDR_WIDTH_CLUSTER = 0,
   parameter int unsigned AXI_DATA_WIDTH_CLUSTER = 0,
 
-  parameter int unsigned AXI_ID_INP_WIDTH_C07 = 0,
-  parameter int unsigned AXI_ID_OUP_WIDTH_C07 = 0,
-  parameter int unsigned AXI_USER_WIDTH_C07 = 0,
-  parameter int unsigned AXI_STRB_WIDTH_C07 = 0,
-  parameter int unsigned AXI_ADDR_WIDTH_C07 = 0,
-  parameter int unsigned AXI_DATA_WIDTH_C07 = 0,
-
-  parameter int unsigned AXI_ID_INP_WIDTH_NOCR07 = 0,
-  parameter int unsigned AXI_ID_OUP_WIDTH_NOCR07 = 0,
-  parameter int unsigned AXI_USER_WIDTH_NOCR07 = 0,
-  parameter int unsigned AXI_STRB_WIDTH_NOCR07 = 0,
-  parameter int unsigned AXI_ADDR_WIDTH_NOCR07 = 0,
-  parameter int unsigned AXI_DATA_WIDTH_NOCR07 = 0,
-
-  parameter int unsigned AXI_ID_INP_WIDTH_SMS = 0,
-  parameter int unsigned AXI_USER_WIDTH_SMS = 0,
-  parameter int unsigned AXI_STRB_WIDTH_SMS = 0,
-  parameter int unsigned AXI_ADDR_WIDTH_SMS = 0,
-  parameter int unsigned AXI_DATA_WIDTH_SMS = 0,
+  parameter int unsigned AXI_ID_INP_WIDTH_PMS = 0,
+  parameter int unsigned AXI_ID_OUP_WIDTH_PMS = 0,
+  parameter int unsigned AXI_USER_WIDTH_PMS = 0,
+  parameter int unsigned AXI_STRB_WIDTH_PMS = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_PMS = 0,
+  parameter int unsigned AXI_DATA_WIDTH_PMS = 0,
 
   parameter int unsigned AXI_AW = 0, // [bit]
   parameter int unsigned AXI_DW = 0, // [bit]
@@ -99,21 +83,17 @@ module soc_node #(
   AXI_BUS.Slave  cl_slv,
   AXI_BUS.Slave  soc_slv,
   AXI_BUS.Master soc_mst,
-  AXI_BUS.Slave  c07_slv,
-  AXI_BUS.Master c07_mst,
-  AXI_BUS.Slave  nocr07_slv,
-  AXI_BUS.Master nocr07_mst,
-  AXI_BUS.Slave  sms_slv
+  AXI_BUS.Slave  ext_slv,
+  AXI_BUS.Master ext_mst
 );
 
   localparam int unsigned N_REGIONS = 1;
 
-  // for axi xbar that maps c07, nocr07, sms master to soc
+  // for axi xbar that maps nci_cp_top master to soc
   localparam int unsigned IDX_SOC = 0;
 
-  // for axi xbar that maps soc master to c07, nocr07
-  localparam int unsigned IDX_C07 = 0;
-  localparam int unsigned IDX_NOCR07 = 1;
+  // for axi xbar that maps soc master to nci_cp_top
+  localparam int unsigned IDX_EXT = 0;
 
   typedef logic [AXI_AW-1:0] addr_t;
 
@@ -135,16 +115,13 @@ module soc_node #(
             `"node`", AXI_IW_``direction``_``node``, AXI_ID_``direction``_WIDTH_``name``); \
 
   `ELAB_ASSERT_AXI_ID(EXT,INP,CLUSTER)
-  `ELAB_ASSERT_AXI_ID(EXT,INP,C07)
-  `ELAB_ASSERT_AXI_ID(EXT,INP,NOCR07)
-  `ELAB_ASSERT_AXI_ID(EXT,INP,SMS)
+  `ELAB_ASSERT_AXI_ID(EXT,INP,PMS)
   `ELAB_ASSERT_AXI_ID(EXT,OUP,SOC)
 
   `ELAB_ASSERT_AXI_ID(SOC,INP,SOC)
-  `ELAB_ASSERT_AXI_ID(SOC,OUP,C07)
-  `ELAB_ASSERT_AXI_ID(SOC,OUP,NOCR07)
+  `ELAB_ASSERT_AXI_ID(SOC,OUP,PMS)
 
-  // axi xbar c07, nocr07, sms, cluster(!) -> soc (l2, periphs)
+  // axi xbar nci_cp_top, cluster(!) -> soc (l2, periphs)
   // master slave buses
   AXI_BUS #(
     .AXI_ADDR_WIDTH (AXI_AW),
@@ -162,12 +139,10 @@ module soc_node #(
 
   `AXI_ASSIGN(soc_mst, ext_to_soc_masters[IDX_SOC]);
 
-  `AXI_ASSIGN(ext_to_soc_slaves[0], c07_slv);
-  `AXI_ASSIGN(ext_to_soc_slaves[1], nocr07_slv);
-  `AXI_ASSIGN(ext_to_soc_slaves[2], sms_slv);
-  `AXI_ASSIGN(ext_to_soc_slaves[3], cl_slv);
+  `AXI_ASSIGN(ext_to_soc_slaves[0], ext_slv);
+  `AXI_ASSIGN(ext_to_soc_slaves[1], cl_slv);
 
-  // axi xbar soc -> c07, nocr07
+  // axi xbar soc -> nci_cp_top
   // master slave buses
   AXI_BUS #(
     .AXI_ADDR_WIDTH (AXI_AW),
@@ -190,8 +165,7 @@ module soc_node #(
     .AXI_USER_WIDTH (AXI_UW)
   ) dummy_slv (); // additional input to xbar because xbar limitations
 
-  `AXI_ASSIGN(c07_mst, soc_to_ext_masters[IDX_C07]);
-  `AXI_ASSIGN(nocr07_mst, soc_to_ext_masters[IDX_NOCR07]);
+  `AXI_ASSIGN(ext_mst, soc_to_ext_masters[IDX_EXT]);
 
   `AXI_ASSIGN(soc_to_ext_slaves[0], soc_slv);
   `AXI_ASSIGN(soc_to_ext_slaves[1], dummy_slv);
@@ -212,22 +186,17 @@ module soc_node #(
     soc_view_start_addr = '0;
     soc_view_end_addr   = '0;
 
-    // to c07
-    soc_view_start_addr[0][IDX_C07] = soc_node_pkg::C07_SOC_VIEW_START_ADDR;
-    soc_view_end_addr[0][IDX_C07]   = soc_node_pkg::C07_SOC_VIEW_END_ADDR; // NOTE: arbitrarily assigned this range
+    // to nci_cp_top
+    soc_view_start_addr[0][IDX_EXT] = soc_node_pkg::EXT_SOC_VIEW_START_ADDR;
+    soc_view_end_addr[0][IDX_EXT]   = soc_node_pkg::EXT_SOC_VIEW_END_ADDR; // NOTE: arbitrarily assigned this range
     // valid_rule[0][IDX_C07] = 1'b1;
-
-    // to NoCr07
-    soc_view_start_addr[0][IDX_NOCR07] = soc_node_pkg::NOCR07_SOC_VIEW_START_ADDR;
-    soc_view_end_addr[0][IDX_NOCR07]   = soc_node_pkg::NOCR07_SOC_VIEW_END_ADDR; // NOTE: map everything else to global memory
-    // valid_rule[0][IDX_NOCR07] = 1'b1;
 
   end
 
   // TODO: we use a version that doesn't support region or valid rules. For that
   // we would have to go to the atop branch
 
-  // axi xbar c07, nocr07, sms, cluster (!) -> soc (l2, periphs)
+  // axi xbar nci_cp_top, cluster (!) -> soc (l2, periphs)
   // external and cluster to soc
   axi_node_wrap_with_slices #(
     .NB_MASTER          (soc_node_pkg::N_MASTERS_EXT),
@@ -250,7 +219,7 @@ module soc_node #(
     // .valid_rule_i (valid_rule)
   );
 
-  // axi xbar soc -> c07, nocr07
+  // axi xbar soc -> nci_cp_top
   // soc to external
   // note that axi_node can't handle only one master (N_SLAVES=1) so we add a
   // dummy masters that does nothing.
