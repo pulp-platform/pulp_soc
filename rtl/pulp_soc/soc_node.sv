@@ -17,7 +17,7 @@
 
 package automatic soc_node_pkg;
 
-  localparam int unsigned N_SLAVES_EXT = `AXI_SOC_NODE_SLAVES_EXT; // 2
+  localparam int unsigned N_SLAVES_EXT = `AXI_SOC_NODE_SLAVES_EXT; // 3
   localparam int unsigned N_MASTERS_EXT = `AXI_SOC_NODE_MASTERS_EXT; // 1
 
   localparam int unsigned N_SLAVES_SOC = `AXI_SOC_NODE_SLAVES_SOC;
@@ -69,6 +69,13 @@ module soc_node #(
   parameter int unsigned AXI_ADDR_WIDTH_PMS = 0,
   parameter int unsigned AXI_DATA_WIDTH_PMS = 0,
 
+  parameter int unsigned AXI_ID_INP_WIDTH_SPI = 0,
+  parameter int unsigned AXI_ID_OUP_WIDTH_SPI = 0,
+  parameter int unsigned AXI_USER_WIDTH_SPI = 0,
+  parameter int unsigned AXI_STRB_WIDTH_SPI = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_SPI = 0,
+  parameter int unsigned AXI_DATA_WIDTH_SPI = 0,
+
   parameter int unsigned AXI_AW = 0, // [bit]
   parameter int unsigned AXI_DW = 0, // [bit]
   parameter int unsigned AXI_UW = 0, // [bit]
@@ -83,8 +90,11 @@ module soc_node #(
   AXI_BUS.Slave  cl_slv,
   AXI_BUS.Slave  soc_slv,
   AXI_BUS.Master soc_mst,
+
   AXI_BUS.Slave  ext_slv,
   AXI_BUS.Master ext_mst
+
+  AXI_BUS.Slave  spi_slv
 );
 
   localparam int unsigned N_REGIONS = 1;
@@ -116,6 +126,7 @@ module soc_node #(
 
   `ELAB_ASSERT_AXI_ID(EXT,INP,CLUSTER)
   `ELAB_ASSERT_AXI_ID(EXT,INP,PMS)
+  `ELAB_ASSERT_AXI_ID(EXT,INP,SPI)
   `ELAB_ASSERT_AXI_ID(EXT,OUP,SOC)
 
   `ELAB_ASSERT_AXI_ID(SOC,INP,SOC)
@@ -141,6 +152,7 @@ module soc_node #(
 
   `AXI_ASSIGN(ext_to_soc_slaves[0], ext_slv);
   `AXI_ASSIGN(ext_to_soc_slaves[1], cl_slv);
+  `AXI_ASSIGN(ext_to_soc_slaves[2], spi_slv);
 
   // axi xbar soc -> nci_cp_top
   // master slave buses
@@ -196,7 +208,7 @@ module soc_node #(
   // TODO: we use a version that doesn't support region or valid rules. For that
   // we would have to go to the atop branch
 
-  // axi xbar nci_cp_top, cluster (!) -> soc (l2, periphs)
+  // axi xbar nci_cp_top, cluster (!), SPI slave -> soc (l2, periphs)
   // external and cluster to soc
   axi_node_wrap_with_slices #(
     .NB_MASTER          (soc_node_pkg::N_MASTERS_EXT),

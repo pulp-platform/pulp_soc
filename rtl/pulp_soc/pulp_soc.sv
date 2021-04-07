@@ -231,6 +231,12 @@ module pulp_soc import dm::*; #(
     output logic [N_SPI-1:0][3:0]         spi_sdo_o,
     input  logic [N_SPI-1:0][3:0]         spi_sdi_i,
 
+    input  logic                          spi_clk_i,
+    input  logic                          spi_csn_i,
+    output logic [3:0]                    spi_oen_slv_o,
+    output logic [3:0]                    spi_sdo_slv_o,
+    input  logic [3:0]                    spi_sdi_slv_i,
+
     output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
@@ -429,6 +435,12 @@ module pulp_soc import dm::*; #(
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus ();
 
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) s_axi_spi ();
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
@@ -575,6 +587,13 @@ module pulp_soc import dm::*; #(
         .AXI_ADDR_WIDTH_PMS      (AXI_ADDR_WIDTH_PMS),
         .AXI_DATA_WIDTH_PMS      (AXI_DATA_WIDTH_PMS),
 
+        .AXI_ID_INP_WIDTH_SPI    (AXI_ID_IN_WIDTH),
+        .AXI_ID_OUP_WIDTH_SPI    (AXI_ID_OUT_WIDTH),
+        .AXI_USER_WIDTH_SPI      (AXI_USER_WIDTH),
+        .AXI_STRB_WIDTH_SPI      (AXI_DATA_IN_WIDTH/8),
+        .AXI_ADDR_WIDTH_SPI      (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH_SPI      (AXI_DATA_IN_WIDTH),
+
         // this is the soc nodes axi config. All connections' parameters will be
         // checked against this
         .AXI_AW                  (AXI_SOC_NODE_AW),
@@ -589,8 +608,12 @@ module pulp_soc import dm::*; #(
         .cl_slv          (s_data_in_bus),
         .soc_slv         (soc_to_external),
         .soc_mst         (soc_in_mst),
+
         .ext_slv         (axi_ext_slv),
         .ext_mst         (axi_ext_mst),
+
+        .spi_slv         (s_axi_spi),
+
         // Inputs
         .clk_i           (s_soc_clk),
         .rst_ni          (s_soc_rstn)
@@ -635,7 +658,12 @@ module pulp_soc import dm::*; #(
         .NBIT_PADMUX        ( NBIT_PADMUX                           ),
         .N_UART             ( N_UART                                ),
         .N_SPI              ( N_SPI                                 ),
-        .N_I2C              ( N_I2C                                 )
+        .N_I2C              ( N_I2C                                 ),
+        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
+        .AXI_DATA_WIDTH     ( AXI_DATA_OUT_WIDTH                    ),
+        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH                      ),
+        .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH                        )
+
     ) soc_peripherals_i (
 
         .clk_i                  ( s_soc_clk              ),
@@ -664,6 +692,8 @@ module pulp_soc import dm::*; #(
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
+
+        .axi_mst_spi_slv        ( s_axi_spi              ),
 
         .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
         .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
@@ -711,12 +741,19 @@ module pulp_soc import dm::*; #(
         .i2s_slave_sck_o        ( i2s_slave_sck_o        ),
         .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
 
-         //SPI
+         //SPI MASTER
         .spi_clk_o              ( spi_clk_o              ),
         .spi_csn_o              ( spi_csn_o              ),
         .spi_oen_o              ( spi_oen_o              ),
         .spi_sdo_o              ( spi_sdo_o              ),
         .spi_sdi_i              ( spi_sdi_i              ),
+
+         //SPI SLAVE
+        .spi_clk_i              ( spi_clk_i              ),
+        .spi_csn_i              ( spi_csn_i              ),
+        .spi_oen_slv_o          ( spi_oen_slv_o          ),
+        .spi_sdo_slv_o          ( spi_sdo_slv_o          ),
+        .spi_sdi_slv_i          ( spi_sdi_slv_i          ),
 
         //SDIO
         .sdclk_o                ( sdio_clk_o             ),

@@ -11,137 +11,149 @@
 `include "pulp_soc_defines.sv"
 
 module soc_peripherals #(
-    parameter CORE_TYPE      = 0,
-    parameter MEM_ADDR_WIDTH = 13,
-    parameter APB_ADDR_WIDTH = 32,
-    parameter APB_DATA_WIDTH = 32,
-    parameter NB_CORES       = 4,
-    parameter NB_CLUSTERS    = 0,
-    parameter EVNT_WIDTH     = 8,
-    parameter NGPIO          = 64,
-    parameter NPAD           = 64,
-    parameter NBIT_PADCFG    = 4,
-    parameter NBIT_PADMUX    = 2,
-    parameter N_UART         = 1,
-    parameter N_SPI          = 1,
-    parameter N_I2C          = 2
+    parameter CORE_TYPE          = 0,
+    parameter MEM_ADDR_WIDTH     = 13,
+    parameter APB_ADDR_WIDTH     = 32,
+    parameter APB_DATA_WIDTH     = 32,
+    parameter NB_CORES           = 4,
+    parameter NB_CLUSTERS        = 0,
+    parameter EVNT_WIDTH         = 8,
+    parameter NGPIO              = 64,
+    parameter NPAD               = 64,
+    parameter NBIT_PADCFG        = 4,
+    parameter NBIT_PADMUX        = 2,
+    parameter N_UART             = 1,
+    parameter N_SPI              = 1,
+    parameter N_I2C              = 2,
+    parameter AXI_ADDR_WIDTH     = 0,
+    parameter AXI_DATA_WIDTH     = 0,
+    parameter AXI_32_ID_WIDTH    = 0,
+    parameter AXI_32_USER_WIDTH  = 0
 ) (
-    input  logic                       clk_i,
-    input  logic                       periph_clk_i,
-    input  logic                       rst_ni,
+    input logic                               clk_i,
+    input logic                               periph_clk_i,
+    input logic                               rst_ni,
     //check the reset
-    input  logic                       slow_clk_i,
+    input logic                               slow_clk_i,
 
-    input  logic                       sel_clk_i,
-    input  logic                       dft_test_mode_i,
-    input  logic                       dft_cg_enable_i,
-    output logic [31:0]                fc_bootaddr_o,
-    output logic                       fc_fetchen_o,
-    input  logic [7:0]                 soc_jtag_reg_i,
-    output logic [7:0]                 soc_jtag_reg_o,
+    input logic                               sel_clk_i,
+    input logic                               dft_test_mode_i,
+    input logic                               dft_cg_enable_i,
+    output logic [31:0]                       fc_bootaddr_o,
+    output logic                              fc_fetchen_o,
+    input logic [7:0]                         soc_jtag_reg_i,
+    output logic [7:0]                        soc_jtag_reg_o,
 
-    input  logic [1:0]                 bootsel_i,
+    input logic [1:0]                         bootsel_i,
     // fc fetch enable can be controlled through this signal or through an APB
     // write to the fc fetch enable register
-    input  logic                       fc_fetch_en_valid_i,
-    input  logic                       fc_fetch_en_i,
+    input logic                               fc_fetch_en_valid_i,
+    input logic                               fc_fetch_en_i,
 
     // SLAVE PORTS
     // APB SLAVE PORT
-    APB_BUS.Slave                      apb_slave,
-    APB_BUS.Master                     apb_eu_master,
-    APB_BUS.Master                     apb_hwpe_master,
-    APB_BUS.Master                     apb_debug_master,
+    APB_BUS.Slave                             apb_slave,
+    APB_BUS.Master                            apb_eu_master,
+    APB_BUS.Master                            apb_hwpe_master,
+    APB_BUS.Master                            apb_debug_master,
     // MASTER PORT TO SOC CLK CTRL
-    APB_BUS.Master                     apb_clk_ctrl_master,
-
+    APB_BUS.Master                            apb_clk_ctrl_master,
     // FABRIC CONTROLLER MASTER REFILL PORT
-    XBAR_TCDM_BUS.Master               l2_rx_master,
-    XBAR_TCDM_BUS.Master               l2_tx_master,
+    XBAR_TCDM_BUS.Master                      l2_rx_master,
+    XBAR_TCDM_BUS.Master                      l2_tx_master,
+    // MASTER PORT FOR SPI SLAVE
+    AXI_BUS.Master                            axi_mst_spi_slv,
 
-    input  logic                       dma_pe_evt_i,
-    input  logic                       dma_pe_irq_i,
-    input  logic                       pf_evt_i,
-    input  logic [1:0]                 fc_hwpe_events_i,
-    output logic [31:0]                fc_events_o,
+    input logic                               dma_pe_evt_i,
+    input logic                               dma_pe_irq_i,
+    input logic                               pf_evt_i,
+    input logic [1:0]                         fc_hwpe_events_i,
+    output logic [31:0]                       fc_events_o,
 
-    input  logic [NGPIO-1:0]           gpio_in,
-    output logic [NGPIO-1:0]           gpio_out,
-    output logic [NGPIO-1:0]           gpio_dir,
+    input logic [NGPIO-1:0]                   gpio_in,
+    output logic [NGPIO-1:0]                  gpio_out,
+    output logic [NGPIO-1:0]                  gpio_dir,
     output logic [NGPIO-1:0][NBIT_PADCFG-1:0] gpio_padcfg,
 
-    output logic [NPAD-1:0][NBIT_PADMUX-1:0] pad_mux_o,
-    output logic [NPAD-1:0][NBIT_PADCFG-1:0] pad_cfg_o,
+    output logic [NPAD-1:0][NBIT_PADMUX-1:0]  pad_mux_o,
+    output logic [NPAD-1:0][NBIT_PADCFG-1:0]  pad_cfg_o,
 
-    output logic [3:0]                 timer_ch0_o,
-    output logic [3:0]                 timer_ch1_o,
-    output logic [3:0]                 timer_ch2_o,
-    output logic [3:0]                 timer_ch3_o,
+    output logic [3:0]                        timer_ch0_o,
+    output logic [3:0]                        timer_ch1_o,
+    output logic [3:0]                        timer_ch2_o,
+    output logic [3:0]                        timer_ch3_o,
 
     //CAMERA
-    input  logic                       cam_clk_i,
-    input  logic [7:0]                 cam_data_i,
-    input  logic                       cam_hsync_i,
-    input  logic                       cam_vsync_i,
+    input logic                               cam_clk_i,
+    input logic [7:0]                         cam_data_i,
+    input logic                               cam_hsync_i,
+    input logic                               cam_vsync_i,
 
     //UART
     // output logic [N_UART-1:0]          uart_tx,
     // input  logic [N_UART-1:0]          uart_rx,
-    output logic           uart_tx,
-    input  logic           uart_rx,
+    output logic                              uart_tx,
+    input logic                               uart_rx,
 
 
     //I2C
-    input  logic [N_I2C-1:0]           i2c_scl_i,
-    output logic [N_I2C-1:0]           i2c_scl_o,
-    output logic [N_I2C-1:0]           i2c_scl_oe_o,
-    input  logic [N_I2C-1:0]           i2c_sda_i,
-    output logic [N_I2C-1:0]           i2c_sda_o,
-    output logic [N_I2C-1:0]           i2c_sda_oe_o,
+    input logic [N_I2C-1:0]                   i2c_scl_i,
+    output logic [N_I2C-1:0]                  i2c_scl_o,
+    output logic [N_I2C-1:0]                  i2c_scl_oe_o,
+    input logic [N_I2C-1:0]                   i2c_sda_i,
+    output logic [N_I2C-1:0]                  i2c_sda_o,
+    output logic [N_I2C-1:0]                  i2c_sda_oe_o,
 
     //I2S
-    input  logic                       i2s_slave_sd0_i,
-    input  logic                       i2s_slave_sd1_i,
-    input  logic                       i2s_slave_ws_i,
-    output logic                       i2s_slave_ws_o,
-    output logic                       i2s_slave_ws_oe,
-    input  logic                       i2s_slave_sck_i,
-    output logic                       i2s_slave_sck_o,
-    output logic                       i2s_slave_sck_oe,
+    input logic                               i2s_slave_sd0_i,
+    input logic                               i2s_slave_sd1_i,
+    input logic                               i2s_slave_ws_i,
+    output logic                              i2s_slave_ws_o,
+    output logic                              i2s_slave_ws_oe,
+    input logic                               i2s_slave_sck_i,
+    output logic                              i2s_slave_sck_o,
+    output logic                              i2s_slave_sck_oe,
 
-    //SPI
-    output logic [N_SPI-1:0]           spi_clk_o,
-    output logic [N_SPI-1:0][3:0]      spi_csn_o,
-    output logic [N_SPI-1:0][3:0]      spi_oen_o,
-    output logic [N_SPI-1:0][3:0]      spi_sdo_o,
-    input  logic [N_SPI-1:0][3:0]      spi_sdi_i,
+    //SPI MASTER
+    output logic [N_SPI-1:0]                  spi_clk_o,
+    output logic [N_SPI-1:0][3:0]             spi_csn_o,
+    output logic [N_SPI-1:0][3:0]             spi_oen_o,
+    output logic [N_SPI-1:0][3:0]             spi_sdo_o,
+    input logic [N_SPI-1:0][3:0]              spi_sdi_i,
+
+    //SPI SLAVE
+    input logic                               spi_clk_i,
+    input logic                               spi_csn_i,
+    output logic [3:0]                        spi_oen_slv_o,
+    output logic [3:0]                        spi_sdo_slv_o,
+    input logic [3:0]                         spi_sdi_slv_i,
 
     //SDIO
-    output logic                       sdclk_o,
-    output logic                       sdcmd_o,
-    input  logic                       sdcmd_i,
-    output logic                       sdcmd_oen_o,
-    output logic                 [3:0] sddata_o,
-    input  logic                 [3:0] sddata_i,
-    output logic                 [3:0] sddata_oen_o,
+    output logic                              sdclk_o,
+    output logic                              sdcmd_o,
+    input logic                               sdcmd_i,
+    output logic                              sdcmd_oen_o,
+    output logic [3:0]                        sddata_o,
+    input logic [3:0]                         sddata_i,
+    output logic [3:0]                        sddata_oen_o,
 
 
-    output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
-    output logic                       cl_event_valid_o,
-    input  logic                       cl_event_ready_i,
-    output logic [EVNT_WIDTH-1:0]      fc_event_data_o,
-    output logic                       fc_event_valid_o,
-    input  logic                       fc_event_ready_i,
+    output logic [EVNT_WIDTH-1:0]             cl_event_data_o,
+    output logic                              cl_event_valid_o,
+    input logic                               cl_event_ready_i,
+    output logic [EVNT_WIDTH-1:0]             fc_event_data_o,
+    output logic                              fc_event_valid_o,
+    input logic                               fc_event_ready_i,
 
-    output logic                       cluster_pow_o,
-    output logic                       cluster_byp_o, // bypass cluster
-    output logic                [63:0] cluster_boot_addr_o,
-    output logic                       cluster_fetch_enable_o,
-    output logic                       cluster_rstn_o,
-    output logic                       cluster_irq_o,
+    output logic                              cluster_pow_o,
+    output logic                              cluster_byp_o, // bypass cluster
+    output logic [63:0]                       cluster_boot_addr_o,
+    output logic                              cluster_fetch_enable_o,
+    output logic                              cluster_rstn_o,
+    output logic                              cluster_irq_o,
 
     //wdt reset output:
-    output logic			wdt_reset_o
+    output logic                              wdt_reset_o
 );
 
     localparam USE_IBEX = CORE_TYPE == 1 || CORE_TYPE == 2;
@@ -186,6 +198,7 @@ module soc_peripherals #(
 
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
+
 
     assign s_events[UDMA_EVENTS-1:0]  = s_udma_events;
     assign s_events[135]              = s_adv_timer_events[0];
@@ -637,5 +650,43 @@ module soc_peripherals #(
     );
 
     assign wdt_reset_o = resetwdt_out;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    //   █████╗ ██╗  ██╗██╗    ███████╗██████╗ ██╗    ███████╗██╗      █████╗ ██╗   ██╗███████╗ //
+    //  ██╔══██╗╚██╗██╔╝██║    ██╔════╝██╔══██╗██║    ██╔════╝██║     ██╔══██╗██║   ██║██╔════╝ //
+    //  ███████║ ╚███╔╝ ██║    ███████╗██████╔╝██║    ███████╗██║     ███████║██║   ██║█████╗   //
+    //  ██╔══██║ ██╔██╗ ██║    ╚════██║██╔═══╝ ██║    ╚════██║██║     ██╔══██║╚██╗ ██╔╝██╔══╝   //
+    //  ██║  ██║██╔╝ ██╗██║    ███████║██║     ██║    ███████║███████╗██║  ██║ ╚████╔╝ ███████╗ //
+    //  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝    ╚══════╝╚═╝     ╚═╝    ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝ //
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    axi_spi_slave_wrap #(
+      .AXI_ADDRESS_WIDTH  ( AXI_ADDR_WIDTH       ),
+      .AXI_DATA_WIDTH     ( AXI_DATA_WIDTH       ),
+      .AXI_USER_WIDTH     ( AXI_32_USER_WIDTH    ),
+      .AXI_ID_WIDTH       ( AXI_32_ID_WIDTH      )
+    ) axi_spi_slave_i (
+      .clk_i      ( clk_i            ),
+      .rst_ni     ( rst_ni           ),
+
+      .test_mode  ( 1'h0             ),
+
+      .axi_master ( axi_mst_spi_slv  ),
+
+      .spi_clk    ( spi_clk_i        ),
+      .spi_cs     ( spi_csn_i        ),
+      .spi_oen0_o ( spi_oen_slv_o[0] ),
+      .spi_oen1_o ( spi_oen_slv_o[1] ),
+      .spi_oen2_o ( spi_oen_slv_o[2] ),
+      .spi_oen3_o ( spi_oen_slv_o[3] ),
+      .spi_sdo0   ( spi_sdo_slv_o[0] ),
+      .spi_sdo1   ( spi_sdo_slv_o[1] ),
+      .spi_sdo2   ( spi_sdo_slv_o[2] ),
+      .spi_sdo3   ( spi_sdo_slv_o[3] ),
+      .spi_sdi0   ( spi_sdi_slv_i[0] ),
+      .spi_sdi1   ( spi_sdi_slv_i[1] ),
+      .spi_sdi2   ( spi_sdi_slv_i[2] ),
+      .spi_sdi3   ( spi_sdi_slv_i[3] )
+    );
 
 endmodule
