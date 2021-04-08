@@ -92,7 +92,7 @@ module soc_node #(
   AXI_BUS.Master soc_mst,
 
   AXI_BUS.Slave  ext_slv,
-  AXI_BUS.Master ext_mst
+  AXI_BUS.Master ext_mst,
 
   AXI_BUS.Slave  spi_slv
 );
