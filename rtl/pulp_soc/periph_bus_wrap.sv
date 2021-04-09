@@ -29,7 +29,8 @@ module periph_bus_wrap #(
     APB_BUS.Master timer_master,
     APB_BUS.Master hwpe_master,
     APB_BUS.Master stdout_master,
-    APB_BUS.Master wdt_master
+    APB_BUS.Master wdt_master,
+    APB_BUS.Master i2cs_master
 );
 
     localparam NB_MASTER = `NB_MASTER;
@@ -98,6 +99,10 @@ module periph_bus_wrap #(
     `APB_ASSIGN_MASTER(s_masters[11], wdt_master);
     assign s_start_addr[11] = `WDT_START_ADDR;
     assign s_end_addr[11]   = `WDT_END_ADDR;
+
+    `APB_ASSIGN_MASTER(s_masters[12], i2cs_master);
+    assign s_start_addr[12] = `I2CSLAVE_START_ADDR;
+    assign s_end_addr[12]   = `I2CSLAVE_END_ADDR;
 
 
     //********************************************************
