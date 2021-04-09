@@ -62,6 +62,12 @@ module soc_node #(
   parameter int unsigned AXI_ADDR_WIDTH_CLUSTER = 0,
   parameter int unsigned AXI_DATA_WIDTH_CLUSTER = 0,
 
+  parameter int unsigned AXI_ID_INP_WIDTH_I2C = 0,
+  parameter int unsigned AXI_USER_WIDTH_I2C = 0,
+  parameter int unsigned AXI_STRB_WIDTH_I2C = 0,
+  parameter int unsigned AXI_ADDR_WIDTH_I2C = 0,
+  parameter int unsigned AXI_DATA_WIDTH_I2C = 0,
+
   parameter int unsigned AXI_ID_INP_WIDTH_PMS = 0,
   parameter int unsigned AXI_ID_OUP_WIDTH_PMS = 0,
   parameter int unsigned AXI_USER_WIDTH_PMS = 0,
@@ -94,7 +100,8 @@ module soc_node #(
   AXI_BUS.Slave  ext_slv,
   AXI_BUS.Master ext_mst,
 
-  AXI_BUS.Slave  spi_slv
+  AXI_BUS.Slave  spi_slv,
+  AXI_BUS.Slave  i2csl_slv
 );
 
   localparam int unsigned N_REGIONS = 1;
@@ -153,6 +160,7 @@ module soc_node #(
   `AXI_ASSIGN(ext_to_soc_slaves[0], ext_slv);
   `AXI_ASSIGN(ext_to_soc_slaves[1], cl_slv);
   `AXI_ASSIGN(ext_to_soc_slaves[2], spi_slv);
+  `AXI_ASSIGN(ext_to_soc_slaves[3], i2csl_slv); //must be add the second i2c slave
 
   // axi xbar soc -> nci_cp_top
   // master slave buses
