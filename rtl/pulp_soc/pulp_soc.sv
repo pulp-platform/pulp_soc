@@ -47,6 +47,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2,
+    parameter int unsigned N_I2C_SLV  = 2,
 
     parameter int unsigned N_L2_BANKS = 0,
     parameter int unsigned N_L2_BANKS_PRI = 0,
@@ -215,6 +216,13 @@ module pulp_soc import dm::*; #(
     input  logic [N_I2C-1:0]              i2c_sda_i,
     output logic [N_I2C-1:0]              i2c_sda_o,
     output logic [N_I2C-1:0]              i2c_sda_oe_o,
+
+    input logic  [N_I2C_SLV-1:0]          i2c_slv_scl_i,
+    output logic [N_I2C_SLV-1:0]          i2c_slv_scl_o,
+    output logic [N_I2C_SLV-1:0]          i2c_slv_scl_oe_o,
+    input logic  [N_I2C_SLV-1:0]          i2c_slv_sda_i,
+    output logic [N_I2C_SLV-1:0]          i2c_slv_sda_o,
+    output logic [N_I2C_SLV-1:0]          i2c_slv_sda_oe_o,
 
     input  logic                          i2s_slave_sd0_i,
     input  logic                          i2s_slave_sd1_i,
@@ -594,8 +602,7 @@ module pulp_soc import dm::*; #(
         .AXI_ADDR_WIDTH_PMS      (AXI_ADDR_WIDTH_PMS),
         .AXI_DATA_WIDTH_PMS      (AXI_DATA_WIDTH_PMS),
 
-        .AXI_ID_INP_WIDTH_I2C    (AXI_ID_IN_WIDTH),
-        .AXI_ID_OUP_WIDTH_I2C    (AXI_ID_OUT_WIDTH),
+        .AXI_ID_INP_WIDTH_I2C    (AXI_ID_OUT_WIDTH),
         .AXI_USER_WIDTH_I2C      (AXI_USER_WIDTH),
         .AXI_STRB_WIDTH_I2C      (AXI_DATA_IN_WIDTH/8),
         .AXI_ADDR_WIDTH_I2C      (AXI_ADDR_WIDTH),
@@ -625,6 +632,8 @@ module pulp_soc import dm::*; #(
 
         .ext_slv         (axi_ext_slv),
         .ext_mst         (axi_ext_mst),
+
+        .i2csl_slv       (axi_i2cs_slv),
 
         .spi_slv         (s_axi_spi),
 
@@ -745,6 +754,14 @@ module pulp_soc import dm::*; #(
         .i2c_sda_i              ( i2c_sda_i              ),
         .i2c_sda_o              ( i2c_sda_o              ),
         .i2c_sda_oe_o           ( i2c_sda_oe_o           ),
+
+        //I2C slave
+        .i2c_slv_scl_i          ( i2c_slv_scl_i          ),
+        .i2c_slv_scl_o          ( i2c_slv_scl_o          ),
+        .i2c_slv_scl_oe_o       ( i2c_slv_scl_oe_o       ),
+        .i2c_slv_sda_i          ( i2c_slv_sda_i          ),
+        .i2c_slv_sda_o          ( i2c_slv_sda_o          ),
+        .i2c_slv_sda_oe_o       ( i2c_slv_sda_oe_o       ),
 
         //I2S
         .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),
