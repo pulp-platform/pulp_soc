@@ -269,6 +269,8 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
 );
 
+    localparam int unsigned AXI_DATA_EXT_WIDTH = 64;
+
     localparam int unsigned CLK_CTRL_ADDR_WIDTH = 32;
     localparam int unsigned CLK_CTRL_DATA_WIDTH = 32;
 
@@ -478,7 +480,7 @@ module pulp_soc import dm::*; #(
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
+        .AXI_DATA_WIDTH ( AXI_DATA_EXT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) soc_to_external ();

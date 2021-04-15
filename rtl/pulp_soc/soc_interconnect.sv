@@ -252,8 +252,8 @@ module soc_interconnect #(
     input  logic                                                AXI_Master2_aw_ready_i,
     // ---------------------------------------------------------
     //AXI write data bus -------------- // USED// --------------
-    output logic [DATA_WIDTH-1:0]                               AXI_Master2_w_data_o,
-    output logic [BE_WIDTH-1:0]                                 AXI_Master2_w_strb_o,
+    output logic [AXI_DATA_WIDTH-1:0]                           AXI_Master2_w_data_o,
+    output logic [AXI_DATA_WIDTH/8-1:0]                         AXI_Master2_w_strb_o,
     output logic                                                AXI_Master2_w_last_o,
     output logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_w_user_o,
     output logic                                                AXI_Master2_w_valid_o,
@@ -283,7 +283,7 @@ module soc_interconnect #(
     // ---------------------------------------------------------
     //AXI read data bus ----------------------------------------
     input  logic [AXI_32_ID_WIDTH-1:0]                          AXI_Master2_r_id_i,
-    input  logic [DATA_WIDTH-1:0]                               AXI_Master2_r_data_i,
+    input  logic [AXI_DATA_WIDTH-1:0]                           AXI_Master2_r_data_i,
     input  logic [1:0]                                          AXI_Master2_r_resp_i,
     input  logic                                                AXI_Master2_r_last_i,
     input  logic [AXI_32_USER_WIDTH-1:0]                        AXI_Master2_r_user_i,
@@ -885,15 +885,16 @@ module soc_interconnect #(
     );
 
     // hacked in axi port for going off ip
-    lint_2_axi #(
-        .ADDR_WIDTH       ( ADDR_WIDTH        ),
-        .DATA_WIDTH       ( DATA_WIDTH        ),
-        .BE_WIDTH         ( BE_WIDTH          ),
-        .ID_WIDTH         ( PER_ID_WIDTH      ),
-        .USER_WIDTH       ( AXI_32_USER_WIDTH ),
-        .AUX_WIDTH        ( AUX_WIDTH         ),
-        .AXI_ID_WIDTH     ( AXI_32_ID_WIDTH   ),
-        .REGISTERED_GRANT ( "FALSE"           )  // "TRUE"|"FALSE"
+    lint_2_axi_dwc #(
+        .AXI_DATA_WIDTH_MST   ( AXI_DATA_WIDTH    ),
+        .AXI_ID_WIDTH         ( AXI_32_ID_WIDTH   ),
+        .ADDR_WIDTH           ( ADDR_WIDTH        ),
+        .DATA_WIDTH           ( DATA_WIDTH        ),
+        .BE_WIDTH             ( BE_WIDTH          ),
+        .ID_WIDTH             ( PER_ID_WIDTH      ),
+        .USER_WIDTH           ( AXI_32_USER_WIDTH ),
+        .AUX_WIDTH            ( AUX_WIDTH         ),
+        .REGISTERED_GRANT     ( "FALSE"           )  // "TRUE"|"FALSE"
     ) i_lint_2_external_axi (
         // Clock and Reset
         .clk_i         ( clk                            ),
