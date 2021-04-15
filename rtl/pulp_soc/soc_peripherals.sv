@@ -25,6 +25,7 @@ module soc_peripherals #(
     parameter N_UART             = 1,
     parameter N_SPI              = 1,
     parameter N_I2C              = 2,
+    parameter N_I2C_SLV          = 2,
     parameter AXI_ADDR_WIDTH     = 0,
     parameter AXI_DATA_WIDTH     = 0,
     parameter AXI_32_ID_WIDTH    = 0,
@@ -103,6 +104,14 @@ module soc_peripherals #(
     input logic [N_I2C-1:0]                   i2c_sda_i,
     output logic [N_I2C-1:0]                  i2c_sda_o,
     output logic [N_I2C-1:0]                  i2c_sda_oe_o,
+
+    //I2C slave
+    input logic  [N_I2C_SLV-1:0]              i2c_slv_scl_i,
+    output logic [N_I2C_SLV-1:0]              i2c_slv_scl_o,
+    output logic [N_I2C_SLV-1:0]              i2c_slv_scl_oe_o,
+    input logic  [N_I2C_SLV-1:0]              i2c_slv_sda_i,
+    output logic [N_I2C_SLV-1:0]              i2c_slv_sda_o,
+    output logic [N_I2C_SLV-1:0]              i2c_slv_sda_oe_o,
 
     //I2S
     input logic                               i2s_slave_sd0_i,
@@ -303,8 +312,8 @@ module soc_peripherals #(
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
         .stdout_master       ( s_stdout_bus       ),
-        .wdt_master          ( s_apb_wdt_bus	  ),
-        .i2cs_master         ( s_apb_i2cs_bus	  )
+        .wdt_master          ( s_apb_wdt_bus      ),
+        .i2cs_master         ( s_apb_i2cs_bus     )
     );
 
     `ifdef SYNTHESIS
@@ -657,7 +666,7 @@ module soc_peripherals #(
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //    █████╗ ██╗  ██╗██╗     █████╗ ██████╗ ██████╗     ██╗██████╗  ██████╗    ███████╗██╗      █████╗ ██╗   ██╗███████╗   // 
+    //    █████╗ ██╗  ██╗██╗     █████╗ ██████╗ ██████╗     ██╗██████╗  ██████╗    ███████╗██╗      █████╗ ██╗   ██╗███████╗   //
     //   ██╔══██╗╚██╗██╔╝██║    ██╔══██╗██╔══██╗██╔══██╗    ██║╚════██╗██╔════╝    ██╔════╝██║     ██╔══██╗██║   ██║██╔════╝   //
     //   ███████║ ╚███╔╝ ██║    ███████║██████╔╝██████╔╝    ██║ █████╔╝██║         ███████╗██║     ███████║██║   ██║█████╗     //
     //   ██╔══██║ ██╔██╗ ██║    ██╔══██║██╔═══╝ ██╔══██╗    ██║██╔═══╝ ██║         ╚════██║██║     ██╔══██║╚██╗ ██╔╝██╔══╝     //
@@ -674,15 +683,15 @@ module soc_peripherals #(
     ) i_axi_apb_i2c_slave (
         .clk_i                  ( clk_i                                    ),
         .rstn_i                 ( rst_ni                                   ),
-        //i2c: TODO
-        .scl_i                  (                                          ),
-        .scl_o                  (                                          ),
-        .scl_oe                 (                                          ),
-        .sda_i                  (                                          ),
-        .sda_o                  (                                          ),
-        .sda_oe                 (                                          ),
+        //i2c
+        .scl_i                  ( i2c_slv_scl_i[0]                         ),
+        .scl_o                  ( i2c_slv_scl_o[0]                         ),
+        .scl_oe                 ( i2c_slv_scl_oe_o[0]                      ),
+        .sda_i                  ( i2c_slv_sda_i[0]                         ),
+        .sda_o                  ( i2c_slv_sda_o[0]                         ),
+        .sda_oe                 ( i2c_slv_sda_oe_o[0]                      ),
         //interrupt:
-        .int1_o                 (  s_i2cs_event                            ), 
+        .int1_o                 ( s_i2cs_event                             ),
         //apb
         .HCLK_i                 ( clk_i                                    ),
         .HRESETn_i              ( rst_ni                                   ),
@@ -714,7 +723,7 @@ module soc_peripherals #(
         .axi_master_aw_user_o   ( axi_i2csl.aw_user[AXI_32_USER_WIDTH-1:0] ),
         .axi_master_aw_valid_o  ( axi_i2csl.aw_valid                       ),
         .axi_master_aw_ready_i  ( axi_i2csl.aw_ready                       ),
-        
+
         // ADDRESS READ CHANNEL
         .axi_master_ar_addr_o   ( axi_i2csl.ar_addr                        ),
         .axi_master_ar_prot_o   ( axi_i2csl.ar_prot                        ),
@@ -729,7 +738,7 @@ module soc_peripherals #(
         .axi_master_ar_user_o   ( axi_i2csl.ar_user[AXI_32_USER_WIDTH-1:0] ),
         .axi_master_ar_valid_o  ( axi_i2csl.ar_valid                       ),
         .axi_master_ar_ready_i  ( axi_i2csl.ar_ready                       ),
-        
+
         // WRITE CHANNEL
         .axi_master_w_user_o    ( axi_i2csl.w_user[AXI_32_USER_WIDTH-1:0]  ),
         .axi_master_w_data_o    ( axi_i2csl.w_data                         ),
@@ -737,7 +746,7 @@ module soc_peripherals #(
         .axi_master_w_last_o    ( axi_i2csl.w_last                         ),
         .axi_master_w_valid_o   ( axi_i2csl.w_valid                        ),
         .axi_master_w_ready_i   ( axi_i2csl.w_ready                        ),
-        
+
         // READ CHANNEL
         .axi_master_r_id_i      ( axi_i2csl.r_id[AXI_32_ID_WIDTH-1:0]      ),
         .axi_master_r_user_i    ( axi_i2csl.r_user[AXI_32_USER_WIDTH-1:0]  ),
@@ -745,8 +754,8 @@ module soc_peripherals #(
         .axi_master_r_resp_i    ( axi_i2csl.r_resp                         ),
         .axi_master_r_last_i    ( axi_i2csl.r_last                         ),
         .axi_master_r_valid_i   ( axi_i2csl.r_valid                        ),
-        .axi_master_r_ready_o   ( axi_i2csl.r_ready                        ),  
-      
+        .axi_master_r_ready_o   ( axi_i2csl.r_ready                        ),
+
         // WRITE RESPONSE CHANNEL
         .axi_master_b_id_i      ( axi_i2csl.b_id[AXI_32_ID_WIDTH-1:0]      ),
         .axi_master_b_resp_i    ( axi_i2csl.b_resp                         ),
