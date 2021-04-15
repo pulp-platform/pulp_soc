@@ -472,6 +472,13 @@ module pulp_soc import dm::*; #(
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) soc_to_external ();
 
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_i2cs_slv ();
+
     //assign s_data_out_bus.aw_atop = 6'b0;
 
     APB_BUS s_apb_periph_bus ();
@@ -587,6 +594,13 @@ module pulp_soc import dm::*; #(
         .AXI_ADDR_WIDTH_PMS      (AXI_ADDR_WIDTH_PMS),
         .AXI_DATA_WIDTH_PMS      (AXI_DATA_WIDTH_PMS),
 
+        .AXI_ID_INP_WIDTH_I2C    (AXI_ID_IN_WIDTH),
+        .AXI_ID_OUP_WIDTH_I2C    (AXI_ID_OUT_WIDTH),
+        .AXI_USER_WIDTH_I2C      (AXI_USER_WIDTH),
+        .AXI_STRB_WIDTH_I2C      (AXI_DATA_IN_WIDTH/8),
+        .AXI_ADDR_WIDTH_I2C      (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH_I2C      (AXI_DATA_IN_WIDTH),
+
         .AXI_ID_INP_WIDTH_SPI    (AXI_ID_IN_WIDTH),
         .AXI_ID_OUP_WIDTH_SPI    (AXI_ID_OUT_WIDTH),
         .AXI_USER_WIDTH_SPI      (AXI_USER_WIDTH),
@@ -659,6 +673,7 @@ module pulp_soc import dm::*; #(
         .N_UART             ( N_UART                                ),
         .N_SPI              ( N_SPI                                 ),
         .N_I2C              ( N_I2C                                 ),
+        .N_I2C_SLV          ( N_I2C_SLV                             ),
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
         .AXI_DATA_WIDTH     ( AXI_DATA_OUT_WIDTH                    ),
         .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH                      ),
