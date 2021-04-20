@@ -163,7 +163,8 @@ module soc_peripherals #(
 
     //wdt reset output:
     output logic                              wdt_reset_o,
-    AXI_BUS.Master                            axi_i2csl
+    AXI_BUS.Master                            axi_i2c_slv_bmc,
+    AXI_BUS.Master                            axi_i2c_slv_1
 );
 
     localparam USE_IBEX = CORE_TYPE == 1 || CORE_TYPE == 2;
@@ -178,7 +179,8 @@ module soc_peripherals #(
     APB_BUS s_apb_timer_bus ();
 
     APB_BUS s_apb_wdt_bus ();
-    APB_BUS s_apb_i2cs_bus();
+    APB_BUS s_apb_i2c_slv_bmc_bus();
+    APB_BUS s_apb_i2c_slv_1_bus();
 
     localparam UDMA_EVENTS = 16*8;
 
@@ -210,7 +212,8 @@ module soc_peripherals #(
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
 
-    logic s_i2cs_event;
+    logic s_i2c_slv_bmc_event;
+    logic s_i2c_slv_1_event;
 
     assign s_events[UDMA_EVENTS-1:0]  = s_udma_events;
     assign s_events[135]              = s_adv_timer_events[0];
@@ -230,10 +233,10 @@ module soc_peripherals #(
     assign fc_events_o[10]  = s_timer_lo_event;
     assign fc_events_o[11]  = s_timer_hi_event;
     assign fc_events_o[12]  = pf_evt_i;
-    assign fc_events_o[13]  = s_i2cs_event;
+    assign fc_events_o[13]  = s_i2c_slv_bmc_event;
     assign fc_events_o[14]  = s_ref_rise_event | s_ref_fall_event;
     assign fc_events_o[15]  = s_gpio_event;
-    assign fc_events_o[16]  = 1'b0;
+    assign fc_events_o[16]  = s_i2c_slv_1_event;
     assign fc_events_o[17]  = s_adv_timer_events[0];
     assign fc_events_o[18]  = s_adv_timer_events[1];
     assign fc_events_o[19]  = s_adv_timer_events[2];
@@ -262,8 +265,8 @@ module soc_peripherals #(
     assign fc_events_o[5]     = s_adv_timer_events[1];
     assign fc_events_o[6]     = s_adv_timer_events[2];
     assign fc_events_o[7]     = s_adv_timer_events[3];
-    assign fc_events_o[8]     = s_i2cs_event;
-    assign fc_events_o[9]     = 1'b0; // not used
+    assign fc_events_o[8]     = s_i2c_slv_bmc_event;
+    assign fc_events_o[9]     = s_i2c_slv_1_event;
     assign fc_events_o[10]    = 1'b0; //RESERVED for soc event FIFO
     assign fc_events_o[11]    = s_fc_err_events;
     assign fc_events_o[12]    = s_fc_hp_events[0];
@@ -296,24 +299,25 @@ module soc_peripherals #(
         .APB_ADDR_WIDTH ( 32 ),
         .APB_DATA_WIDTH ( 32 )
     ) i_periph_bus (
-        .clk_i               ( clk_i              ),
-        .rst_ni              ( rst_ni             ),
+        .clk_i               ( clk_i                 ),
+        .rst_ni              ( rst_ni                ),
 
-        .apb_slave           ( apb_slave          ),
+        .apb_slave           ( apb_slave             ),
 
-        .clk_ctrl_master     ( apb_clk_ctrl_master),
-        .gpio_master         ( s_gpio_bus         ),
-        .udma_master         ( s_udma_bus         ),
-        .soc_ctrl_master     ( s_soc_ctrl_bus     ),
-        .adv_timer_master    ( s_adv_timer_bus    ),
-        .soc_evnt_gen_master ( s_soc_evnt_gen_bus ),
-        .eu_master           ( apb_eu_master      ),
-        .mmap_debug_master   ( apb_debug_master   ),
-        .hwpe_master         ( apb_hwpe_master    ),
-        .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       ),
-        .wdt_master          ( s_apb_wdt_bus      ),
-        .i2cs_master         ( s_apb_i2cs_bus     )
+        .clk_ctrl_master     ( apb_clk_ctrl_master   ),
+        .gpio_master         ( s_gpio_bus            ),
+        .udma_master         ( s_udma_bus            ),
+        .soc_ctrl_master     ( s_soc_ctrl_bus        ),
+        .adv_timer_master    ( s_adv_timer_bus       ),
+        .soc_evnt_gen_master ( s_soc_evnt_gen_bus    ),
+        .eu_master           ( apb_eu_master         ),
+        .mmap_debug_master   ( apb_debug_master      ),
+        .hwpe_master         ( apb_hwpe_master       ),
+        .timer_master        ( s_apb_timer_bus       ),
+        .stdout_master       ( s_stdout_bus          ),
+        .wdt_master          ( s_apb_wdt_bus         ),
+        .i2c_slv_bmc_master  ( s_apb_i2c_slv_bmc_bus ),
+        .i2c_slv_1_master    ( s_apb_i2c_slv_1_bus   )
     );
 
     `ifdef SYNTHESIS
@@ -680,7 +684,7 @@ module soc_peripherals #(
         .AXI_DATA_WIDTH         ( AXI_DATA_WIDTH                           ),
         .AXI_ID_WIDTH           ( AXI_32_ID_WIDTH                          ),
         .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        )
-    ) i_axi_apb_i2c_slave (
+    ) i_axi_apb_i2c_slave_bmc (
         .clk_i                  ( clk_i                                    ),
         .rstn_i                 ( rst_ni                                   ),
         //i2c
@@ -691,80 +695,180 @@ module soc_peripherals #(
         .sda_o                  ( i2c_slv_sda_o[0]                         ),
         .sda_oe                 ( i2c_slv_sda_oe_o[0]                      ),
         //interrupt:
-        .int1_o                 ( s_i2cs_event                             ),
+        .int1_o                 ( s_i2c_slv_bmc_event                      ),
         //apb
         .HCLK_i                 ( clk_i                                    ),
         .HRESETn_i              ( rst_ni                                   ),
-        .PADDR_i                ( s_apb_i2cs_bus.paddr                     ),
-        .PWDATA_i               ( s_apb_i2cs_bus.pwdata                    ),
-        .PWRITE_i               ( s_apb_i2cs_bus.pwrite                    ),
-        .PSEL_i                 ( s_apb_i2cs_bus.psel                      ),
-        .PENABLE_i              ( s_apb_i2cs_bus.penable                   ),
+        .PADDR_i                ( s_apb_i2c_slv_bmc_bus.paddr              ),
+        .PWDATA_i               ( s_apb_i2c_slv_bmc_bus.pwdata             ),
+        .PWRITE_i               ( s_apb_i2c_slv_bmc_bus.pwrite             ),
+        .PSEL_i                 ( s_apb_i2c_slv_bmc_bus.psel               ),
+        .PENABLE_i              ( s_apb_i2c_slv_bmc_bus.penable            ),
 
-        .PRDATA_o               ( s_apb_i2cs_bus.prdata                    ),
-        .PREADY_o               ( s_apb_i2cs_bus.pready                    ),
-        .PSLVERR_o              ( s_apb_i2cs_bus.pslverr                   ),
+        .PRDATA_o               ( s_apb_i2c_slv_bmc_bus.prdata             ),
+        .PREADY_o               ( s_apb_i2c_slv_bmc_bus.pready             ),
+        .PSLVERR_o              ( s_apb_i2c_slv_bmc_bus.pslverr            ),
 
          //AXI4:
         .axi_aclk_i             ( clk_i                                    ),
         .axi_aresetn_i          ( rst_ni                                   ),
 
         // ADDRESS WRITE CHANNEL
-        .axi_master_aw_addr_o   ( axi_i2csl.aw_addr                        ),
-        .axi_master_aw_prot_o   ( axi_i2csl.aw_prot                        ),
-        .axi_master_aw_region_o ( axi_i2csl.aw_region                      ),
-        .axi_master_aw_len_o    ( axi_i2csl.aw_len                         ),
-        .axi_master_aw_size_o   ( axi_i2csl.aw_size                        ),
-        .axi_master_aw_burst_o  ( axi_i2csl.aw_burst                       ),
-        .axi_master_aw_lock_o   ( axi_i2csl.aw_lock                        ),
-        .axi_master_aw_cache_o  ( axi_i2csl.aw_cache                       ),
-        .axi_master_aw_qos_o    ( axi_i2csl.aw_qos                         ),
-        .axi_master_aw_id_o     ( axi_i2csl.aw_id[AXI_32_ID_WIDTH-1:0]     ),
-        .axi_master_aw_user_o   ( axi_i2csl.aw_user[AXI_32_USER_WIDTH-1:0] ),
-        .axi_master_aw_valid_o  ( axi_i2csl.aw_valid                       ),
-        .axi_master_aw_ready_i  ( axi_i2csl.aw_ready                       ),
+        .axi_master_aw_addr_o   ( axi_i2c_slv_bmc.aw_addr                        ),
+        .axi_master_aw_prot_o   ( axi_i2c_slv_bmc.aw_prot                        ),
+        .axi_master_aw_region_o ( axi_i2c_slv_bmc.aw_region                      ),
+        .axi_master_aw_len_o    ( axi_i2c_slv_bmc.aw_len                         ),
+        .axi_master_aw_size_o   ( axi_i2c_slv_bmc.aw_size                        ),
+        .axi_master_aw_burst_o  ( axi_i2c_slv_bmc.aw_burst                       ),
+        .axi_master_aw_lock_o   ( axi_i2c_slv_bmc.aw_lock                        ),
+        .axi_master_aw_cache_o  ( axi_i2c_slv_bmc.aw_cache                       ),
+        .axi_master_aw_qos_o    ( axi_i2c_slv_bmc.aw_qos                         ),
+        .axi_master_aw_id_o     ( axi_i2c_slv_bmc.aw_id[AXI_32_ID_WIDTH-1:0]     ),
+        .axi_master_aw_user_o   ( axi_i2c_slv_bmc.aw_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_aw_valid_o  ( axi_i2c_slv_bmc.aw_valid                       ),
+        .axi_master_aw_ready_i  ( axi_i2c_slv_bmc.aw_ready                       ),
 
         // ADDRESS READ CHANNEL
-        .axi_master_ar_addr_o   ( axi_i2csl.ar_addr                        ),
-        .axi_master_ar_prot_o   ( axi_i2csl.ar_prot                        ),
-        .axi_master_ar_region_o ( axi_i2csl.ar_region                      ),
-        .axi_master_ar_len_o    ( axi_i2csl.ar_len                         ),
-        .axi_master_ar_size_o   ( axi_i2csl.ar_size                        ),
-        .axi_master_ar_burst_o  ( axi_i2csl.ar_burst                       ),
-        .axi_master_ar_lock_o   ( axi_i2csl.ar_lock                        ),
-        .axi_master_ar_cache_o  ( axi_i2csl.ar_cache                       ),
-        .axi_master_ar_qos_o    ( axi_i2csl.ar_qos                         ),
-        .axi_master_ar_id_o     ( axi_i2csl.ar_id[AXI_32_ID_WIDTH-1:0]     ),
-        .axi_master_ar_user_o   ( axi_i2csl.ar_user[AXI_32_USER_WIDTH-1:0] ),
-        .axi_master_ar_valid_o  ( axi_i2csl.ar_valid                       ),
-        .axi_master_ar_ready_i  ( axi_i2csl.ar_ready                       ),
+        .axi_master_ar_addr_o   ( axi_i2c_slv_bmc.ar_addr                        ),
+        .axi_master_ar_prot_o   ( axi_i2c_slv_bmc.ar_prot                        ),
+        .axi_master_ar_region_o ( axi_i2c_slv_bmc.ar_region                      ),
+        .axi_master_ar_len_o    ( axi_i2c_slv_bmc.ar_len                         ),
+        .axi_master_ar_size_o   ( axi_i2c_slv_bmc.ar_size                        ),
+        .axi_master_ar_burst_o  ( axi_i2c_slv_bmc.ar_burst                       ),
+        .axi_master_ar_lock_o   ( axi_i2c_slv_bmc.ar_lock                        ),
+        .axi_master_ar_cache_o  ( axi_i2c_slv_bmc.ar_cache                       ),
+        .axi_master_ar_qos_o    ( axi_i2c_slv_bmc.ar_qos                         ),
+        .axi_master_ar_id_o     ( axi_i2c_slv_bmc.ar_id[AXI_32_ID_WIDTH-1:0]     ),
+        .axi_master_ar_user_o   ( axi_i2c_slv_bmc.ar_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_ar_valid_o  ( axi_i2c_slv_bmc.ar_valid                       ),
+        .axi_master_ar_ready_i  ( axi_i2c_slv_bmc.ar_ready                       ),
 
         // WRITE CHANNEL
-        .axi_master_w_user_o    ( axi_i2csl.w_user[AXI_32_USER_WIDTH-1:0]  ),
-        .axi_master_w_data_o    ( axi_i2csl.w_data                         ),
-        .axi_master_w_strb_o    ( axi_i2csl.w_strb                         ),
-        .axi_master_w_last_o    ( axi_i2csl.w_last                         ),
-        .axi_master_w_valid_o   ( axi_i2csl.w_valid                        ),
-        .axi_master_w_ready_i   ( axi_i2csl.w_ready                        ),
+        .axi_master_w_user_o    ( axi_i2c_slv_bmc.w_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_w_data_o    ( axi_i2c_slv_bmc.w_data                         ),
+        .axi_master_w_strb_o    ( axi_i2c_slv_bmc.w_strb                         ),
+        .axi_master_w_last_o    ( axi_i2c_slv_bmc.w_last                         ),
+        .axi_master_w_valid_o   ( axi_i2c_slv_bmc.w_valid                        ),
+        .axi_master_w_ready_i   ( axi_i2c_slv_bmc.w_ready                        ),
 
         // READ CHANNEL
-        .axi_master_r_id_i      ( axi_i2csl.r_id[AXI_32_ID_WIDTH-1:0]      ),
-        .axi_master_r_user_i    ( axi_i2csl.r_user[AXI_32_USER_WIDTH-1:0]  ),
-        .axi_master_r_data_i    ( axi_i2csl.r_data                         ),
-        .axi_master_r_resp_i    ( axi_i2csl.r_resp                         ),
-        .axi_master_r_last_i    ( axi_i2csl.r_last                         ),
-        .axi_master_r_valid_i   ( axi_i2csl.r_valid                        ),
-        .axi_master_r_ready_o   ( axi_i2csl.r_ready                        ),
+        .axi_master_r_id_i      ( axi_i2c_slv_bmc.r_id[AXI_32_ID_WIDTH-1:0]      ),
+        .axi_master_r_user_i    ( axi_i2c_slv_bmc.r_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_r_data_i    ( axi_i2c_slv_bmc.r_data                         ),
+        .axi_master_r_resp_i    ( axi_i2c_slv_bmc.r_resp                         ),
+        .axi_master_r_last_i    ( axi_i2c_slv_bmc.r_last                         ),
+        .axi_master_r_valid_i   ( axi_i2c_slv_bmc.r_valid                        ),
+        .axi_master_r_ready_o   ( axi_i2c_slv_bmc.r_ready                        ),
 
         // WRITE RESPONSE CHANNEL
-        .axi_master_b_id_i      ( axi_i2csl.b_id[AXI_32_ID_WIDTH-1:0]      ),
-        .axi_master_b_resp_i    ( axi_i2csl.b_resp                         ),
-        .axi_master_b_user_i    ( axi_i2csl.b_user[AXI_32_USER_WIDTH-1:0]  ),
-        .axi_master_b_valid_i   ( axi_i2csl.b_valid                        ),
-        .axi_master_b_ready_o   ( axi_i2csl.b_ready                        )
+        .axi_master_b_id_i      ( axi_i2c_slv_bmc.b_id[AXI_32_ID_WIDTH-1:0]      ),
+        .axi_master_b_resp_i    ( axi_i2c_slv_bmc.b_resp                         ),
+        .axi_master_b_user_i    ( axi_i2c_slv_bmc.b_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_b_valid_i   ( axi_i2c_slv_bmc.b_valid                        ),
+        .axi_master_b_ready_o   ( axi_i2c_slv_bmc.b_ready                        )
 
     );
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //   █████╗ ██╗  ██╗██╗     █████╗ ██████╗ ██████╗     ██╗██████╗  ██████╗    ███████╗██╗      █████╗ ██╗   ██╗███████╗     ██╗ //
+    //  ██╔══██╗╚██╗██╔╝██║    ██╔══██╗██╔══██╗██╔══██╗    ██║╚════██╗██╔════╝    ██╔════╝██║     ██╔══██╗██║   ██║██╔════╝    ███║ //
+    //  ███████║ ╚███╔╝ ██║    ███████║██████╔╝██████╔╝    ██║ █████╔╝██║         ███████╗██║     ███████║██║   ██║█████╗      ╚██║ //
+    //  ██╔══██║ ██╔██╗ ██║    ██╔══██║██╔═══╝ ██╔══██╗    ██║██╔═══╝ ██║         ╚════██║██║     ██╔══██║╚██╗ ██╔╝██╔══╝       ██║ //
+    //  ██║  ██║██╔╝ ██╗██║    ██║  ██║██║     ██████╔╝    ██║███████╗╚██████╗    ███████║███████╗██║  ██║ ╚████╔╝ ███████╗     ██║ //
+    //  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝    ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚═╝╚══════╝ ╚═════╝    ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝     ╚═╝ //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    axi_apb_i2c_slave #(
+        .APB_ADDR_WIDTH         ( APB_ADDR_WIDTH                               ),
+        .AXI_ADDR_WIDTH         ( AXI_ADDR_WIDTH                               ),
+        .AXI_DATA_WIDTH         ( AXI_DATA_WIDTH                               ),
+        .AXI_ID_WIDTH           ( AXI_32_ID_WIDTH                              ),
+        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                            )
+    ) i_axi_apb_i2c_slave_1 (
+        .clk_i                  ( clk_i                                        ),
+        .rstn_i                 ( rst_ni                                       ),
+        //i2c
+        .scl_i                  ( i2c_slv_scl_i[1]                             ),
+        .scl_o                  ( i2c_slv_scl_o[1]                             ),
+        .scl_oe                 ( i2c_slv_scl_oe_o[1]                          ),
+        .sda_i                  ( i2c_slv_sda_i[1]                             ),
+        .sda_o                  ( i2c_slv_sda_o[1]                             ),
+        .sda_oe                 ( i2c_slv_sda_oe_o[1]                          ),
+        //interrupt:
+        .int1_o                 ( s_i2c_slv_1_event                            ),
+        //apb
+        .HCLK_i                 ( clk_i                                        ),
+        .HRESETn_i              ( rst_ni                                       ),
+        .PADDR_i                ( s_apb_i2c_slv_1_bus.paddr                    ),
+        .PWDATA_i               ( s_apb_i2c_slv_1_bus.pwdata                   ),
+        .PWRITE_i               ( s_apb_i2c_slv_1_bus.pwrite                   ),
+        .PSEL_i                 ( s_apb_i2c_slv_1_bus.psel                     ),
+        .PENABLE_i              ( s_apb_i2c_slv_1_bus.penable                  ),
+
+        .PRDATA_o               ( s_apb_i2c_slv_1_bus.prdata                   ),
+        .PREADY_o               ( s_apb_i2c_slv_1_bus.pready                   ),
+        .PSLVERR_o              ( s_apb_i2c_slv_1_bus.pslverr                  ),
+
+         //AXI4:
+        .axi_aclk_i             ( clk_i                                        ),
+        .axi_aresetn_i          ( rst_ni                                       ),
+
+        // ADDRESS WRITE CHANNEL
+        .axi_master_aw_addr_o   ( axi_i2c_slv_1.aw_addr                        ),
+        .axi_master_aw_prot_o   ( axi_i2c_slv_1.aw_prot                        ),
+        .axi_master_aw_region_o ( axi_i2c_slv_1.aw_region                      ),
+        .axi_master_aw_len_o    ( axi_i2c_slv_1.aw_len                         ),
+        .axi_master_aw_size_o   ( axi_i2c_slv_1.aw_size                        ),
+        .axi_master_aw_burst_o  ( axi_i2c_slv_1.aw_burst                       ),
+        .axi_master_aw_lock_o   ( axi_i2c_slv_1.aw_lock                        ),
+        .axi_master_aw_cache_o  ( axi_i2c_slv_1.aw_cache                       ),
+        .axi_master_aw_qos_o    ( axi_i2c_slv_1.aw_qos                         ),
+        .axi_master_aw_id_o     ( axi_i2c_slv_1.aw_id[AXI_32_ID_WIDTH-1:0]     ),
+        .axi_master_aw_user_o   ( axi_i2c_slv_1.aw_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_aw_valid_o  ( axi_i2c_slv_1.aw_valid                       ),
+        .axi_master_aw_ready_i  ( axi_i2c_slv_1.aw_ready                       ),
+
+        // ADDRESS READ CHANNEL
+        .axi_master_ar_addr_o   ( axi_i2c_slv_1.ar_addr                        ),
+        .axi_master_ar_prot_o   ( axi_i2c_slv_1.ar_prot                        ),
+        .axi_master_ar_region_o ( axi_i2c_slv_1.ar_region                      ),
+        .axi_master_ar_len_o    ( axi_i2c_slv_1.ar_len                         ),
+        .axi_master_ar_size_o   ( axi_i2c_slv_1.ar_size                        ),
+        .axi_master_ar_burst_o  ( axi_i2c_slv_1.ar_burst                       ),
+        .axi_master_ar_lock_o   ( axi_i2c_slv_1.ar_lock                        ),
+        .axi_master_ar_cache_o  ( axi_i2c_slv_1.ar_cache                       ),
+        .axi_master_ar_qos_o    ( axi_i2c_slv_1.ar_qos                         ),
+        .axi_master_ar_id_o     ( axi_i2c_slv_1.ar_id[AXI_32_ID_WIDTH-1:0]     ),
+        .axi_master_ar_user_o   ( axi_i2c_slv_1.ar_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_ar_valid_o  ( axi_i2c_slv_1.ar_valid                       ),
+        .axi_master_ar_ready_i  ( axi_i2c_slv_1.ar_ready                       ),
+
+        // WRITE CHANNEL
+        .axi_master_w_user_o    ( axi_i2c_slv_1.w_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_w_data_o    ( axi_i2c_slv_1.w_data                         ),
+        .axi_master_w_strb_o    ( axi_i2c_slv_1.w_strb                         ),
+        .axi_master_w_last_o    ( axi_i2c_slv_1.w_last                         ),
+        .axi_master_w_valid_o   ( axi_i2c_slv_1.w_valid                        ),
+        .axi_master_w_ready_i   ( axi_i2c_slv_1.w_ready                        ),
+
+        // READ CHANNEL
+        .axi_master_r_id_i      ( axi_i2c_slv_1.r_id[AXI_32_ID_WIDTH-1:0]      ),
+        .axi_master_r_user_i    ( axi_i2c_slv_1.r_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_r_data_i    ( axi_i2c_slv_1.r_data                         ),
+        .axi_master_r_resp_i    ( axi_i2c_slv_1.r_resp                         ),
+        .axi_master_r_last_i    ( axi_i2c_slv_1.r_last                         ),
+        .axi_master_r_valid_i   ( axi_i2c_slv_1.r_valid                        ),
+        .axi_master_r_ready_o   ( axi_i2c_slv_1.r_ready                        ),
+
+        // WRITE RESPONSE CHANNEL
+        .axi_master_b_id_i      ( axi_i2c_slv_1.b_id[AXI_32_ID_WIDTH-1:0]      ),
+        .axi_master_b_resp_i    ( axi_i2c_slv_1.b_resp                         ),
+        .axi_master_b_user_i    ( axi_i2c_slv_1.b_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_b_valid_i   ( axi_i2c_slv_1.b_valid                        ),
+        .axi_master_b_ready_o   ( axi_i2c_slv_1.b_ready                        )
+
+    );
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////

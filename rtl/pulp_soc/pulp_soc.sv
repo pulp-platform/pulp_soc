@@ -485,7 +485,14 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) axi_i2cs_slv ();
+    ) axi_i2c_slv_bmc ();
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_i2c_slv_1 ();
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
@@ -633,7 +640,8 @@ module pulp_soc import dm::*; #(
         .ext_slv         (axi_ext_slv),
         .ext_mst         (axi_ext_mst),
 
-        .i2csl_slv       (axi_i2cs_slv),
+        .i2c_slv_bmc_slv (axi_i2c_slv_bmc),
+        .i2c_slv_1_slv   (axi_i2c_slv_1),
 
         .spi_slv         (s_axi_spi),
 
@@ -817,7 +825,9 @@ module pulp_soc import dm::*; #(
         .cluster_irq_o          ( cluster_irq_o          ),
 
         .wdt_reset_o            ( wdt_reset_o            ),
-        .axi_i2csl              ( axi_i2cs_slv           )
+        .axi_i2c_slv_bmc        ( axi_i2c_slv_bmc        ),
+        .axi_i2c_slv_1          ( axi_i2c_slv_1          )
+
     );
 
 

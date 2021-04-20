@@ -101,7 +101,9 @@ module soc_node #(
   AXI_BUS.Master ext_mst,
 
   AXI_BUS.Slave  spi_slv,
-  AXI_BUS.Slave  i2csl_slv
+  AXI_BUS.Slave  i2c_slv_bmc_slv,
+  AXI_BUS.Slave  i2c_slv_1_slv
+
 );
 
   localparam int unsigned N_REGIONS = 1;
@@ -160,7 +162,8 @@ module soc_node #(
   `AXI_ASSIGN(ext_to_soc_slaves[0], ext_slv);
   `AXI_ASSIGN(ext_to_soc_slaves[1], cl_slv);
   `AXI_ASSIGN(ext_to_soc_slaves[2], spi_slv);
-  `AXI_ASSIGN(ext_to_soc_slaves[3], i2csl_slv); //must be add the second i2c slave
+  `AXI_ASSIGN(ext_to_soc_slaves[3], i2c_slv_bmc_slv); //first i2c slave (bmc)
+  `AXI_ASSIGN(ext_to_soc_slaves[4], i2c_slv_1_slv);   //second i2c slave
 
   // axi xbar soc -> nci_cp_top
   // master slave buses
