@@ -42,6 +42,8 @@
 `define REG_PADCFG14    7'b0010110 //BASEADDR+0x58 sets config for pin 56(bits [7:0]) to pin 59(bits [31:24])
 `define REG_PADCFG15    7'b0010111 //BASEADDR+0x5C sets config for pin 60(bits [7:0]) to pin 63(bits [31:24])
 
+`define REG_INTRSCKT_SEL  7'b0011000 //BASEADDR+0x60 mux selection bit for inter-socket peripherals
+
 `define REG_JTAGREG     7'b0011101 //BASEADDR+0x74 JTAG REG
 
 `define REG_CORESTATUS  7'b0101000 //BASEADDR+0xA0 32bit GP register to be used during testing to return EOC(bit[31]) and status(bit[30:0])
@@ -92,6 +94,7 @@ module apb_soc_ctrl #(
 
     output logic                      fc_fetchen_o,
     output logic                      sel_hyper_axi_o,
+    output logic                      sel_intr_sckt_o,
     output logic                      cluster_pow_o, // power cluster
     output logic                      cluster_byp_o, // bypass cluster
     output logic               [63:0] cluster_boot_addr_o,
@@ -127,6 +130,7 @@ module apb_soc_ctrl #(
    logic            r_cluster_irq;
 
    logic            r_sel_hyper_axi;
+   logic            r_sel_intr_sckt;
    logic      [1:0] r_bootsel;
 
    logic s_apb_write;
@@ -142,6 +146,9 @@ module apb_soc_ctrl #(
 
    assign cluster_pow_o = r_cluster_pow;
    assign sel_hyper_axi_o = r_sel_hyper_axi;
+
+   // Inter-socket select signal assign
+   assign sel_intr_sckt_o = r_sel_intr_sckt;
 
    assign s_apb_write = PSEL && PENABLE && PWRITE;
 
@@ -180,6 +187,7 @@ module apb_soc_ctrl #(
         //pad_cfg                <= '{default: 6'b111111};
         pad_cfg                <= '1;
         r_sel_hyper_axi        <= 1'b0;
+        r_sel_intr_sckt        <= 1'b0;
         r_cluster_fetch_enable <= 1'b0;
         r_cluster_boot         <= '0;
         r_cluster_rstn         <= 1'b1;
@@ -342,6 +350,11 @@ module apb_soc_ctrl #(
                   pad_cfg[62]        <= PWDATA[16 +: NBIT_PADCFG-1]; //
                   pad_cfg[63]        <= PWDATA[24 +: NBIT_PADCFG-1]; //
                 end
+                `REG_INTRSCKT_SEL:
+                begin
+                   r_sel_intr_sckt <= PWDATA[0];
+                end
+
                 `REG_JTAGREG:
                 begin
                   r_jtag_rego   <= PWDATA[JTAG_REG_SIZE-1:0];
@@ -496,6 +509,8 @@ module apb_soc_ctrl #(
               r_cluster_byp };
           `REG_JTAGREG:
             PRDATA = {16'h0,r_jtag_regi_sync[0],r_jtag_rego};
+          `REG_INTRSCKT_SEL:
+            PRDATA = {31'b0, r_sel_intr_sckt};
           `REG_CTRL_PER:
             PRDATA = {31'b0, r_sel_hyper_axi};
           `REG_CLUSTER_IRQ:

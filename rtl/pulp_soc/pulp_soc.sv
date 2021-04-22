@@ -245,6 +245,9 @@ module pulp_soc import dm::*; #(
     output logic [3:0]                    spi_sdo_slv_o,
     input  logic [3:0]                    spi_sdi_slv_i,
 
+    //inter-socket mux signal
+    output logic                          sel_intr_sckt_o,
+
     output logic                          sdio_clk_o,
     output logic                          sdio_cmd_o,
     input  logic                          sdio_cmd_i,
@@ -794,6 +797,9 @@ module pulp_soc import dm::*; #(
         .spi_oen_slv_o          ( spi_oen_slv_o          ),
         .spi_sdo_slv_o          ( spi_sdo_slv_o          ),
         .spi_sdi_slv_i          ( spi_sdi_slv_i          ),
+
+        //INTER-SOCKET MUX SIGNAL
+        .sel_intr_sckt_o        ( sel_intr_sckt_o        ),
 
         //SDIO
         .sdclk_o                ( sdio_clk_o             ),
