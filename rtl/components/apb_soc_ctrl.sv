@@ -187,7 +187,7 @@ module apb_soc_ctrl #(
         //pad_cfg                <= '{default: 6'b111111};
         pad_cfg                <= '1;
         r_sel_hyper_axi        <= 1'b0;
-        r_sel_intr_sckt        <= 1'b0;
+        r_sel_intr_sckt        <= 1'b1; // default value of select signal for inter-socket peripheral: slave
         r_cluster_fetch_enable <= 1'b0;
         r_cluster_boot         <= '0;
         r_cluster_rstn         <= 1'b1;
