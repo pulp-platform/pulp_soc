@@ -4,6 +4,7 @@ pulp_soc:
     ../axi/axi/include,
   ]
   files: [
+    ../axi/axi/src/axi_pkg.sv,
     rtl/pulp_soc/soc_node.sv,
     rtl/pulp_soc/soc_interconnect.sv,
     rtl/pulp_soc/boot_rom.sv,
