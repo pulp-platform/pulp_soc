@@ -1,12 +1,18 @@
 pulp_soc:
   incdirs: [
     ../../rtl/includes,
+    rtl/include,
     ../axi/axi/include,
   ]
   files: [
     ../axi/axi/src/axi_pkg.sv,
     rtl/pulp_soc/soc_node.sv,
-    rtl/pulp_soc/soc_interconnect.sv,
+    rtl/pulp_soc/pkg_soc_interconnect.sv,
+    rtl/pulp_soc/axi64_2_lint32_wrap.sv,
+    rtl/pulp_soc/lint_2_axi_wrap.sv,
+    rtl/pulp_soc/contiguous_crossbar.sv,
+    rtl/pulp_soc/interleaved_crossbar.sv,
+    rtl/pulp_soc/tcdm_demux.sv,
     rtl/pulp_soc/boot_rom.sv,
     rtl/pulp_soc/l2_ram_multi_bank.sv,
     rtl/pulp_soc/lint_jtag_wrap.sv,
@@ -15,6 +21,8 @@ pulp_soc:
     rtl/pulp_soc/soc_event_arbiter.sv,
     rtl/pulp_soc/soc_event_generator.sv,
     rtl/pulp_soc/soc_event_queue.sv,
+    rtl/pulp_soc/tcdm_error_slave.sv,
+    rtl/pulp_soc/soc_interconnect.sv,
     rtl/pulp_soc/soc_interconnect_wrap.sv,
     rtl/pulp_soc/soc_peripherals.sv,
     rtl/pulp_soc/pulp_soc.sv,

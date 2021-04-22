@@ -587,98 +587,6 @@ interface AXI_BUS_ASYNC2
 
 endinterface
 
-interface AXI_LITE
-      #(
-      parameter AXI_ADDR_WIDTH = 32,
-      parameter AXI_DATA_WIDTH = 64,
-      parameter AXI_ID_WIDTH   = 6,
-      parameter AXI_USER_WIDTH = 6
-      );
-
-   localparam AXI_STRB_WIDTH = `EVAL_BE_WIDTH(AXI_DATA_WIDTH);
-
-   logic [AXI_ADDR_WIDTH-1:0] aw_addr;
-   logic                      aw_valid;
-   logic                      aw_ready;
-
-   logic [AXI_DATA_WIDTH-1:0] w_data;
-   logic                      w_valid;
-   logic                      w_ready;
-   logic [AXI_STRB_WIDTH-1:0] w_strb;
-
-   logic                [1:0] b_resp;
-   logic                      b_valid;
-   logic                      b_ready;
-
-   logic [AXI_ADDR_WIDTH-1:0] ar_addr;
-   logic                      ar_valid;
-   logic                      ar_ready;
-
-   logic [AXI_DATA_WIDTH-1:0] r_data;
-   logic                [1:0] r_resp;
-   logic                      r_valid;
-   logic                      r_ready;
-
-
-   // Master Side
-   //***************************************
-   modport Master
-      (
-
-         output aw_addr,
-         output aw_valid,
-         input  aw_ready,
-
-         output w_data,
-         output w_valid,
-         input  w_ready,
-         output w_strb,
-
-         input  b_resp,
-         input  b_valid,
-         output b_ready,
-
-         output ar_addr,
-         output ar_valid,
-         input  ar_ready,
-
-         input  r_data,
-         input  r_resp,
-         input  r_valid,
-         output r_ready
-
-      );
-
-   // Slave Side
-   //***************************************
-   modport Slave
-      (
-
-         input  aw_addr,
-         input  aw_valid,
-         output aw_ready,
-
-         input  w_data,
-         input  w_valid,
-         output w_ready,
-         input  w_strb,
-
-         output b_resp,
-         output b_valid,
-         input  b_ready,
-
-         input  ar_addr,
-         input  ar_valid,
-         output ar_ready,
-
-         output r_data,
-         output r_resp,
-         output r_valid,
-         input  r_ready
-
-      );
-
-endinterface
 
    //********************************************************
    //***************** CLKGATE CONFIG BUS *******************
@@ -1373,73 +1281,73 @@ endinterface // CORE_PREF_BUS
 /// interface.
 /*`ifndef PULP_FPGA_EMUL
 interface marx_apu_if #(
-												parameter WOP      = 1,
-												parameter NARGS    = 2,
-												parameter NUSFLAGS = 1,
-												parameter NDSFLAGS = 1,
+                        parameter WOP      = 1,
+                        parameter NARGS    = 2,
+                        parameter NUSFLAGS = 1,
+                        parameter NDSFLAGS = 1,
                         parameter WAPUTAG  = 2,
                         parameter WRESULT  = 32,
                         parameter WARG     = 32
-												);
+                        );
 
-	 // Downstream
-	 logic valid_ds_s;
-	 logic ready_ds_s;
+   // Downstream
+   logic valid_ds_s;
+   logic ready_ds_s;
 
-	 logic [WARG-1:0]            operands_ds_d [NARGS-1:0];
-	 logic [WOP-1:0]             op_ds_d;
-	 logic [NDSFLAGS-1:0]        flags_ds_d;
-	 logic [WAPUTAG-1:0]         tag_ds_d;
+   logic [WARG-1:0]            operands_ds_d [NARGS-1:0];
+   logic [WOP-1:0]             op_ds_d;
+   logic [NDSFLAGS-1:0]        flags_ds_d;
+   logic [WAPUTAG-1:0]         tag_ds_d;
 
-	 // Upstream
-	 logic                       req_us_s;
-	 logic                       ack_us_s;
+   // Upstream
+   logic                       req_us_s;
+   logic                       ack_us_s;
 
-	 logic [WRESULT-1:0]         result_us_d;
-	 logic [NUSFLAGS-1:0]        flags_us_d;
-	 logic [WAPUTAG-1:0]         tag_us_d;
+   logic [WRESULT-1:0]         result_us_d;
+   logic [NUSFLAGS-1:0]        flags_us_d;
+   logic [WAPUTAG-1:0]         tag_us_d;
 
-	 // The interface from the APU's perspective.
-	 modport apu (
-		            input  valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
-		            output ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
-	              );
+   // The interface from the APU's perspective.
+   modport apu (
+                input  valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
+                output ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
+                );
 
-	 // The interface from interconnect's perspective.
-	 modport marx (
-		             output valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
-		             input  ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
-	               );
+   // The interface from interconnect's perspective.
+   modport marx (
+                 output valid_ds_s, operands_ds_d, op_ds_d, flags_ds_d, tag_ds_d, ack_us_s,
+                 input  ready_ds_s, req_us_s, result_us_d, flags_us_d, tag_us_d
+                 );
 
 endinterface // marx_apu_if
 
 // Interface between arbiter and fp-interconnect
 interface marx_arbiter_if #(
-		                        parameter NIN = -1, // number of request inputs
-		                        parameter NOUT = -1, // number of allocatable resources
-		                        parameter NIN2 = $clog2(NIN)
-	                          );
+                            parameter NIN = -1, // number of request inputs
+                            parameter NOUT = -1, // number of allocatable resources
+                            parameter NIN2 = $clog2(NIN)
+                            );
 
-	 // Allocation request handshake.
-	 logic [NIN-1:0]      req_d;
-	 logic [NIN-1:0]      ack_d;
+   // Allocation request handshake.
+   logic [NIN-1:0]      req_d;
+   logic [NIN-1:0]      ack_d;
 
-	 // Index of the resource allocated.
-	 logic                unsigned [NOUT-1:0] [NIN2-1:0] assid_d;
+   // Index of the resource allocated.
+   logic                unsigned [NOUT-1:0] [NIN2-1:0] assid_d;
 
-	 // Resource handshake.
-	 logic [NOUT-1:0]     avail_d; // resource is ready to be allocated
-	 logic [NOUT-1:0]     alloc_d; // resource was allocated
+   // Resource handshake.
+   logic [NOUT-1:0]     avail_d; // resource is ready to be allocated
+   logic [NOUT-1:0]     alloc_d; // resource was allocated
 
-	 modport arbiter (
-		                input  req_d, avail_d,
-		                output ack_d, assid_d, alloc_d
-	                  );
+   modport arbiter (
+                    input  req_d, avail_d,
+                    output ack_d, assid_d, alloc_d
+                    );
 
-	 modport marx (
-		             output req_d, avail_d,
-		             input  ack_d, assid_d, alloc_d
-	               );
+   modport marx (
+                 output req_d, avail_d,
+                 input  ack_d, assid_d, alloc_d
+                 );
 
 endinterface // marx_arbiter_if
 
@@ -1447,43 +1355,43 @@ endinterface // marx_arbiter_if
 /// The interface between the Marx interconnect and the cores. The interconnect
 /// shall instantiate the "marx" modport.
 interface cpu_marx_if #(
-												parameter WOP_CPU      = 0,
-												parameter WAPUTYPE     = 0,
-												parameter NUSFLAGS_CPU = 1,
-												parameter NDSFLAGS_CPU = 1,
+                        parameter WOP_CPU      = 0,
+                        parameter WAPUTYPE     = 0,
+                        parameter NUSFLAGS_CPU = 1,
+                        parameter NDSFLAGS_CPU = 1,
                         parameter WRESULT      = 32,
                         parameter WARG         = 32,
                         parameter NARGS_CPU    = 3
-												);
+                        );
 
-	 // Downstream
-	 logic                            req_ds_s;
-	 logic                            ack_ds_s;
+   // Downstream
+   logic                            req_ds_s;
+   logic                            ack_ds_s;
 
-	 logic [WAPUTYPE-1:0]             type_ds_d;
+   logic [WAPUTYPE-1:0]             type_ds_d;
 
-	 logic [WARG-1:0]                 operands_ds_d [NARGS_CPU-1:0];
-	 logic [WOP_CPU-1:0]              op_ds_d;
-	 logic [NDSFLAGS_CPU-1:0]         flags_ds_d;
+   logic [WARG-1:0]                 operands_ds_d [NARGS_CPU-1:0];
+   logic [WOP_CPU-1:0]              op_ds_d;
+   logic [NDSFLAGS_CPU-1:0]         flags_ds_d;
 
-	 // Upstream
-	 logic                            valid_us_s;
-	 logic                            ready_us_s;
+   // Upstream
+   logic                            valid_us_s;
+   logic                            ready_us_s;
 
-	 logic [WRESULT-1:0]              result_us_d;
-	 logic [NUSFLAGS_CPU-1:0]         flags_us_d;
+   logic [WRESULT-1:0]              result_us_d;
+   logic [NUSFLAGS_CPU-1:0]         flags_us_d;
 
-	 // The interface from the Core's perspective.
-	 modport cpu (
-		            output req_ds_s, type_ds_d, operands_ds_d, op_ds_d, flags_ds_d, ready_us_s,
-		            input  ack_ds_s, valid_us_s, result_us_d, flags_us_d
-	              );
+   // The interface from the Core's perspective.
+   modport cpu (
+                output req_ds_s, type_ds_d, operands_ds_d, op_ds_d, flags_ds_d, ready_us_s,
+                input  ack_ds_s, valid_us_s, result_us_d, flags_us_d
+                );
 
-	 // The interface from the interconnect's perspective.
-	 modport marx (
-		             input  req_ds_s, type_ds_d, operands_ds_d, op_ds_d, ready_us_s, flags_ds_d,
-		             output ack_ds_s, valid_us_s, result_us_d, flags_us_d
-	               );
+   // The interface from the interconnect's perspective.
+   modport marx (
+                 input  req_ds_s, type_ds_d, operands_ds_d, op_ds_d, ready_us_s, flags_ds_d,
+                 output ack_ds_s, valid_us_s, result_us_d, flags_us_d
+                 );
 
 endinterface
 `endif */

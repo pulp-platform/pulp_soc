@@ -9,8 +9,6 @@
 // specific language governing permissions and limitations under the License.
 
 
-`include "soc_bus_defines.sv"
-
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
@@ -29,7 +27,7 @@ module fc_subsystem #(
     input  logic                      rst_ni,
     input  logic                      test_en_i,
 
-    input logic 		      wdt_reset_i,
+    input logic           wdt_reset_i,
 
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,

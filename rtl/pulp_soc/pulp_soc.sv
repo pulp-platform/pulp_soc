@@ -10,7 +10,6 @@
 
 
 `include "pulp_soc_defines.sv"
-`include "soc_bus_defines.sv"
 
 module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
@@ -47,7 +46,6 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2,
-    parameter int unsigned N_I2C_SLV  = 2,
 
     parameter int unsigned N_L2_BANKS = 0,
     parameter int unsigned N_L2_BANKS_PRI = 0,
@@ -72,8 +70,8 @@ module pulp_soc import dm::*; #(
     AXI_BUS.Master                        axi_ext_mst,
 
     // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
-    UNICAD_MEM_BUS_32.Master              tcdm_interleaved_l2_bus[N_L2_BANKS-1:0],
-    UNICAD_MEM_BUS_32.Master              tcdm_private_l2_bus[N_L2_BANKS_PRI-1:0],
+    XBAR_TCDM_BUS_32.Master               s_mem_l2_bus[N_L2_BANKS-1:0],
+    XBAR_TCDM_BUS_32.Master               s_mem_l2_pri[N_L2_BANKS_PRI-1:0],
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -275,7 +273,7 @@ module pulp_soc import dm::*; #(
     localparam int unsigned CLK_CTRL_DATA_WIDTH = 32;
 
     localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * N_L2_BANKS) - $clog2(N_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
-    localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * N_L2_BANKS_PRI) - $clog2(N_L2_BANKS_PRI);
+
     localparam ROM_ADDR_WIDTH        = 13;
 
     localparam FC_CORE_CLUSTER_ID    = 6'd31;
@@ -485,7 +483,7 @@ module pulp_soc import dm::*; #(
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) soc_to_external ();
 
-    AXI_BUS #(
+        AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
@@ -503,7 +501,10 @@ module pulp_soc import dm::*; #(
 
     APB_BUS s_apb_periph_bus ();
 
-    UNICAD_MEM_BUS_32 s_mem_rom_bus ();
+    XBAR_TCDM_BUS_32 s_mem_rom_bus ();
+
+    XBAR_TCDM_BUS  s_mem_l2_bus[NB_L2_BANKS-1:0]();
+    XBAR_TCDM_BUS  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
@@ -642,11 +643,11 @@ module pulp_soc import dm::*; #(
         .soc_slv         (soc_to_external),
         .soc_mst         (soc_in_mst),
 
-        .ext_slv         (axi_ext_slv),
-        .ext_mst         (axi_ext_mst),
-
         .i2c_slv_bmc_slv (axi_i2c_slv_bmc),
         .i2c_slv_1_slv   (axi_i2c_slv_1),
+
+        .ext_slv         (axi_ext_slv),
+        .ext_mst         (axi_ext_mst),
 
         .spi_slv         (s_axi_spi),
 
@@ -835,7 +836,6 @@ module pulp_soc import dm::*; #(
         .wdt_reset_o            ( wdt_reset_o            ),
         .axi_i2c_slv_bmc        ( axi_i2c_slv_bmc        ),
         .axi_i2c_slv_1          ( axi_i2c_slv_1          )
-
     );
 
 
@@ -938,42 +938,29 @@ module pulp_soc import dm::*; #(
     );
 
     soc_interconnect_wrap #(
-        .N_L2_BANKS         ( N_L2_BANKS            ),
-        .ADDR_MEM_WIDTH     ( L2_MEM_ADDR_WIDTH     ),
-        .N_HWPE_PORTS       ( NB_HWPE_PORTS         ),
-
-        .N_L2_BANKS_PRI     ( N_L2_BANKS_PRI        ),
-        .ADDR_MEM_PRI_WIDTH ( L2_MEM_ADDR_WIDTH_PRI ),
-
-        .ROM_ADDR_WIDTH     ( ROM_ADDR_WIDTH        ),
-
-        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH      ),
-        .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH        ),
-
-        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH        ),
-        .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH     ),
-        .AXI_STRB_WIDTH     ( AXI_DATA_IN_WIDTH/8   ),
-        .AXI_USER_WIDTH     ( AXI_USER_WIDTH        ),
-        .AXI_ID_WIDTH       ( AXI_SOC_NODE_IW_OUP_EXT )
+        .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
+        .NR_L2_PORTS         ( N_L2_BANKS       ),
+        .AXI_USER_WIDTH      ( AXI_USER_WIDTH   ),
+        .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
-        .rstn_i           ( s_soc_rstn          ),
+        .rst_ni           ( s_soc_rstn          ),
         .test_en_i        ( dft_test_mode_i     ),
-        .lint_fc_data     ( s_lint_fc_data_bus  ),
-        .lint_fc_instr    ( s_lint_fc_instr_bus ),
-        .lint_udma_tx     ( s_lint_udma_tx_bus  ),
-        .lint_udma_rx     ( s_lint_udma_rx_bus  ),
-        .lint_debug       ( s_lint_debug_bus    ),
-        .lint_hwpe        ( s_lint_hwpe_bus     ),
+        .tcdm_fc_data     ( s_lint_fc_data_bus  ),
+        .tcdm_fc_instr    ( s_lint_fc_instr_bus ),
+        .tcdm_udma_rx     ( s_lint_udma_rx_bus  ),
+        .tcdm_udma_tx     ( s_lint_udma_tx_bus  ),
+        .tcdm_debug       ( s_lint_debug_bus    ),
+        .tcdm_hwpe        ( s_lint_hwpe_bus     ),
 
-        .axi_from_cluster ( soc_in_mst          ),
-        .axi_to_cluster   ( s_data_out_bus      ),
-        .axi_to_external  ( soc_to_external     ),
+        .axi_master_plug  ( s_data_in_bus       ), //cluster!
+        .axi_slave_plug   ( s_data_out_bus      ),
+//        .axi_to_external  ( soc_to_external     ),
 
-        .apb_periph_bus   ( s_apb_periph_bus        ),
-        .mem_l2_bus       ( tcdm_interleaved_l2_bus ),
-        .mem_l2_pri_bus   ( tcdm_private_l2_bus     ),
-        .mem_rom_bus      ( s_mem_rom_bus           )
+        .apb_periph_bus        ( s_apb_periph_bus        ),
+        .l2_interleaved_slaves ( s_mem_l2_bus            ), //bus name changes!
+        .l2_private_slaves     ( s_mem_l2_pri_bus        ), //bus name changes!
+        .boot_rom_slaves       ( s_mem_rom_bus           )
     );
 
     // Debug Subsystem

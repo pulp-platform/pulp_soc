@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 
-`include "pulp_soc_defines.sv"
+`include "soc_mem_map.svh"
 
 module boot_rom #(
     parameter ROM_ADDR_WIDTH = 13
@@ -18,35 +18,52 @@ module boot_rom #(
      input logic             clk_i,
      input logic             rst_ni,
      input logic             init_ni,
-     UNICAD_MEM_BUS_32.Slave mem_slave,
+     XBAR_TCDM_BUS.Slave     mem_slave,
      input logic             test_mode_i
     );
+
+    assign mem_slave.r_opc = 1'b0;
+
+    //Perform TCDM handshaking for constant 1 cycle latency
+    assign mem_slave.gnt     = mem_slave.req;
+    always_ff @(posedge clk_i, negedge rst_ni) begin
+        if (!rst_ni) begin
+            mem_slave.r_valid <= 1'b0;
+        end else begin
+            mem_slave.r_valid <= mem_slave.req;
+        end
+    end
+
+    //Remove address offset
+    logic [31:0] address;
+    assign address = mem_slave.add - `SOC_MEM_MAP_BOOT_ROM_START_ADDR;
 
     `ifndef PULP_FPGA_EMUL
 
         generic_rom #(
-            .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
+            .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
             .DATA_WIDTH(32)
          ) rom_mem_i (
             .CLK            (  clk_i                ),
-            .CEN            (  mem_slave.csn        ),
-            .A              (  mem_slave.add[ROM_ADDR_WIDTH-1:2]  ),
-            .Q              (  mem_slave.rdata      )
+            .CEN            (  ~mem_slave.req        ),
+            .A              (  address[ROM_ADDR_WIDTH-1:2]  ), //Cutoff insignificant address bits. The
+                                                                     //interconnect makes sure we only receive addresses in the bootrom address space
+            .Q              (  mem_slave.r_rdata      )
         );
 
-        // TODO: why the is this even here? breaks dc analysis
-        //assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
+        // assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
 
     `else // !`ifndef PULP_FPGA_EMUL
 
     fpga_bootrom #(
-                   .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
+                   .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
                    .DATA_WIDTH(32)
                    ) rom_mem_i (
                             .CLK(clk_i),
-                            .CEN(mem_slave.csn),
-                            .A(mem_slave.add[ROM_ADDR_WIDTH-1:2]),
-                            .Q(mem_slave.rdata)
+                            .CEN(~mem_slave.req),
+                            .A(address[ROM_ADDR_WIDTH-1:2]), //Cutoff insignificant address bits. The interconnect
+                                                                   //makes sure we only receive addresses in the bootrom address space
+                            .Q(mem_slave.r_rdata)
                             );
 
     `endif
