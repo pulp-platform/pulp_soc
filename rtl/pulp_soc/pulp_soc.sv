@@ -46,6 +46,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
     parameter int unsigned N_I2C  = 2,
+    parameter int unsigned N_I2C_SLV  = 2,
 
     parameter int unsigned N_L2_BANKS = 0,
     parameter int unsigned N_L2_BANKS_PRI = 0,
@@ -70,8 +71,8 @@ module pulp_soc import dm::*; #(
     AXI_BUS.Master                        axi_ext_mst,
 
     // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
-    XBAR_TCDM_BUS_32.Master               s_mem_l2_bus[N_L2_BANKS-1:0],
-    XBAR_TCDM_BUS_32.Master               s_mem_l2_pri[N_L2_BANKS_PRI-1:0],
+    XBAR_TCDM_BUS.Master                  s_mem_l2_bus[N_L2_BANKS-1:0],
+    XBAR_TCDM_BUS.Master                  s_mem_l2_pri_bus[N_L2_BANKS_PRI-1:0],
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -483,7 +484,7 @@ module pulp_soc import dm::*; #(
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) soc_to_external ();
 
-        AXI_BUS #(
+    AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
@@ -501,10 +502,7 @@ module pulp_soc import dm::*; #(
 
     APB_BUS s_apb_periph_bus ();
 
-    XBAR_TCDM_BUS_32 s_mem_rom_bus ();
-
-    XBAR_TCDM_BUS  s_mem_l2_bus[NB_L2_BANKS-1:0]();
-    XBAR_TCDM_BUS  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
+    XBAR_TCDM_BUS s_mem_rom_bus ();
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
@@ -643,11 +641,11 @@ module pulp_soc import dm::*; #(
         .soc_slv         (soc_to_external),
         .soc_mst         (soc_in_mst),
 
-        .i2c_slv_bmc_slv (axi_i2c_slv_bmc),
-        .i2c_slv_1_slv   (axi_i2c_slv_1),
-
         .ext_slv         (axi_ext_slv),
         .ext_mst         (axi_ext_mst),
+
+        .i2c_slv_bmc_slv (axi_i2c_slv_bmc),
+        .i2c_slv_1_slv   (axi_i2c_slv_1),
 
         .spi_slv         (s_axi_spi),
 
@@ -957,10 +955,10 @@ module pulp_soc import dm::*; #(
         .axi_slave_plug   ( s_data_out_bus      ),
 //        .axi_to_external  ( soc_to_external     ),
 
-        .apb_periph_bus        ( s_apb_periph_bus        ),
-        .l2_interleaved_slaves ( s_mem_l2_bus            ), //bus name changes!
-        .l2_private_slaves     ( s_mem_l2_pri_bus        ), //bus name changes!
-        .boot_rom_slaves       ( s_mem_rom_bus           )
+        .apb_peripheral_bus    ( s_apb_periph_bus        ),
+        .l2_interleaved_slaves ( s_mem_l2_bus            ),
+        .l2_private_slaves     ( s_mem_l2_pri_bus        ),
+        .boot_rom_slave        ( s_mem_rom_bus           )
     );
 
     // Debug Subsystem
