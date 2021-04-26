@@ -110,9 +110,7 @@ udma/udma_external_per:
   commit: v1.0.0
   domain: [soc]
 udma_hyper:
-  commit: pulp_integ
-  server: git@iis-git.ee.ethz.ch
-  group: hayate
+  commit: 83ab704f9d1c5f9e5353268c901fe95c36bcea36
   domain: [soc]
 hwpe-mac-engine:
   commit: v1.2
