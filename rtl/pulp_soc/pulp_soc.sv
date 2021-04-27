@@ -10,6 +10,7 @@
 
 
 `include "pulp_soc_defines.sv"
+`include "axi/assign.svh"
 
 module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
@@ -35,13 +36,6 @@ module pulp_soc import dm::*; #(
     parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
                                       //downstreams are not parametrci
     parameter NBIT_PADMUX        = 2,
-
-    parameter int unsigned AXI_ID_INP_WIDTH_PMS = 6,
-    parameter int unsigned AXI_ID_OUP_WIDTH_PMS = 6,
-    parameter int unsigned AXI_USER_WIDTH_PMS = 6,
-    parameter int unsigned AXI_STRB_WIDTH_PMS = 64/8,
-    parameter int unsigned AXI_ADDR_WIDTH_PMS = 32,
-    parameter int unsigned AXI_DATA_WIDTH_PMS = 64,
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
@@ -283,16 +277,6 @@ module pulp_soc import dm::*; #(
     localparam FC_CORE_CORE_ID       = 4'd0;
     localparam FC_CORE_MHARTID       = {FC_CORE_CLUSTER_ID, 1'b0, FC_CORE_CORE_ID};
 
-    // TODO: this should be exposed somewhere, maybe configurable?
-    localparam int unsigned AXI_SOC_NODE_AW = 32;
-    localparam int unsigned AXI_SOC_NODE_DW = 64;
-    localparam int unsigned AXI_SOC_NODE_UW = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_INP_EXT = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_OUP_EXT = soc_node_pkg::axi_iw_oup_ext(AXI_SOC_NODE_IW_INP_EXT);
-    localparam int unsigned AXI_SOC_NODE_IW_INP_SOC = 6;
-    localparam int unsigned AXI_SOC_NODE_IW_OUP_SOC = soc_node_pkg::axi_iw_oup_soc(AXI_SOC_NODE_IW_INP_SOC);
-
-
     //  PULP RISC-V cores have not continguos MHARTID.
     //  This leads to set the number of HARTS >= the maximum value of the MHARTID.
     //  In this case, the MHARD ID is {FC_CORE_CLUSTER_ID,1'b0,FC_CORE_CORE_ID} --> 996 (1024 chosen as power of 2)
@@ -321,7 +305,6 @@ module pulp_soc import dm::*; #(
     for (genvar i = 0; i < NB_CORES; i++) begin : gen_cluster_core_id
         assign cluster_core_id[i] = {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]};
     end
-
 
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
        zero1:        '0,
@@ -424,79 +407,117 @@ module pulp_soc import dm::*; #(
     APB_BUS                s_apb_debug_bus();
     APB_BUS                s_apb_clk_ctrl_bus();
 
+    // AXI interface CPULP->cluster direction (to be exploded)
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
         .BUFFER_WIDTH   ( BUFFER_WIDTH       )
-    ) s_data_master ();
+    ) s_data_master (); // to_cluster
 
+    // AXI interface EXT->CPULP direction (from exploded ports)
     AXI_BUS_ASYNC #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    ),
         .BUFFER_WIDTH   ( BUFFER_WIDTH      )
-    ) s_data_slave ();
+    ) s_data_slave (); // from cluster
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_data_in_bus ();
-
-    AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) s_axi_spi ();
+    ) s_data_in_bus (); // from cluster
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
         .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_data_out_bus ();
+    ) s_data_out_bus (); // to cluster
 
-    // cl master -> soc_node
-    AXI_BUS #(
+    logic s_cluster_isolate_dc;
+    logic s_rstn_cluster_sync_soc;
+
+    // to_soc --> wrap cluster into s_data_slave intf, get s_data_in_bus
+    axi_slice_dc_master_wrap  #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) cl_in_mst ();
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH      )
+    ) dc_fifo_dataout_bus_i (
+        .clk_i           ( s_soc_clk                ),
+        .rst_ni          ( s_cluster_rstn           ),
+        .isolate_i       ( s_cluster_isolate_dc     ),
+        .test_cgbypass_i ( 1'b0                     ),
+        .clock_down_i    ( 1'b0                     ),
+        .incoming_req_o  (                          ),
+        .axi_master      ( s_data_in_bus            ),
+        .axi_slave_async ( s_data_slave             )
+    );
 
-    // soc_node -> soc
-    AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH      ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH   ),
-        .AXI_ID_WIDTH   ( AXI_SOC_NODE_IW_OUP_EXT ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
-    ) soc_in_mst ();
+    // from_soc --> get s_data_master for cluster, flatten AXI ports
+    axi_slice_dc_slave_wrap #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
+        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
+    ) dc_fifo_datain_bus_i (
+        .clk_i            ( s_soc_clk               ),
+        .rst_ni           ( s_rstn_cluster_sync_soc ),
+        .test_cgbypass_i  ( 1'b0                    ),
+        .isolate_i        ( s_cluster_isolate_dc    ),
+        .axi_slave        ( s_data_out_bus          ),
+        .axi_master_async ( s_data_master           )
+    );
 
-    AXI_BUS #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_EXT_WIDTH),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) soc_to_external ();
+    ////////////////////
+    // AXI Mux inputs //
+    ////////////////////
+
+    // 5 inputs to AXI Mux from external: cl_slv, spi_slv, i2c_slv_1, i2c_slv_2, ext_slv (i.e. nci_cp_top)
+
+    localparam int unsigned N_EXT_MASTERS_TO_SOC = 3; //TODO: Add i2c slaves (x2) once they are complete
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) axi_i2c_slv_bmc ();
+    ) s_axi_spi (); // from spi_slv
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) axi_i2c_slv_1 ();
+    ) axi_i2c_slv_bmc (); // from i2c_slv_1
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_i2c_slv_1 (); // from i2c_slv_2
+
+    // Wrap into single interface
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) ext_masters_to_soc [N_EXT_MASTERS_TO_SOC-1:0] ();
+
+    `AXI_ASSIGN(ext_masters_to_soc[0], s_data_in_bus);    // from cluster
+    `AXI_ASSIGN(ext_masters_to_soc[1], s_axi_spi);        // from spi_slv
+    `AXI_ASSIGN(ext_masters_to_soc[2], axi_ext_slv);      // from ext (nci_cp_top)
+    //`AXI_ASSIGN(ext_masters_to_soc[3], axi_i2c_slv_1);    // from i2c_slv_1
+    //`AXI_ASSIGN(ext_masters_to_soc[4], axi_i2c_slv_bmc);  // from i2c_slv_2
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
@@ -518,12 +539,6 @@ module pulp_soc import dm::*; #(
         assign base_addr_int = 4'b0001; //FIXME attach this signal somewhere in the soc peripherals --> IGOR
     `endif
 
-
-
-    logic s_cluster_isolate_dc;
-    logic s_rstn_cluster_sync_soc;
-
-
     assign cluster_clk_o  = s_cluster_clk;
     assign cluster_rstn_o = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
     assign s_rstn_cluster_sync_soc = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
@@ -534,126 +549,6 @@ module pulp_soc import dm::*; #(
    assign s_cluster_isolate_dc = 1'b0;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
-
-    // cluster to soc
-    axi_slice_dc_master_wrap  #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH    ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH      )
-    ) dc_fifo_dataout_bus_i (
-        .clk_i           ( s_soc_clk                ),
-        .rst_ni          ( s_cluster_rstn           ),
-        .isolate_i       ( s_cluster_isolate_dc     ),
-        .test_cgbypass_i ( 1'b0                     ),
-        .clock_down_i    ( 1'b0                     ),
-        .incoming_req_o  (                          ),
-        .axi_master      ( s_data_in_bus            ),
-        .axi_slave_async ( s_data_slave             )
-    );
-
-    // soc to cluster
-    axi_slice_dc_slave_wrap #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH   ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH     ),
-        .BUFFER_WIDTH   ( BUFFER_WIDTH       )
-    ) dc_fifo_datain_bus_i (
-        .clk_i            ( s_soc_clk               ),
-        .rst_ni           ( s_rstn_cluster_sync_soc ),
-        .test_cgbypass_i  ( 1'b0                    ),
-        .isolate_i        ( s_cluster_isolate_dc    ),
-        .axi_slave        ( s_data_out_bus          ),
-        .axi_master_async ( s_data_master           )
-    );
-
-
-    // data width conversions of AXI to 32-bit. Currently we fail here if we have
-    // a mismatch.
-    if (AXI_DATA_IN_WIDTH != AXI_DATA_WIDTH_PMS)
-        $fatal(1, "AXI data width mismatch on nci_cp_top");
-    /* axi_data_width_converter AUTO_TEMPLATE "_\([a-z]+\)" (
-     .slv (axi_in[]),
-     .mst (axi[]),
-     );
-     */
-
-    // Addr width conversion of AXI. Currently we fail here if we have a mismatch.
-    if (AXI_ADDR_WIDTH != AXI_ADDR_WIDTH_PMS)
-        $fatal(1, "AXI address width mismatch on nci_cp_top");
-
-    //
-    // AXI soc node
-    //
-    // We connect the axi bus from the cluster with all the external axi master
-    // and slaves and route this to the tcdm interconnect
-
-    soc_node #(
-        // Parameters
-        .AXI_ID_INP_WIDTH_SOC    (AXI_SOC_NODE_IW_INP_EXT),
-        .AXI_ID_OUP_WIDTH_SOC    (AXI_SOC_NODE_IW_OUP_EXT),
-        .AXI_USER_WIDTH_SOC      (AXI_USER_WIDTH),
-        .AXI_STRB_WIDTH_SOC      (AXI_DATA_IN_WIDTH/8),
-        .AXI_ADDR_WIDTH_SOC      (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH_SOC      (AXI_DATA_IN_WIDTH),
-
-        .AXI_ID_INP_WIDTH_CLUSTER(AXI_ID_IN_WIDTH),
-        .AXI_ID_OUP_WIDTH_CLUSTER(AXI_ID_OUT_WIDTH),
-        .AXI_USER_WIDTH_CLUSTER  (AXI_USER_WIDTH),
-        .AXI_STRB_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH/8),
-        .AXI_ADDR_WIDTH_CLUSTER  (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH_CLUSTER  (AXI_DATA_IN_WIDTH),
-
-        .AXI_ID_INP_WIDTH_PMS    (AXI_ID_INP_WIDTH_PMS),
-        .AXI_ID_OUP_WIDTH_PMS    (AXI_ID_OUP_WIDTH_PMS),
-        .AXI_USER_WIDTH_PMS      (AXI_USER_WIDTH_PMS),
-        .AXI_STRB_WIDTH_PMS      (AXI_STRB_WIDTH_PMS),
-        .AXI_ADDR_WIDTH_PMS      (AXI_ADDR_WIDTH_PMS),
-        .AXI_DATA_WIDTH_PMS      (AXI_DATA_WIDTH_PMS),
-
-        .AXI_ID_INP_WIDTH_I2C    (AXI_ID_OUT_WIDTH),
-        .AXI_USER_WIDTH_I2C      (AXI_USER_WIDTH),
-        .AXI_STRB_WIDTH_I2C      (AXI_DATA_IN_WIDTH/8),
-        .AXI_ADDR_WIDTH_I2C      (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH_I2C      (AXI_DATA_IN_WIDTH),
-
-        .AXI_ID_INP_WIDTH_SPI    (AXI_ID_IN_WIDTH),
-        .AXI_ID_OUP_WIDTH_SPI    (AXI_ID_OUT_WIDTH),
-        .AXI_USER_WIDTH_SPI      (AXI_USER_WIDTH),
-        .AXI_STRB_WIDTH_SPI      (AXI_DATA_IN_WIDTH/8),
-        .AXI_ADDR_WIDTH_SPI      (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH_SPI      (AXI_DATA_IN_WIDTH),
-
-        // this is the soc nodes axi config. All connections' parameters will be
-        // checked against this
-        .AXI_AW                  (AXI_SOC_NODE_AW),
-        .AXI_DW                  (AXI_SOC_NODE_DW),
-        .AXI_UW                  (AXI_SOC_NODE_UW),
-        .AXI_IW_INP_EXT          (AXI_SOC_NODE_IW_INP_EXT), // cluster, ext -> soc id width
-        .AXI_IW_INP_SOC          (AXI_SOC_NODE_IW_INP_SOC), // soc -> ext id width
-        .MST_SLICE_DEPTH         (1),
-        .SLV_SLICE_DEPTH         (1)
-    ) i_soc_node (
-        // Interfaces
-        .cl_slv          (s_data_in_bus),
-        .soc_slv         (soc_to_external),
-        .soc_mst         (soc_in_mst),
-
-        .ext_slv         (axi_ext_slv),
-        .ext_mst         (axi_ext_mst),
-
-        .i2c_slv_bmc_slv (axi_i2c_slv_bmc),
-        .i2c_slv_1_slv   (axi_i2c_slv_1),
-
-        .spi_slv         (s_axi_spi),
-
-        // Inputs
-        .clk_i           (s_soc_clk),
-        .rst_ni          (s_soc_rstn)
-    );
-
 
     //********************************************************
     //********************* SOC L2 RAM ***********************
@@ -939,7 +834,8 @@ module pulp_soc import dm::*; #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
         .NR_L2_PORTS         ( N_L2_BANKS       ),
         .AXI_USER_WIDTH      ( AXI_USER_WIDTH   ),
-        .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  )
+        .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  ),
+        .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC )
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rst_ni           ( s_soc_rstn          ),
@@ -951,14 +847,17 @@ module pulp_soc import dm::*; #(
         .tcdm_debug       ( s_lint_debug_bus    ),
         .tcdm_hwpe        ( s_lint_hwpe_bus     ),
 
-        .axi_master_plug  ( s_data_in_bus       ), //cluster!
-        .axi_slave_plug   ( s_data_out_bus      ),
-//        .axi_to_external  ( soc_to_external     ),
+        // ext-to-pms direction (wrapped interface)
+        .axi_master_plug  ( ext_masters_to_soc  ), // from external modules (cluster, spi, i2c_1, i2c_2, nci_cp_top)
 
-        .apb_peripheral_bus    ( s_apb_periph_bus        ),
-        .l2_interleaved_slaves ( s_mem_l2_bus            ),
-        .l2_private_slaves     ( s_mem_l2_pri_bus        ),
-        .boot_rom_slave        ( s_mem_rom_bus           )
+        // pms-to-ext direction (discrete interfaces)
+        .axi_slave_plug   ( s_data_out_bus      ), // to_cluster
+        .axi_ext_mst      ( axi_ext_mst         ), // to nci_cp_top
+        .apb_peripheral_bus    ( s_apb_periph_bus        ), // to apb_periph
+
+        .l2_interleaved_slaves ( s_mem_l2_bus            ), // to interleaved L2
+        .l2_private_slaves     ( s_mem_l2_pri_bus        ), // to private L2
+        .boot_rom_slave        ( s_mem_rom_bus           )  // to bootrom
     );
 
     // Debug Subsystem
