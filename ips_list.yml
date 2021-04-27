@@ -29,6 +29,9 @@ cluster_interconnect:
 adv_dbg_if:
   commit: v0.0.2
   domain: [cluster, soc]
+apb/apb:
+  commit: v0.1.0
+  domain: [soc]
 apb/apb2per:
   commit: v0.1.0
   domain: [soc]
