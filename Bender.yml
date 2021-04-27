@@ -49,7 +49,6 @@ dependencies:
   hwpe-mac-engine:        { git: "https://github.com/pulp-platform/hwpe-mac-engine.git", version: 1.3.3 }
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.2.0 }
   register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.2.1 }
-  # apb for interface?
 
 sources:
   # pulp_soc
