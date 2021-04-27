@@ -23,8 +23,7 @@ module soc_peripherals #(
     parameter NBIT_PADMUX    = 2,
     parameter N_UART         = 1,
     parameter N_SPI          = 1,
-    parameter N_I2C          = 2,
-    parameter N_HYPER        = 5
+    parameter N_I2C          = 2
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
