@@ -25,6 +25,7 @@
 module soc_interconnect
     import pkg_soc_interconnect::addr_map_rule_t;
     import axi_pkg::xbar_cfg_t;
+    import control_pulp_pkg::*;
     #(
       // TCDM Bus Master Config
       parameter int unsigned  NR_MASTER_PORTS, //Master Ports to the SoC interconnect with access to all memory regions
@@ -275,7 +276,7 @@ module soc_interconnect
                                                     //per slave port
                                                     FallThrough: 1,       //Use the reccomended default config
                                                     LatencyMode: axi_pkg::CUT_MST_PORTS,
-                                                    AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
+                                                    AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH, // 1
                                                     AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
                                                     AxiAddrWidth: BUS_ADDR_WIDTH,
                                                     AxiDataWidth: BUS_DATA_WIDTH,
@@ -301,6 +302,8 @@ module soc_interconnect
     for (genvar i = 0; i < NR_AXI_SLAVE_PORTS; i++) begin
         `AXI_ASSIGN(axi_slaves[i], axi_slaves_reversed[i])
     end
+
+
 
     axi_xbar_intf #(
                     .AXI_USER_WIDTH(AXI_USER_WIDTH),

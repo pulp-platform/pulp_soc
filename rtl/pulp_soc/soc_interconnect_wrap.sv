@@ -24,10 +24,12 @@
 `include "soc_mem_map.svh"
 `include "tcdm_macros.svh"
 `include "axi/assign.svh"
-
+`include "cluster_bus_defines.sv"
 
 module soc_interconnect_wrap
     import pkg_soc_interconnect::addr_map_rule_t;
+    import control_pulp_pkg::*;
+    import axi_pkg::xbar_cfg_t;
     #(
       parameter int  NR_HWPE_PORTS = 0,
       parameter int  NR_L2_PORTS = 4,
@@ -39,8 +41,9 @@ module soc_interconnect_wrap
       parameter int  AXI_USER_WIDTH = 6,
       // Axi Output Plug
       localparam int AXI_OUT_ADDR_WIDTH = 32, // All addresses in the SoC must be 32-bit
-      localparam int AXI_OUT_DATA_WIDTH = 32  // The internal TCDM->AXI protocol converter does not support any other
+      localparam int AXI_OUT_DATA_WIDTH = 32,  // The internal TCDM->AXI protocol converter does not support any other
                                               // datawidths than 32-bit
+      parameter int N_EXT_MASTERS_TO_SOC = 5 // Number of external masters in the EXT->SoC direction. Parameter for this module, localparam in pulp_soc.sv
     ) (
        input logic clk_i,
        input logic rst_ni,
@@ -51,9 +54,10 @@ module soc_interconnect_wrap
        XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
        XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
-       AXI_BUS.Slave            axi_master_plug, // Normaly used for cluster -> SoC communication
+       AXI_BUS.Slave            axi_master_plug[N_EXT_MASTERS_TO_SOC-1:0], // Normaly used for EXT -> SoC communication
        AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
-       APB_BUS.Master           apb_peripheral_bus, // Connects to all the SoC Peripherals
+       AXI_BUS.Master           axi_ext_mst, // Used for SoC -> nci_cp_top
+       APB_BUS.Master           apb_peripheral_bus, // Connects to all the SoC Peripherals (SoC -> periph)
        XBAR_TCDM_BUS.Master     l2_interleaved_slaves[NR_L2_PORTS], // Connects to the interleaved memory banks
        XBAR_TCDM_BUS.Master     l2_private_slaves[2], // Connects to core-private memory banks
        XBAR_TCDM_BUS.Master     boot_rom_slave //Connects to the bootrom
@@ -62,6 +66,36 @@ module soc_interconnect_wrap
     //**Do not change these values unles you verified that all downstream IPs are properly parametrized and support it**
     localparam ADDR_WIDTH = 32;
     localparam DATA_WIDTH = 32;
+
+    ////////////////////////////////////////////////////
+    // 64-bit AXI Mux (External to SoC communication) //
+    ////////////////////////////////////////////////////
+
+    localparam int unsigned AXI_IN_ID_WIDTH_MUX = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC); // = 6 + clog2(5) = 9
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_IN_ADDR_WIDTH   ),
+        .AXI_DATA_WIDTH ( AXI_IN_DATA_WIDTH   ),
+        .AXI_ID_WIDTH   ( AXI_IN_ID_WIDTH_MUX ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_mux_out (); // AXI Mux output
+
+    axi_mux_intf #(
+      .SLV_AXI_ID_WIDTH( AXI_IN_ID_WIDTH ),
+      .MST_AXI_ID_WIDTH( AXI_IN_ID_WIDTH_MUX ),
+      .AXI_ADDR_WIDTH( AXI_IN_ADDR_WIDTH ),
+      .AXI_DATA_WIDTH( AXI_IN_DATA_WIDTH ),
+      .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+      .NO_SLV_PORTS( N_EXT_MASTERS_TO_SOC ),
+      .MAX_W_TRANS( 1 ),
+      .FALL_THROUGH( 1'b1 )
+    ) i_axi64_mux (
+      .clk_i,
+      .rst_ni,
+      .test_i(test_en_i),
+      .slv(axi_master_plug),
+      .mst(axi_mux_out)
+    );
 
 
     //////////////////////////////////////////////////////////////
@@ -78,12 +112,12 @@ module soc_interconnect_wrap
 
     axi64_2_lint32_wrap #(
                      .AXI_USER_WIDTH(AXI_USER_WIDTH),
-                     .AXI_ID_WIDTH(AXI_IN_ID_WIDTH)
+                     .AXI_ID_WIDTH(AXI_IN_ID_WIDTH_MUX) // Increased due to AXI Mux
                      ) i_axi64_to_lint32(
                                          .clk_i,
                                          .rst_ni,
                                          .test_en_i,
-                                         .axi_master(axi_master_plug),
+                                         .axi_master(axi_mux_out),
                                          .tcdm_slaves(axi_bridge_2_interconnect)
                                          );
 
@@ -109,10 +143,11 @@ module soc_interconnect_wrap
         '{ idx: 1 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK1_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK1_END_ADDR} ,
         '{ idx: 2 , start_addr: `SOC_MEM_MAP_BOOT_ROM_START_ADDR      , end_addr: `SOC_MEM_MAP_BOOT_ROM_END_ADDR}};
 
-    localparam NR_RULES_AXI_CROSSBAR = 2;
+    localparam NR_RULES_AXI_CROSSBAR = 3;
     localparam addr_map_rule_t [NR_RULES_AXI_CROSSBAR-1:0] AXI_CROSSBAR_RULES = '{
        '{ idx: 0, start_addr: `SOC_MEM_MAP_AXI_PLUG_START_ADDR,    end_addr: `SOC_MEM_MAP_AXI_PLUG_END_ADDR},
-       '{ idx: 1, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
+       '{ idx: 1, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR},
+       '{ idx: 2, start_addr: `AXI_EXT_START_ADDR, end_addr: `AXI_EXT_END_ADDR}};
 
     //For legacy reasons, the fc_data port can alias the address prefix 0x000 to 0x1c0. E.g. an access to 0x00001234 is
     //mapped to 0x1c001234. The following lines perform this remapping.
@@ -175,11 +210,42 @@ module soc_interconnect_wrap
               .AXI_DATA_WIDTH(32),
               .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
               .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_slaves[2]();
+              ) axi_slaves[3]();
     `AXI_ASSIGN(axi_slave_plug, axi_slaves[0])
     `AXI_ASSIGN(axi_to_axi_lite_bridge, axi_slaves[1])
 
-    //Interconnect instantiation
+    ////////////////////////////////////////////////////////////////////////
+    // Convert external AXI Data width from 32-bit to 64-bit (CPULP->EXT) //
+    ////////////////////////////////////////////////////////////////////////
+
+    AXI_BUS #(.AXI_ADDR_WIDTH(32),
+              .AXI_DATA_WIDTH(64),
+              .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
+              .AXI_USER_WIDTH(AXI_USER_WIDTH)
+              ) axi_ext_mst_dw64();
+
+    // Convert AXI32 ext master to AXI64
+    axi_dw_converter_intf #(
+      .AXI_ID_WIDTH            ( pkg_soc_interconnect::AXI_ID_OUT_WIDTH ),
+      .AXI_ADDR_WIDTH          ( 32               ),
+      .AXI_SLV_PORT_DATA_WIDTH ( 32               ),
+      .AXI_MST_PORT_DATA_WIDTH ( 64               ),
+      .AXI_USER_WIDTH          ( AXI_USER_WIDTH   ),
+      .AXI_MAX_READS           ( 2                )
+    ) i_axi_dwc_32to64_to_ext (
+      .clk_i,
+      .rst_ni,
+      .slv(axi_slaves[2]),
+      .mst(axi_ext_mst_dw64)
+    );
+
+    // Assign AXI upsizer output upstream
+    `AXI_ASSIGN(axi_ext_mst, axi_ext_mst_dw64)
+
+    ////////////////////////////////
+    // Interconnect instantiation //
+    ////////////////////////////////
+
     soc_interconnect #(
                        .NR_MASTER_PORTS(pkg_soc_interconnect::NR_TCDM_MASTER_PORTS), // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
                                               // axi plug
@@ -191,7 +257,7 @@ module soc_interconnect_wrap
                        .NR_SLAVE_PORTS_CONTIG(3), // Bootrom + number of private memory banks (normally 1 for
                                                   // programm instructions and 1 for programm stack )
                        .NR_ADDR_RULES_SLAVE_PORTS_CONTIG(NR_RULES_CONTIG_CROSSBAR),
-                       .NR_AXI_SLAVE_PORTS(2), // 1 for AXI to cluster, 1 for SoC peripherals (converted to APB)
+                       .NR_AXI_SLAVE_PORTS(3), // 1 for AXI to cluster, 1 for SoC peripherals (converted to APB), 1 for nci_cp_top
                        .NR_ADDR_RULES_AXI_SLAVE_PORTS(NR_RULES_AXI_CROSSBAR),
                        .AXI_MASTER_ID_WIDTH(1), //Doesn't need to be changed. All axi masters in the current
                                                 //interconnect come from a TCDM protocol converter and thus do not have and AXI ID.
