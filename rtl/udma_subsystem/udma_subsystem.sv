@@ -124,20 +124,19 @@ module udma_subsystem
 
     localparam L2_AWIDTH_NOAL = L2_ADDR_WIDTH + 2;
 
-    localparam N_I2S     = 1;
-    localparam N_CAM     = 1;
-    localparam N_CSI2    = 0;
-    //localparam N_HYPER   = 0;
-    localparam N_SDIO    = 1;
-    localparam N_JTAG    = 0;
-    localparam N_MRAM    = 0;
-    localparam N_FILTER  = 1;
-    localparam N_CH_HYPER        = 8;
-    localparam N_FPGA    = 0;
-`ifdef PULP_TRAINING
-    localparam N_EXT_PER = 1;
-`else
-    localparam N_EXT_PER = 0;
+    localparam N_I2S      = 1;
+    localparam N_CAM      = 1;
+    localparam N_CSI2     = 0;
+    localparam N_SDIO     = 1;
+    localparam N_JTAG     = 0;
+    localparam N_MRAM     = 0;
+    localparam N_FILTER   = 1;
+    localparam N_CH_HYPER = 8;
+    localparam N_FPGA     = 0;
+`ifdef PULP_TRAINING	  
+    localparam N_EXT_PER  = 1;
+`else			  
+    localparam N_EXT_PER  = 0;
 `endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER + N_CH_HYPER;
@@ -180,15 +179,15 @@ module udma_subsystem
     localparam CH_ID_EXT_TX_FILTER = 0;
     localparam CH_ID_EXT_RX_FILTER = 0;
 
-    localparam PER_ID_UART    = 0;                  //0
-    localparam PER_ID_SPIM    = PER_ID_UART   + N_UART   ;     //1
-    localparam PER_ID_I2C     = PER_ID_SPIM   + N_SPI    ;       //2, 3
-    localparam PER_ID_SDIO    = PER_ID_I2C    + N_I2C    ; //4
-    localparam PER_ID_I2S     = PER_ID_SDIO   + N_SDIO   ;      //5
-    localparam PER_ID_CAM     = PER_ID_I2S    + N_I2S    ;       //6
-    localparam PER_ID_FILTER  = PER_ID_CAM    + N_CAM    ;       //7
+    localparam PER_ID_UART    = 0;                  
+    localparam PER_ID_SPIM    = PER_ID_UART   + N_UART   ;     
+    localparam PER_ID_I2C     = PER_ID_SPIM   + N_SPI    ;     
+    localparam PER_ID_SDIO    = PER_ID_I2C    + N_I2C    ; 
+    localparam PER_ID_I2S     = PER_ID_SDIO   + N_SDIO   ; 
+    localparam PER_ID_CAM     = PER_ID_I2S    + N_I2S    ; 
+    localparam PER_ID_FILTER  = PER_ID_CAM    + N_CAM    ; 
     localparam PER_ID_HYPER   = PER_ID_FILTER + N_FILTER ;
-    localparam PER_ID_EXT_PER = PER_ID_HYPER  + N_HYPER  + N_CH_HYPER;    //8
+    localparam PER_ID_EXT_PER = PER_ID_HYPER  + N_HYPER  + N_CH_HYPER;
 
 
     
@@ -957,24 +956,24 @@ module udma_subsystem
     assign s_events[4*PER_ID_HYPER+2]          = |s_evt_eot_hyper & is_hyper_read_d ;
     assign s_events[4*PER_ID_HYPER+3]          = |s_evt_eot_hyper & !is_hyper_read_d;
 
-    always @(posedge s_clk_periphs_core[PER_ID_HYPER], negedge sys_resetn_i) begin
+    always_ff @(posedge s_clk_periphs_core[PER_ID_HYPER], negedge sys_resetn_i) begin
        if(!sys_resetn_i) 
-             is_hyper_read_q = 0;
+             is_hyper_read_q <= 1'b0;
        else
-             is_hyper_read_q = is_hyper_read_d;
+             is_hyper_read_q <= is_hyper_read_d;
     end 
     always_comb begin
            if(is_hyper_read_q) begin
                 if ( s_tx_ch_events[CH_ID_TX_HYPER] & !s_rx_ch_events[CH_ID_RX_HYPER]) begin
-                      is_hyper_read_d =0;
+                      is_hyper_read_d = 1'b0;
                 end
-                else  is_hyper_read_d =1;
+                else  is_hyper_read_d = 1'b1;
            end 
            else if(!is_hyper_read_q) begin
                 if ( s_rx_ch_events[CH_ID_RX_HYPER] & !s_tx_ch_events[CH_ID_TX_HYPER]) begin
-                      is_hyper_read_d =1;
+                      is_hyper_read_d = 1'b1;
                 end
-                else  is_hyper_read_d =0;
+                else  is_hyper_read_d = 1'b0;
            end
     end
 
