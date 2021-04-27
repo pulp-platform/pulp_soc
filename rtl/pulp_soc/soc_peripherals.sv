@@ -41,7 +41,7 @@ module soc_peripherals #(
     output logic [7:0]                 soc_jtag_reg_o,
 
     input  logic                       boot_l2_i,
-    input  logic                       bootsel_i,
+    input  logic [1:0]                 bootsel_i,
     // fc fetch enable can be controlled through this signal or through an APB
     // write to the fc fetch enable register
     input  logic                       fc_fetch_en_valid_i,
@@ -138,6 +138,18 @@ module soc_peripherals #(
     output logic                 [3:0] sddata_o,
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
+
+    // HYPERBUS
+    output logic [1:0]                 hyper_cs_no,
+    output logic                       hyper_ck_o,
+    output logic                       hyper_ck_no,
+    output logic [1:0]                 hyper_rwds_o,
+    input  logic                       hyper_rwds_i,
+    output logic [1:0]                 hyper_rwds_oe_o,
+    input  logic [15:0]                hyper_dq_i,
+    output logic [15:0]                hyper_dq_o,
+    output logic [1:0]                 hyper_dq_oe_o,
+    output logic                       hyper_reset_no,
 
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
@@ -466,7 +478,19 @@ module soc_peripherals #(
         .i2c_scl_oe       ( i2c_scl_oe_o         ),
         .i2c_sda_i        ( i2c_sda_i            ),
         .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe_o         )
+        .i2c_sda_oe       ( i2c_sda_oe_o         ),
+
+
+        .hyper_cs_no      ( hyper_cs_no          ),
+        .hyper_ck_o       ( hyper_ck_o           ),
+        .hyper_ck_no      ( hyper_ck_no          ),
+        .hyper_rwds_o     ( hyper_rwds_o         ),
+        .hyper_rwds_i     ( hyper_rwds_i         ),
+        .hyper_rwds_oe_o  ( hyper_rwds_oe_o      ),
+        .hyper_dq_i       ( hyper_dq_i           ),
+        .hyper_dq_o       ( hyper_dq_o           ),
+        .hyper_dq_oe_o    ( hyper_dq_oe_o        ),
+        .hyper_reset_no   ( hyper_reset_no       )
 
     );
 
