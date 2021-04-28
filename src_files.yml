@@ -6,7 +6,7 @@ pulp_soc:
   ]
   files: [
     ../axi/axi/src/axi_pkg.sv,
-    rtl/pulp_soc/soc_node.sv,
+    ../../rtl/includes/control_pulp_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
