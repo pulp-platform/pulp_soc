@@ -421,6 +421,19 @@ module pulp_soc import dm::*; #(
    `AXI_TYPEDEF_AR_CHAN_T(c2s_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_R_CHAN_T(c2s_r_chan_t,logic[AXI_DATA_IN_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
 
+    //Make sure the cluster -> soc cdc signals have the correct width
+    if ($bits(c2s_aw_chan_t) != C2S_AW_WIDTH)
+        $error("C2S_AW_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_aw_chan_t));
+    if ($bits(c2s_w_chan_t) != C2S_W_WIDTH)
+        $error("C2S_W_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_w_chan_t));
+    if ($bits(c2s_b_chan_t) != C2S_B_WIDTH)
+        $error("C2S_B_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_b_chan_t));
+    if ($bits(c2s_ar_chan_t) != C2S_AR_WIDTH)
+        $error("C2S_AR_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_ar_chan_t));
+    if ($bits(c2s_r_chan_t) != C2S_R_WIDTH)
+        $error("C2S_R_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_r_chan_t));
+
+
   `AXI_TYPEDEF_REQ_T(c2s_req_t,c2s_aw_chan_t,c2s_w_chan_t,c2s_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(c2s_resp_t,c2s_b_chan_t,c2s_r_chan_t)
 
@@ -468,6 +481,18 @@ module pulp_soc import dm::*; #(
    `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+
+    //Make sure the soc -> cluster cdc signals have the correct width
+    if ($bits(s2c_aw_chan_t) != S2C_AW_WIDTH)
+        $error("S2C_AW_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_aw_chan_t));
+    if ($bits(s2c_w_chan_t) != S2C_W_WIDTH)
+        $error("S2C_W_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_w_chan_t));
+    if ($bits(s2c_b_chan_t) != S2C_B_WIDTH)
+        $error("S2C_B_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_b_chan_t));
+    if ($bits(s2c_ar_chan_t) != S2C_AR_WIDTH)
+        $error("S2C_AR_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_ar_chan_t));
+    if ($bits(s2c_r_chan_t) != S2C_R_WIDTH)
+        $error("S2C_R_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_r_chan_t));
 
   `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
