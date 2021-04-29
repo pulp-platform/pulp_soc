@@ -591,8 +591,10 @@ module pulp_soc import dm::*; #(
         .N_I2C              ( N_I2C                                 ),
         .N_I2C_SLV          ( N_I2C_SLV                             ),
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
-        .AXI_DATA_WIDTH     ( AXI_DATA_OUT_WIDTH                    ),
-        .AXI_32_ID_WIDTH    ( AXI_ID_OUT_WIDTH                      ),
+        .AXI_DATA_OUT_WIDTH ( AXI_DATA_OUT_WIDTH                    ),
+        .AXI_DATA_IN_WIDTH  ( AXI_DATA_IN_WIDTH                     ),
+        .AXI_64_ID_IN_WIDTH ( AXI_ID_IN_WIDTH                       ),
+        .AXI_32_ID_OUT_WIDTH( AXI_ID_OUT_WIDTH                      ),
         .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH                        )
 
     ) soc_peripherals_i (
