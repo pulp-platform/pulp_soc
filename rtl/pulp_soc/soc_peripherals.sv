@@ -137,8 +137,8 @@ module soc_peripherals #(
     output logic [3:0]                        spi_sdo_slv_o,
     input logic [3:0]                         spi_sdi_slv_i,
 
-    //INTER-SOCKET MUX SIGNAL
-    output logic                              sel_intr_sckt_o,
+    //INTER-SOCKET MUX SIGNALS
+    output logic                              sel_spi_dir_o,
 
     //SDIO
     output logic                              sdclk_o,
@@ -189,7 +189,7 @@ module soc_peripherals #(
 
     logic [31:0] s_gpio_sync;
     logic       s_sel_hyper_axi;
-    logic       s_sel_intr_sckt;
+    logic       s_sel_spi_dir;
 
     logic       s_gpio_event      ;
     logic [1:0] s_spim_event      ;
@@ -280,7 +280,7 @@ module soc_peripherals #(
     end
     endgenerate
 
-    assign sel_intr_sckt_o = s_sel_intr_sckt;
+    assign sel_spi_dir_o = s_sel_spi_dir;
 
     pulp_sync_wedge i_ref_clk_sync (
         .clk_i    ( clk_i            ),
@@ -514,7 +514,7 @@ module soc_peripherals #(
         .pad_cfg             ( pad_cfg_o              ),
         .cluster_pow_o       ( cluster_pow_o          ),
         .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
-        .sel_intr_sckt_o     ( s_sel_intr_sckt        ),
+        .sel_spi_dir_o       ( s_sel_spi_dir          ),
 
         .cluster_byp_o            ( cluster_byp_o          ),
         .cluster_boot_addr_o      ( cluster_boot_addr_o    ),

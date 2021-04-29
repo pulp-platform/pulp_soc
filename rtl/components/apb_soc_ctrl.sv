@@ -42,7 +42,9 @@
 `define REG_PADCFG14    7'b0010110 //BASEADDR+0x58 sets config for pin 56(bits [7:0]) to pin 59(bits [31:24])
 `define REG_PADCFG15    7'b0010111 //BASEADDR+0x5C sets config for pin 60(bits [7:0]) to pin 63(bits [31:24])
 
-`define REG_INTRSCKT_SEL  7'b0011000 //BASEADDR+0x60 mux selection bit for inter-socket peripherals
+// Regster to configure the direction of SPI and I2C peripherals: the first bit as select signal for output multiplexers ('0' for master, '1' for slave)
+`define REG_SPI_DIRECTION  7'b0011000 //BASEADDR+0x60 mux selection bit for inter-socket SPI
+`define REG_I2C_DIRECTION  7'b0011001 //BASEADDR+0x64 mux selection bit for inter-socket I2C
 
 `define REG_JTAGREG     7'b0011101 //BASEADDR+0x74 JTAG REG
 
@@ -94,7 +96,7 @@ module apb_soc_ctrl #(
 
     output logic                      fc_fetchen_o,
     output logic                      sel_hyper_axi_o,
-    output logic                      sel_intr_sckt_o,
+    output logic                      sel_spi_dir_o,
     output logic                      cluster_pow_o, // power cluster
     output logic                      cluster_byp_o, // bypass cluster
     output logic               [63:0] cluster_boot_addr_o,
@@ -130,10 +132,10 @@ module apb_soc_ctrl #(
    logic            r_cluster_irq;
 
    logic            r_sel_hyper_axi;
-   logic            r_sel_intr_sckt;
+   logic            r_sel_spi_dir;
    logic      [1:0] r_bootsel;
 
-   logic s_apb_write;
+   logic            s_apb_write;
 
    // sanity check on NBIT_PADCFG
    if (NBIT_PADCFG > 8 || NBIT_PADCFG < 3)
@@ -148,7 +150,7 @@ module apb_soc_ctrl #(
    assign sel_hyper_axi_o = r_sel_hyper_axi;
 
    // Inter-socket select signal assign
-   assign sel_intr_sckt_o = r_sel_intr_sckt;
+   assign sel_spi_dir_o = r_sel_spi_dir;
 
    assign s_apb_write = PSEL && PENABLE && PWRITE;
 
@@ -187,7 +189,7 @@ module apb_soc_ctrl #(
         //pad_cfg                <= '{default: 6'b111111};
         pad_cfg                <= '1;
         r_sel_hyper_axi        <= 1'b0;
-        r_sel_intr_sckt        <= 1'b1; // default value of select signal for inter-socket peripheral: slave
+        r_sel_spi_dir        <= 1'b1; // default value of select signal for inter-socket peripheral: slave
         r_cluster_fetch_enable <= 1'b0;
         r_cluster_boot         <= '0;
         r_cluster_rstn         <= 1'b1;
@@ -350,9 +352,9 @@ module apb_soc_ctrl #(
                   pad_cfg[62]        <= PWDATA[16 +: NBIT_PADCFG-1]; //
                   pad_cfg[63]        <= PWDATA[24 +: NBIT_PADCFG-1]; //
                 end
-                `REG_INTRSCKT_SEL:
+                `REG_SPI_DIRECTION:
                 begin
-                   r_sel_intr_sckt <= PWDATA[0];
+                   r_sel_spi_dir <= PWDATA[0];
                 end
 
                 `REG_JTAGREG:
@@ -509,8 +511,8 @@ module apb_soc_ctrl #(
               r_cluster_byp };
           `REG_JTAGREG:
             PRDATA = {16'h0,r_jtag_regi_sync[0],r_jtag_rego};
-          `REG_INTRSCKT_SEL:
-            PRDATA = {31'b0, r_sel_intr_sckt};
+          `REG_SPI_DIRECTION:
+            PRDATA = {31'b0, r_sel_spi_dir};
           `REG_CTRL_PER:
             PRDATA = {31'b0, r_sel_hyper_axi};
           `REG_CLUSTER_IRQ:
