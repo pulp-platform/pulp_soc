@@ -27,12 +27,12 @@ module pulp_soc import dm::*; #(
     parameter AXI_STRB_WIDTH_IN       = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT      = AXI_DATA_OUT_WIDTH/8,
     parameter BUFFER_WIDTH            = 8,
-    parameter C2S_AW_WIDTH            = 80, 
+    parameter C2S_AW_WIDTH            = 80,
     parameter C2S_W_WIDTH             = 79,
     parameter C2S_B_WIDTH             = 15,
     parameter C2S_AR_WIDTH            = 74,
     parameter C2S_R_WIDTH             = 80,
-    parameter S2C_AW_WIDTH            = 78, 
+    parameter S2C_AW_WIDTH            = 78,
     parameter S2C_W_WIDTH             = 43,
     parameter S2C_B_WIDTH             = 13,
     parameter S2C_AR_WIDTH            = 72,
@@ -80,50 +80,50 @@ module pulp_soc import dm::*; #(
     output logic                          cluster_irq_o,
     // AXI4 SLAVE
     input logic [LOG_DEPTH:0]                        async_data_slave_aw_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][C2S_AW_WIDTH-1:0] async_data_slave_aw_data_i, 
+    input logic [2**LOG_DEPTH-1:0][C2S_AW_WIDTH-1:0] async_data_slave_aw_data_i,
     output logic  [LOG_DEPTH:0]                      async_data_slave_aw_rptr_o,
-                                             
-    // READ ADDRESS CHANNEL                  
+
+    // READ ADDRESS CHANNEL
     input logic [LOG_DEPTH:0]                        async_data_slave_ar_wptr_i,
     input logic [2**LOG_DEPTH-1:0][C2S_AR_WIDTH-1:0] async_data_slave_ar_data_i,
     output logic [LOG_DEPTH:0]                       async_data_slave_ar_rptr_o,
-                                             
-    // WRITE DATA CHANNEL                    
+
+    // WRITE DATA CHANNEL
     input logic [LOG_DEPTH:0]                        async_data_slave_w_wptr_i,
     input logic [2**LOG_DEPTH-1:0][C2S_W_WIDTH-1:0]  async_data_slave_w_data_i,
     output logic [LOG_DEPTH:0]                       async_data_slave_w_rptr_o,
-                                                     
-    // READ DATA CHANNEL                             
+
+    // READ DATA CHANNEL
     output logic [LOG_DEPTH:0]                        async_data_slave_r_wptr_o,
     output logic [2**LOG_DEPTH-1:0][C2S_R_WIDTH-1:0]  async_data_slave_r_data_o,
     input logic [LOG_DEPTH:0]                         async_data_slave_r_rptr_i,
-                                                     
-    // WRITE RESPONSE CHANNEL                        
+
+    // WRITE RESPONSE CHANNEL
     output logic [LOG_DEPTH:0]                        async_data_slave_b_wptr_o,
     output logic [2**LOG_DEPTH-1:0][C2S_B_WIDTH-1:0]  async_data_slave_b_data_o,
     input logic [LOG_DEPTH:0]                         async_data_slave_b_rptr_i,
 
     // AXI4 MASTER
     output logic [LOG_DEPTH:0]                        async_data_master_aw_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][S2C_AW_WIDTH-1:0] async_data_master_aw_data_o, 
+    output logic [2**LOG_DEPTH-1:0][S2C_AW_WIDTH-1:0] async_data_master_aw_data_o,
     input logic  [LOG_DEPTH:0]                        async_data_master_aw_rptr_i,
-                                             
-    // READ ADDRESS CHANNEL                  
+
+    // READ ADDRESS CHANNEL
     output logic [LOG_DEPTH:0]                        async_data_master_ar_wptr_o,
     output logic [2**LOG_DEPTH-1:0][S2C_AR_WIDTH-1:0] async_data_master_ar_data_o,
     input logic [LOG_DEPTH:0]                         async_data_master_ar_rptr_i,
-                                             
-    // WRITE DATA CHANNEL                    
+
+    // WRITE DATA CHANNEL
     output logic [LOG_DEPTH:0]                        async_data_master_w_wptr_o,
     output logic [2**LOG_DEPTH-1:0][S2C_W_WIDTH-1:0]  async_data_master_w_data_o,
     input logic [LOG_DEPTH:0]                         async_data_master_w_rptr_i,
-                                                     
-    // READ DATA CHANNEL                             
+
+    // READ DATA CHANNEL
     input logic [LOG_DEPTH:0]                        async_data_master_r_wptr_i,
     input logic [2**LOG_DEPTH-1:0][S2C_R_WIDTH-1:0]  async_data_master_r_data_i,
     output logic [LOG_DEPTH:0]                       async_data_master_r_rptr_o,
-                                                     
-    // WRITE RESPONSE CHANNEL                        
+
+    // WRITE RESPONSE CHANNEL
     input logic [LOG_DEPTH:0]                        async_data_master_b_wptr_i,
     input logic [2**LOG_DEPTH-1:0][S2C_B_WIDTH-1:0]  async_data_master_b_data_i,
     output logic [LOG_DEPTH:0]                       async_data_master_b_rptr_o,
@@ -421,27 +421,27 @@ module pulp_soc import dm::*; #(
     assign s_cluster_isolate_dc = ISOLATE_CLUSTER_CDC;
 //cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
-   
+
    `AXI_TYPEDEF_AW_CHAN_T(c2s_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_W_CHAN_T(c2s_w_chan_t,logic[AXI_DATA_IN_WIDTH-1:0],logic[AXI_DATA_IN_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_B_CHAN_T(c2s_b_chan_t,logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_AR_CHAN_T(c2s_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_R_CHAN_T(c2s_r_chan_t,logic[AXI_DATA_IN_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   
+
   `AXI_TYPEDEF_REQ_T(c2s_req_t,c2s_aw_chan_t,c2s_w_chan_t,c2s_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(c2s_resp_t,c2s_b_chan_t,c2s_r_chan_t)
 
    c2s_req_t   dst_req ;
-   c2s_resp_t  dst_resp;   
-   
+   c2s_resp_t  dst_resp;
+
   `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
   `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
- 
-  // CLUSTER TO SOC AXI   
+
+  // CLUSTER TO SOC AXI
   axi_cdc_dst #(
      .aw_chan_t (c2s_aw_chan_t),
      .w_chan_t  (c2s_w_chan_t ),
-     .b_chan_t  (c2s_b_chan_t ),     
+     .b_chan_t  (c2s_b_chan_t ),
      .r_chan_t  (c2s_r_chan_t ),
      .ar_chan_t (c2s_ar_chan_t),
      .axi_req_t (c2s_req_t    ),
@@ -453,7 +453,7 @@ module pulp_soc import dm::*; #(
      .dst_req_o                        ( dst_req                    ),
      .dst_resp_i                       ( dst_resp                   ),
      .isolate_i                        ( s_cluster_isolate_dc       ),
-     .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),   
+     .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),
      .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
      .async_data_slave_aw_data_i       ( async_data_slave_aw_data_i ),
      .async_data_slave_w_wptr_i        ( async_data_slave_w_wptr_i  ),
@@ -467,31 +467,31 @@ module pulp_soc import dm::*; #(
      .async_data_slave_b_data_o        ( async_data_slave_b_data_o  ),
      .async_data_slave_r_wptr_o        ( async_data_slave_r_wptr_o  ),
      .async_data_slave_r_rptr_i        ( async_data_slave_r_rptr_i  ),
-     .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )  
+     .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )
     );
 
-   
+
    `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_DATA_OUT_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   
+
   `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
   `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
 
    s2c_req_t   src_req ;
-   s2c_resp_t  src_resp;   
-   
+   s2c_resp_t  src_resp;
+
   `AXI_ASSIGN_TO_REQ(src_req,s_data_out_bus)
   `AXI_ASSIGN_FROM_RESP(s_data_out_bus,src_resp)
 
-   
+
     // SOC TO CLUSTER
     axi_cdc_src #(
      .aw_chan_t (s2c_aw_chan_t),
      .w_chan_t  (s2c_w_chan_t),
-     .b_chan_t  (s2c_b_chan_t),     
+     .b_chan_t  (s2c_b_chan_t),
      .r_chan_t  (s2c_r_chan_t),
      .ar_chan_t (s2c_ar_chan_t),
      .axi_req_t (s2c_req_t              ),
@@ -501,9 +501,9 @@ module pulp_soc import dm::*; #(
      .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
      .src_clk_i                        ( s_soc_clk                   ),
      .src_req_i                        ( src_req                     ),
-     .src_resp_o                       ( src_resp                    ),   
+     .src_resp_o                       ( src_resp                    ),
      .isolate_i                        ( s_cluster_isolate_dc        ),
-     .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),   
+     .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),
      .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
      .async_data_master_aw_data_o      ( async_data_master_aw_data_o ),
      .async_data_master_w_wptr_o       ( async_data_master_w_wptr_o  ),
@@ -517,9 +517,9 @@ module pulp_soc import dm::*; #(
      .async_data_master_b_data_i       ( async_data_master_b_data_i  ),
      .async_data_master_r_wptr_i       ( async_data_master_r_wptr_i  ),
      .async_data_master_r_rptr_o       ( async_data_master_r_rptr_o  ),
-     .async_data_master_r_data_i       ( async_data_master_r_data_i  )  
+     .async_data_master_r_data_i       ( async_data_master_r_data_i  )
     );
-   
+
     //********************************************************
     //********************* SOC L2 RAM ***********************
     //********************************************************
