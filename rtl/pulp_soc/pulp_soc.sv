@@ -51,10 +51,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_UART     = 1,
     parameter int unsigned N_SPI      = 1,
     parameter int unsigned N_I2C      = 2,
-    parameter USE_ZFINX               = 1,
-    parameter bit ISOLATE_CLUSTER_CDC = 0 // If 0, ties the cluster <-> soc AXI CDC isolation signal to 0 statically
-                                          // disabling the connection. For PULPissimo (MCU without a cluster) this should be set
-                                          // to 0.
+    parameter USE_ZFINX               = 1
 ) (
     input logic                           ref_clk_i,
     input logic                           slow_clk_i,
@@ -407,7 +404,6 @@ module pulp_soc import dm::*; #(
 
 
 
-    logic s_cluster_isolate_dc;
     logic s_rstn_cluster_sync_soc;
 
 
@@ -417,9 +413,6 @@ module pulp_soc import dm::*; #(
 
     assign cluster_rtc_o     = ref_clk_i;
     assign cluster_test_en_o = dft_test_mode_i;
-    // isolate dc if the cluster is down
-    assign s_cluster_isolate_dc = ISOLATE_CLUSTER_CDC;
-//cluster_byp_o;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
    `AXI_TYPEDEF_AW_CHAN_T(c2s_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_IN_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
