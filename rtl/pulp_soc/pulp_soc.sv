@@ -26,7 +26,6 @@ module pulp_soc import dm::*; #(
     parameter AXI_USER_WIDTH          = 6,
     parameter AXI_STRB_WIDTH_IN       = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT      = AXI_DATA_OUT_WIDTH/8,
-    parameter BUFFER_WIDTH            = 8,
     parameter C2S_AW_WIDTH            = 80,
     parameter C2S_W_WIDTH             = 79,
     parameter C2S_B_WIDTH             = 15,
@@ -37,7 +36,7 @@ module pulp_soc import dm::*; #(
     parameter S2C_B_WIDTH             = 13,
     parameter S2C_AR_WIDTH            = 72,
     parameter S2C_R_WIDTH             = 46,
-    parameter LOG_DEPTH               = 3,
+    parameter CDC_FIFOS_LOG_DEPTH     = 3,
     parameter EVNT_WIDTH              = 8,
     parameter NB_CORES                = 8,
     parameter NB_HWPE_PORTS           = 4,
@@ -76,58 +75,58 @@ module pulp_soc import dm::*; #(
     output logic                          cluster_rstn_o,
     output logic                          cluster_irq_o,
     // AXI4 SLAVE
-    input logic [LOG_DEPTH:0]                        async_data_slave_aw_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][C2S_AW_WIDTH-1:0] async_data_slave_aw_data_i,
-    output logic  [LOG_DEPTH:0]                      async_data_slave_aw_rptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_aw_wptr_i,
+    input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_AW_WIDTH-1:0] async_data_slave_aw_data_i,
+    output logic  [CDC_FIFOS_LOG_DEPTH:0]                      async_data_slave_aw_rptr_o,
 
     // READ ADDRESS CHANNEL
-    input logic [LOG_DEPTH:0]                        async_data_slave_ar_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][C2S_AR_WIDTH-1:0] async_data_slave_ar_data_i,
-    output logic [LOG_DEPTH:0]                       async_data_slave_ar_rptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_ar_wptr_i,
+    input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_AR_WIDTH-1:0] async_data_slave_ar_data_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_data_slave_ar_rptr_o,
 
     // WRITE DATA CHANNEL
-    input logic [LOG_DEPTH:0]                        async_data_slave_w_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][C2S_W_WIDTH-1:0]  async_data_slave_w_data_i,
-    output logic [LOG_DEPTH:0]                       async_data_slave_w_rptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_w_wptr_i,
+    input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_W_WIDTH-1:0]  async_data_slave_w_data_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_data_slave_w_rptr_o,
 
     // READ DATA CHANNEL
-    output logic [LOG_DEPTH:0]                        async_data_slave_r_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][C2S_R_WIDTH-1:0]  async_data_slave_r_data_o,
-    input logic [LOG_DEPTH:0]                         async_data_slave_r_rptr_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_r_wptr_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_R_WIDTH-1:0]  async_data_slave_r_data_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                         async_data_slave_r_rptr_i,
 
     // WRITE RESPONSE CHANNEL
-    output logic [LOG_DEPTH:0]                        async_data_slave_b_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][C2S_B_WIDTH-1:0]  async_data_slave_b_data_o,
-    input logic [LOG_DEPTH:0]                         async_data_slave_b_rptr_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_b_wptr_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_B_WIDTH-1:0]  async_data_slave_b_data_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                         async_data_slave_b_rptr_i,
 
     // AXI4 MASTER
-    output logic [LOG_DEPTH:0]                        async_data_master_aw_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][S2C_AW_WIDTH-1:0] async_data_master_aw_data_o,
-    input logic  [LOG_DEPTH:0]                        async_data_master_aw_rptr_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_aw_wptr_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_AW_WIDTH-1:0] async_data_master_aw_data_o,
+    input logic  [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_aw_rptr_i,
 
     // READ ADDRESS CHANNEL
-    output logic [LOG_DEPTH:0]                        async_data_master_ar_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][S2C_AR_WIDTH-1:0] async_data_master_ar_data_o,
-    input logic [LOG_DEPTH:0]                         async_data_master_ar_rptr_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_ar_wptr_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_AR_WIDTH-1:0] async_data_master_ar_data_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                         async_data_master_ar_rptr_i,
 
     // WRITE DATA CHANNEL
-    output logic [LOG_DEPTH:0]                        async_data_master_w_wptr_o,
-    output logic [2**LOG_DEPTH-1:0][S2C_W_WIDTH-1:0]  async_data_master_w_data_o,
-    input logic [LOG_DEPTH:0]                         async_data_master_w_rptr_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_w_wptr_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_W_WIDTH-1:0]  async_data_master_w_data_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                         async_data_master_w_rptr_i,
 
     // READ DATA CHANNEL
-    input logic [LOG_DEPTH:0]                        async_data_master_r_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][S2C_R_WIDTH-1:0]  async_data_master_r_data_i,
-    output logic [LOG_DEPTH:0]                       async_data_master_r_rptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_r_wptr_i,
+    input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_R_WIDTH-1:0]  async_data_master_r_data_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_data_master_r_rptr_o,
 
     // WRITE RESPONSE CHANNEL
-    input logic [LOG_DEPTH:0]                        async_data_master_b_wptr_i,
-    input logic [2**LOG_DEPTH-1:0][S2C_B_WIDTH-1:0]  async_data_master_b_data_i,
-    output logic [LOG_DEPTH:0]                       async_data_master_b_rptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_master_b_wptr_i,
+    input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_B_WIDTH-1:0]  async_data_master_b_data_i,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_data_master_b_rptr_o,
 
-    output logic [BUFFER_WIDTH-1:0]       cluster_events_wt_o,
-    input logic [BUFFER_WIDTH-1:0]        cluster_events_rp_i,
-    output logic [EVNT_WIDTH-1:0]         cluster_events_da_o,
+    output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_cluster_events_wptr_o,
+    input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_cluster_events_rptr_i,
+    output logic [EVNT_WIDTH-1:0][2**CDC_FIFOS_LOG_DEPTH-1:0]  async_cluster_events_data_o,
     output logic                          cluster_clk_o,
     input logic                           cluster_busy_i,
     output logic                          dma_pe_evt_ack_o,
@@ -513,7 +512,7 @@ module pulp_soc import dm::*; #(
      .ar_chan_t (s2c_ar_chan_t),
      .axi_req_t (s2c_req_t              ),
      .axi_resp_t(s2c_resp_t             ),
-    .LogDepth        ( LOG_DEPTH               )
+    .LogDepth        ( CDC_FIFOS_LOG_DEPTH               )
     ) axi_master_cdc_i (
      .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
      .src_clk_i                        ( s_soc_clk                   ),
@@ -715,22 +714,20 @@ module pulp_soc import dm::*; #(
 
     );
 
-
-
-    dc_token_ring_fifo_din #(
-        .DATA_WIDTH   ( EVNT_WIDTH   ),
-        .BUFFER_DEPTH ( BUFFER_WIDTH )
-    ) u_event_dc (
-        .clk          ( s_soc_clk               ),
-        .rstn         ( s_rstn_cluster_sync_soc ),
-        .data         ( s_cl_event_data         ),
-        .valid        ( s_cl_event_valid        ),
-        .ready        ( s_cl_event_ready        ),
-        .write_token  ( cluster_events_wt_o     ),
-        .read_pointer ( cluster_events_rp_i     ),
-        .data_async   ( cluster_events_da_o     )
+    cdc_fifo_gray_src #(
+      .T(logic[EVNT_WIDTH-1:0]),
+      .LOG_DEPTH(CDC_FIFOS_LOG_DEPTH),
+      .SYNC_STAGES(2)
+    ) i_event_cdc_src (
+      .src_rst_ni               ( s_rstn_cluster_sync_soc     ),
+      .src_clk_i                ( s_soc_clk                   ),
+      .src_data_i               ( s_cl_event_data             ),
+      .src_valid_i              ( s_cl_event_valid            ),
+      .src_ready_o              ( s_cl_event_ready            ),
+      (* async *) .async_data_o ( async_cluster_events_data_o ),
+      (* async *) .async_wptr_o ( async_cluster_events_wptr_o ),
+      (* async *) .async_rptr_i ( async_cluster_events_rptr_i )
     );
-
 
     edge_propagator_rx ep_dma_pe_evt_i (
         .clk_i   ( s_soc_clk               ),
