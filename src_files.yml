@@ -97,9 +97,6 @@ dummy_top:
     incdirs: [
     ../dummy_vip/includes,
   ]
-  targets: [
-    rtl,
-  ]
   files: [
     ../dummy_vip/rtl/dummy_top.sv,
     ../dummy_vip/rtl/dummy_submodule.sv,
