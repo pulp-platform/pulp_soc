@@ -120,8 +120,4 @@ riscv-dbg:
 register_interface:
   commit: b1bc9c22e0c2a5801107070c022904498dbae34b
   domain: [soc] 
-dummy_vip:
- commit: master
- server: https://github.com
- group: riscvprocessor
- domain: [soc]
+
