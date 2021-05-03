@@ -48,9 +48,6 @@ fc:
     rtl/fc/fc_subsystem.sv,
     rtl/fc/fc_hwpe.sv,
   ]
-#  vlog_opts : [
-#    -L ibex_lib,
-#  ]
 
 components:
   incdirs: [
@@ -58,6 +55,7 @@ components:
   ]
   files: [
     rtl/components/apb_clkdiv.sv,
+    rtl/components/apb_timer_unit.sv,
     rtl/components/apb_soc_ctrl.sv,
     rtl/components/memory_models.sv,
     rtl/components/pulp_interfaces.sv,
@@ -65,7 +63,6 @@ components:
     rtl/components/scm_2048x32.sv,
     rtl/components/scm_512x32.sv,
     rtl/components/tcdm_arbiter_2x1.sv,
-    rtl/components/obi_pulp_adapter.sv,
   ]
 
 components_rtl:
