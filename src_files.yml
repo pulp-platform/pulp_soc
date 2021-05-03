@@ -48,9 +48,9 @@ fc:
     rtl/fc/fc_subsystem.sv,
     rtl/fc/fc_hwpe.sv,
   ]
-  vlog_opts : [
-    -L ibex_lib,
-  ]
+#  vlog_opts : [
+#    -L ibex_lib,
+#  ]
 
 components:
   incdirs: [
