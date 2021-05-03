@@ -91,6 +91,23 @@ components_behav:
   files: [
     rtl/components/freq_meter.sv,
   ]
+   vlog_opts : [
+    -L common_cells_lib,
+  ]
+  flags: [
+    skip_synthesis,
+  ]
+dummy_top:
+    incdirs: [
+    ../dummy_vip/includes,
+  ]
+  targets: [
+    rtl,
+  ]
+  files: [
+    ../dummy_vip/rtl/dummy_top.sv,
+    ../dummy_vip/rtl/dummy_submodule.sv,
+  ]
   flags: [
     skip_synthesis,
   ]
