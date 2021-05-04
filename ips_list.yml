@@ -18,9 +18,7 @@
 #  work, make sure to checkout a branch.
 #
 common_cells:
-  commit: v1.13.1
-  server: https://github.com
-  group:  pulp-platform
+  commit: tags/pulpissimo-v1.0
 L2_tcdm_hybrid_interco:
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
