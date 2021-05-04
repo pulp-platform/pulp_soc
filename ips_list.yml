@@ -82,3 +82,7 @@ hwpe-mac-engine:
   commit: f1d0b72
 riscv-dbg:
   commit: tags/pulpissimo-v1.0
+dummy_vip:
+  commit: master
+  server: https://github.com
+  group : riscvprocessor
