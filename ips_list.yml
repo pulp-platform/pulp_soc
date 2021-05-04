@@ -19,6 +19,8 @@
 #
 common_cells:
   commit: tags/pulpissimo-v1.0
+  server: https://github.com
+  group : riscvprocessor
 L2_tcdm_hybrid_interco:
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
@@ -45,8 +47,8 @@ axi/axi_mem_if:
   commit: 313d075cac65e960fddc8b93848aceda18eebeac
 timer_unit:
   commit: tags/pulpissimo-v1.0
-common_cells:
-  commit: fpga-genesys
+#common_cells:
+#  commit: fpga-genesys
 fpnew:
   commit: fpga-genesys
 jtag_pulp:
