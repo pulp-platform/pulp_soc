@@ -17,10 +17,6 @@
 #  state of DETACHED HEAD. Before committing any additional
 #  work, make sure to checkout a branch.
 #
-common_cells:
-  commit: tags/pulpissimo-v1.0
-  server: https://github.com
-  group : riscvprocessor
 L2_tcdm_hybrid_interco:
   commit: tags/pulpissimo-v1.0
 adv_dbg_if:
