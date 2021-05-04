@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Hyperbus. pulp_soc now supports booting from HyperFlash memory
 ### Changed
 - Increase size of boot_mode signal to 2-bit to accomodate the new Hyperbus bootmode
+- Bumped riscv_dbg IP Version to 0.4.1
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
 ### Fixed
