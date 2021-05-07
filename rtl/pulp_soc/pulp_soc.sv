@@ -486,21 +486,21 @@ module pulp_soc import dm::*; #(
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_axi_spi (); // from spi_slv
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) axi_i2c_slv_bmc (); // from i2c_slv_1
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) axi_i2c_slv_1 (); // from i2c_slv_2
@@ -508,7 +508,7 @@ module pulp_soc import dm::*; #(
     // Wrap into single interface
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) ext_masters_to_soc [N_EXT_MASTERS_TO_SOC-1:0] ();
