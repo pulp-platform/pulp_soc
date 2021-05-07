@@ -110,7 +110,6 @@ module soc_interconnect
                                   .master_port(master_ports[i]),
                                   .slave_ports(demux_slaves)
                                   );
->>>>>>> a7e27279... ips: Interleave existing rtl source files from 'pulp_soc' v2.1.0
     end
 
     ///////////////////////////////////////
