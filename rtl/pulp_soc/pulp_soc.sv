@@ -858,7 +858,8 @@ module pulp_soc import dm::*; #(
     dm_top #(
        .NrHarts           ( NrHarts                   ),
        .BusWidth          ( 32                        ),
-       .SelectableHarts   ( SELECTABLE_HARTS          )
+       .SelectableHarts   ( SELECTABLE_HARTS          ),
+       .ReadByteEnable    ( 0                         )
     ) i_dm_top (
 
        .clk_i             ( s_soc_clk                 ),
