@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Increase size of boot_mode signal to 2-bit to accomodate the new Hyperbus bootmode
 - Bumped riscv_dbg IP Version to 0.4.1
+- Switched to new AXI CDC IPs between SoC and Cluster
+- Switched to common cells CDC for cluster event exchange
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
+- Removed dependency to archived legacy axi_slice_dc
 ### Fixed
 
 ## [2.1.0] - 2021-02-02
