@@ -214,33 +214,8 @@ module soc_interconnect_wrap
     `AXI_ASSIGN(axi_slave_plug, axi_slaves[0])
     `AXI_ASSIGN(axi_to_axi_lite_bridge, axi_slaves[1])
 
-    ////////////////////////////////////////////////////////////////////////
-    // Convert external AXI Data width from 32-bit to 64-bit (CPULP->EXT) //
-    ////////////////////////////////////////////////////////////////////////
-
-    AXI_BUS #(.AXI_ADDR_WIDTH(32),
-              .AXI_DATA_WIDTH(64),
-              .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
-              .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_ext_mst_dw64();
-
-    // Convert AXI32 ext master to AXI64
-    axi_dw_converter_intf #(
-      .AXI_ID_WIDTH            ( pkg_soc_interconnect::AXI_ID_OUT_WIDTH ),
-      .AXI_ADDR_WIDTH          ( 32               ),
-      .AXI_SLV_PORT_DATA_WIDTH ( 32               ),
-      .AXI_MST_PORT_DATA_WIDTH ( 64               ),
-      .AXI_USER_WIDTH          ( AXI_USER_WIDTH   ),
-      .AXI_MAX_READS           ( 2                )
-    ) i_axi_dwc_32to64_to_ext (
-      .clk_i,
-      .rst_ni,
-      .slv(axi_slaves[2]),
-      .mst(axi_ext_mst_dw64)
-    );
-
     // Assign AXI upsizer output upstream
-    `AXI_ASSIGN(axi_ext_mst, axi_ext_mst_dw64)
+    `AXI_ASSIGN(axi_ext_mst, axi_slaves[2])
 
     ////////////////////////////////
     // Interconnect instantiation //
