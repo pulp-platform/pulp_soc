@@ -51,7 +51,7 @@ apb_interrupt_cntrl:
   commit: v0.1.1
   domain: [soc]
 axi/axi:
-  commit: v0.27.0
+  commit: v0.28.0
   domain: [cluster, soc]
 # axi/axi_node:
 #   commit: v1.1.4
@@ -121,7 +121,7 @@ hwpe-mac-engine:
   commit: v1.3.3
   domain: [cluster, soc]
 riscv-dbg:
-  commit: v0.2.0
+  commit: v0.4.1
   domain: [soc]
 register_interface:
   commit: v0.2.1
