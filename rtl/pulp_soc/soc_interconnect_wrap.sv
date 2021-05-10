@@ -250,6 +250,8 @@ module soc_interconnect_wrap
                            .NoRules(1),
                            .AddrWidth(32),
                            .DataWidth(32),
+                           .PipelineRequest(1'b0),
+                           .PipelineResponse(1'b0),
                            .rule_t(addr_map_rule_t)
                            ) i_axi_lite_to_apb (
                                                 .clk_i,

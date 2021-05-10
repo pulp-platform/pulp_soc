@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped riscv_dbg IP Version to 0.4.1
 - Switched to new AXI CDC IPs between SoC and Cluster
 - Switched to common cells CDC for cluster event exchange
+- Bumped axi IP Version to 0.29.1
+- Reduced latency of APB and AXI transactions
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
 - Removed dependency to archived legacy axi_slice_dc

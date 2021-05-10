@@ -22,7 +22,7 @@ dependencies:
   apb_gpio:               { git: "https://github.com/pulp-platform/apb_gpio.git", rev: "0e9f142f2f11278445c953ad011fce1c7ed85b66" }
   apb_node:               { git: "https://github.com/pulp-platform/apb_node.git", version: 0.1.1 }
   apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
-  axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.28.0 }
+  axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
   # axi_node:               { git: "https://github.com/pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
   axi_slice:              { git: "https://github.com/pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
   timer_unit:             { git: "https://github.com/pulp-platform/timer_unit.git", version: 1.0.2 }
