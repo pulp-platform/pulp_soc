@@ -88,7 +88,7 @@ udma/udma_uart:
   commit: v1.0.1
   domain: [soc]
 udma/udma_i2c:
-  commit: v1.0.0
+  commit: vega_v1.0.0
   domain: [soc]
 udma/udma_i2s:
   commit: v1.1.2
