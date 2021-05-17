@@ -69,7 +69,7 @@ jtag_pulp:
   commit: v0.1
   domain: [soc]
 riscv:
-  commit: pulpissimo-v3.4.0-rev2
+  commit: pulpissimo-v3.4.0
   domain: [cluster, soc]
 ibex:
   commit: pulpissimo-v6.1.1
@@ -121,5 +121,5 @@ riscv-dbg:
   commit: v0.4.1
   domain: [soc]
 register_interface:
-  commit: v0.2.1
+  commit: v0.2.2
   domain: [soc]
