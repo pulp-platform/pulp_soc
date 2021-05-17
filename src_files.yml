@@ -5,6 +5,7 @@ pulp_soc:
     ../axi/axi/include
   ]
   files: [
+    ../apb/apb/src/apb_intf.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
@@ -44,6 +45,7 @@ fc:
     .,
   ]
   files: [
+    ../apb/apb/src/apb_intf.sv,
     rtl/fc/fc_demux.sv,
     rtl/fc/fc_subsystem.sv,
     rtl/fc/fc_hwpe.sv,

@@ -53,9 +53,6 @@ apb_interrupt_cntrl:
 axi/axi:
   commit: v0.28.0
   domain: [cluster, soc]
-# axi/axi_node:
-#   commit: v1.1.4
-#   domain: [cluster, soc]
 axi/axi_slice:
   commit: v1.1.4
   domain: [cluster, soc]
@@ -63,12 +60,12 @@ timer_unit:
   commit: v1.0.2
   domain: [cluster, soc]
 fpnew:
-  commit: v0.6.5
+  commit: v0.6.6
   domain: [cluster, soc]
 jtag_pulp:
   commit: v0.1
   domain: [soc]
-cv32e40p:
+riscv:
   commit: pulpissimo-v3.4.0-rev2
   domain: [cluster, soc]
 ibex:
