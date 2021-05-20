@@ -59,8 +59,13 @@ module fc_subsystem #(
     logic [4:0]  core_irq_ack_id;
     logic        core_irq_ack   ;
     logic [14:0] core_irq_fast  ;
+    logic [31:0] core_irq_x     ;
 
     logic [3:0]  irq_ack_id;
+
+    // Signals for OBI-PULP conversion
+    logic        obi_instr_req;
+    logic        pulp_instr_req;
 
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
@@ -79,7 +84,7 @@ module fc_subsystem #(
 
     //Core Data Bus
     logic [31:0] core_data_addr, core_data_rdata, core_data_wdata;
-    logic        core_data_req, core_data_gnt, core_data_rvalid, core_data_err;
+    logic        core_data_req, core_data_gnt, core_data_rvalid;
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
@@ -126,82 +131,84 @@ module fc_subsystem #(
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
-    riscv_core #(
-        .INSTR_RDATA_WIDTH   ( 32                  ),
-        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .PULP_SECURE         ( 1                   ),
-        .N_PMP_ENTRIES       ( 16                  ),
-        .USE_PMP             ( 1                   ),
-        .PULP_CLUSTER        ( 0                   ),
-        .FPU                 ( USE_FPU             ),
-        .Zfinx               ( ZFINX               ), // 1: shared gp and fp register
-        .FP_DIVSQRT          ( USE_FPU             ),
-        .SHARED_FP           ( 0                   ),
-        .SHARED_DSP_MULT     ( 0                   ),
-        .SHARED_INT_MULT     ( 0                   ),
-        .SHARED_INT_DIV      ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   ),
-        .WAPUTYPE            ( 0                   ),
-        .APU_NARGS_CPU       ( 3                   ),
-        .APU_WOP_CPU         ( 6                   ),
-        .APU_NDSFLAGS_CPU    ( 15                  ),
-        .APU_NUSFLAGS_CPU    ( 5                   ),
-        .DM_HaltAddress      ( 32'h1A110800        )
+    cv32e40p_core #(
+        .PULP_XPULP       (1),
+        .PULP_CLUSTER     (0),
+        .FPU              (1),
+        .PULP_ZFINX       (0),
+        .NUM_MHPMCOUNTERS (1)
     ) lFC_CORE (
-        .clk_i                 ( clk_i             ),
-        .rst_ni                ( core_rst          ),
-        .clock_en_i            ( core_clock_en     ),
-        .test_en_i             ( test_en_i         ),
-        .boot_addr_i           ( boot_addr         ),
-        .core_id_i             ( CORE_ID           ),
-        .cluster_id_i          ( CLUSTER_ID        ),
 
-        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
-        .instr_gnt_i           ( core_instr_gnt    ),
-        .instr_rvalid_i        ( core_instr_rvalid ),
+        // Clock and Reset
+        .clk_i                (clk_i),
+        .rst_ni               (rst_ni),
 
-        // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
-        .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
-        .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
-        .data_rvalid_i         ( core_data_rvalid  ),
+        // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
+        .pulp_clock_en_i      (clock_en_i ),
+        .scan_cg_en_i         (test_mode_i),
+        .boot_addr_i          (boot_addr),
+        .mtvec_addr_i         (),
+        .dm_halt_addr_i       (32'h1A110800),
+        .hart_id_i            (hart_id),
+        .dm_exception_addr_i  (),
+
+        // Instruction memory interface
+        .instr_req_o           (obi_instr_req),
+        .instr_gnt_i           (core_instr_gnt),
+        .instr_rvalid_i        (core_instr_rvalid),
+        .instr_addr_o          (core_instr_addr),
+        .instr_rdata_i         (core_instr_rdata),
+
+        // Data memory interface
+        .data_req_o            (core_data_req),
+        .data_gnt_i            (core_data_gnt),
+        .data_rvalid_i         (core_data_rvalid),
+        .data_we_o             (core_data_we),
+        .data_be_o             (core_data_be),
+        .data_addr_o           (core_data_addr),
+        .data_wdata_o          (core_data_wdata),
+        .data_rdata_i          (core_data_rdata),
 
         // apu-interconnect
         // handshake signals
-        .apu_master_req_o      (                   ),
-        .apu_master_ready_o    (                   ),
-        .apu_master_gnt_i      ( 1'b1              ),
+        .apu_req_o             (),
+        .apu_gnt_i             (1'b1),
         // request channel
-        .apu_master_operands_o (                   ),
-        .apu_master_op_o       (                   ),
-        .apu_master_type_o     (                   ),
-        .apu_master_flags_o    (                   ),
+        .apu_operands_o        (),
+        .apu_op_o              (),
+        .apu_flags_o           (),
         // response channel
-        .apu_master_valid_i    ( '0                ),
-        .apu_master_result_i   ( '0                ),
-        .apu_master_flags_i    ( '0                ),
+        .apu_rvalid_i          ('0),
+        .apu_result_i          ('0),
+        .apu_flags_i           ('0),
 
-        .irq_i                 ( core_irq_req      ),
-        .irq_id_i              ( core_irq_id       ),
-        .irq_ack_o             ( core_irq_ack      ),
-        .irq_id_o              ( core_irq_ack_id   ),
-        .irq_sec_i             ( 1'b0              ),
-        .sec_lvl_o             (                   ),
+        // Interrupt inputs
+        .irq_i                 (core_irq_x),  // CLINT interrupts + CLINT extension interrupts
+        .irq_ack_o             (core_irq_ack),
+        .irq_id_o              (core_irq_ack_id),
 
-        .debug_req_i           ( debug_req_i       ),
+        // Debug Interface
+        .debug_req_i           (debug_req_i),
+        .debug_havereset_o     (),
+        .debug_running_o       (),
+        .debug_halted_o        (),
 
-        .fetch_enable_i        ( fetch_en_int      ),
-        .core_busy_o           (                   ),
-        .ext_perf_counters_i   ( perf_counters_int ),
-        .fregfile_disable_i    ( 1'b0              ) // try me!
+        // CPU Control Signals
+        .fetch_enable_i        (fetch_en_int),
+        .core_sleep_o          ()
     );
+
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (obi_instr_req),
+        .mem_gnt_i    (core_instr_gnt),
+        .mem_rvalid_i (core_instr_rvalid),
+        .mem_req_o    (pulp_instr_req)
+      );
+    assign core_instr_req = pulp_instr_req;
+
     end else begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
@@ -279,17 +286,24 @@ module fc_subsystem #(
         end
     end
 
-    // remap ack ID for SoC Event FIFO
-    always_comb begin : gen_core_irq_ack_id
-        if (irq_ack_id == 10) begin
-            core_irq_ack_id = 26;
-        end else begin
-            core_irq_ack_id = {1'b0, irq_ack_id};
-        end
-    end
+    //// remap ack ID for SoC Event FIFO
+    //always_comb begin : gen_core_irq_ack_id
+    //    if (irq_ack_id == 10) begin
+    //        core_irq_ack_id = 26;
+    //    end else begin
+    //        core_irq_ack_id = {1'b0, irq_ack_id};
+    //    end
+    //end
 
     end
     endgenerate
+
+    always_comb begin : gen_core_irq_x
+        core_irq_x = '0;
+        if (core_irq_req) begin
+            core_irq_x[core_irq_id] = 1'b1;
+        end
+    end
 
     apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
         .clk_i              ( clk_i              ),
