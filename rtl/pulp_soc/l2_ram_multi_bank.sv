@@ -11,7 +11,7 @@
 `include "soc_mem_map.svh"
 
 module l2_ram_multi_bank #(
-   parameter NB_BANKS                   = 4,
+   parameter int unsigned NB_BANKS                   = 4,
    // Don't forget to adjust the SRAM macros and the FPGA settings if you change the banksizes
    parameter int unsigned BANK_SIZE_INTL_SRAM = 32768 //Number of 32-bit words
 ) (
