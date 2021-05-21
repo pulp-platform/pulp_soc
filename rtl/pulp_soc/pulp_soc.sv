@@ -590,6 +590,8 @@ module pulp_soc import dm::*; #(
         .N_SPI              ( N_SPI                                 ),
         .N_I2C              ( N_I2C                                 ),
         .N_I2C_SLV          ( N_I2C_SLV                             ),
+
+        // AXI widths for spi_slv, i2c_slvs AXI conversion within soc_peripherals
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
         .AXI_DATA_OUT_WIDTH ( AXI_DATA_OUT_WIDTH                    ),
         .AXI_DATA_IN_WIDTH  ( AXI_DATA_IN_WIDTH                     ),
