@@ -60,7 +60,7 @@ module lint_jtag_wrap #(
         .lint_be_o      ( jtag_lint_master.be      ),
         .lint_aux_o     (                          ),
         .lint_gnt_i     ( jtag_lint_master.gnt     ),
-        .lint_r_aux_i   (                          ),
+        .lint_r_aux_i   ( '0                       ),
         .lint_r_valid_i ( jtag_lint_master.r_valid ),
         .lint_r_rdata_i ( jtag_lint_master.r_rdata ),
         .lint_r_opc_i   ( jtag_lint_master.r_opc   )
