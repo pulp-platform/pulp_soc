@@ -127,8 +127,8 @@ module soc_interconnect
         //The tcdm demux will route all transaction that do not match any addr rule to port 0 (which we connect to an
         //error slave)
         tcdm_demux #(
-          .NR_OUTPUTS(2),
-          .NR_ADDR_MAP_RULES(NR_ADDR_RULES_SLAVE_PORTS_INTLVD)
+          .NR_OUTPUTS        ( 2                                ),
+          .NR_ADDR_MAP_RULES ( NR_ADDR_RULES_SLAVE_PORTS_INTLVD )
         ) i_err_demux(
           .clk_i,
           .rst_ni,
@@ -183,17 +183,17 @@ module soc_interconnect
     end
 
     interleaved_crossbar #(
-                           .NR_MASTER_PORTS(NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY),
-                           .NR_SLAVE_PORTS(NR_SLAVE_PORTS_INTERLEAVED)
-                           ) i_interleaved_xbar(
-                                                // Interfaces
-                                                .master_ports   (interleaved_masters),
-                                                .slave_ports    (interleaved_slaves),
-                                                // Inputs
-                                                .clk_i,
-                                                .rst_ni,
-                                                .test_en_i
-                                                );
+      .NR_MASTER_PORTS ( NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY ),
+      .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_INTERLEAVED                       )
+    ) i_interleaved_xbar(
+      // Interfaces
+      .master_ports ( interleaved_masters ),
+      .slave_ports  ( interleaved_slaves  ),
+      // Inputs
+      .clk_i,
+      .rst_ni,
+      .test_en_i
+    );
 
     /////////////////////////
     // Contiguous Crossbar //
@@ -208,20 +208,20 @@ module soc_interconnect
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     XBAR_TCDM_BUS error_slave();
     contiguous_crossbar #(
-                          .NR_MASTER_PORTS(NR_MASTER_PORTS),
-                          .NR_SLAVE_PORTS(NR_SLAVE_PORTS_CONTIG),
-                          .NR_ADDR_RULES(NR_ADDR_RULES_SLAVE_PORTS_CONTIG)
-                          ) i_contiguous_xbar(
-                                              // Interfaces
-                                              .master_ports     (l2_demux_2_contiguous_xbar),
-                                              .slave_ports      (contiguous_slaves),
-                                              .error_port       (error_slave),
-                                              .addr_rules       (addr_space_contiguous),
-                                              // Inputs
-                                              .clk_i,
-                                              .rst_ni,
-                                              .test_en_i
-                                              );
+      .NR_MASTER_PORTS ( NR_MASTER_PORTS                  ),
+      .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_CONTIG            ),
+      .NR_ADDR_RULES   ( NR_ADDR_RULES_SLAVE_PORTS_CONTIG )
+    ) i_contiguous_xbar(
+      // Interfaces
+      .master_ports ( l2_demux_2_contiguous_xbar ),
+      .slave_ports  ( contiguous_slaves          ),
+      .error_port   ( error_slave                ),
+      .addr_rules   ( addr_space_contiguous      ),
+      // Inputs
+      .clk_i,
+      .rst_ni,
+      .test_en_i
+    );
     //Error Slave
     // This dummy slave is responsible to generate the buserror described above
     tcdm_error_slave #(
@@ -230,7 +230,7 @@ module soc_interconnect
       .clk_i,
       .rst_ni,
       .slave(error_slave)
-      );
+    );
 
 
     ////////////////////////
@@ -239,21 +239,23 @@ module soc_interconnect
     // Instantiate a TCDM to AXI protocol converter for each master port from the L2 demultiplexer. The converter //
     // converts one 32-bit TCDM port to one 32-bit AXI port.                                                      //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    AXI_BUS #(.AXI_ADDR_WIDTH(32),
-              .AXI_DATA_WIDTH(32),
-              .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
-              .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_bridge_2_axi_xbar[NR_MASTER_PORTS]();
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( 32                  ),
+      .AXI_DATA_WIDTH ( 32                  ),
+      .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
+    ) axi_bridge_2_axi_xbar[NR_MASTER_PORTS]();
+
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_tcdm_2_axi_bridge
         lint2axi_wrap #(
-                        .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
-                        .AXI_USER_WIDTH(AXI_USER_WIDTH)
-                        ) i_lint2axi_bridge (
-                                        .clk_i,
-                                        .rst_ni,
-                                        .master(l2_demux_2_axi_bridge[i]),
-                                        .slave(axi_bridge_2_axi_xbar[i])
-                                        );
+          .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
+          .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
+        ) i_lint2axi_bridge (
+          .clk_i,
+          .rst_ni,
+          .master ( l2_demux_2_axi_bridge[i] ),
+          .slave  ( axi_bridge_2_axi_xbar[i] )
+          );
     end
 
 
@@ -267,33 +269,35 @@ module soc_interconnect
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     localparam xbar_cfg_t AXI_XBAR_CFG = '{
-                                                    NoSlvPorts: NR_MASTER_PORTS,
-                                                    NoMstPorts: NR_AXI_SLAVE_PORTS,
-                                                    MaxMstTrans: 1,       //The TCDM ports do not support
-                                                    //outstanding transactiions anyways
-                                                    MaxSlvTrans: 4,       //Allow up to 4 in-flight transactions
-                                                    //per slave port
-                                                    FallThrough: 1,       //Use the reccomended default config
-                                                    LatencyMode: axi_pkg::CUT_MST_AX | axi_pkg::MuxW,
-                                                    AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
-                                                    AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
-                                                    AxiAddrWidth: BUS_ADDR_WIDTH,
-                                                    AxiDataWidth: BUS_DATA_WIDTH,
-                                                    NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS,
-                                                    UniqueIds: 0
-                                                    };
+      NoSlvPorts: NR_MASTER_PORTS,
+      NoMstPorts: NR_AXI_SLAVE_PORTS,
+      MaxMstTrans: 1,       //The TCDM ports do not support
+      //outstanding transactiions anyways
+      MaxSlvTrans: 4,       //Allow up to 4 in-flight transactions
+      //per slave port
+      FallThrough: 1,       //Use the reccomended default config
+      LatencyMode: axi_pkg::CUT_MST_AX | axi_pkg::MuxW,
+      AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
+      AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
+      UniqueIds: 0,
+      AxiAddrWidth: BUS_ADDR_WIDTH,
+      AxiDataWidth: BUS_DATA_WIDTH,
+      NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS
+    };
 
     //Reverse interface array ordering since axi_xbar uses big-endian ordering of the arrays
-    AXI_BUS #(.AXI_ADDR_WIDTH(32),
-              .AXI_DATA_WIDTH(32),
-              .AXI_ID_WIDTH(AXI_MASTER_ID_WIDTH),
-              .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_bridge_2_axi_xbar_reversed[NR_MASTER_PORTS-1:0]();
-    AXI_BUS #(.AXI_ADDR_WIDTH(32),
-              .AXI_DATA_WIDTH(32),
-              .AXI_ID_WIDTH(AXI_SLAVE_ID_WIDTH),
-              .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_slaves_reversed[NR_AXI_SLAVE_PORTS-1:0]();
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH (32                  ),
+      .AXI_DATA_WIDTH (32                  ),
+      .AXI_ID_WIDTH   (AXI_MASTER_ID_WIDTH ),
+      .AXI_USER_WIDTH (AXI_USER_WIDTH      )
+    ) axi_bridge_2_axi_xbar_reversed[NR_MASTER_PORTS-1:0]();
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( 32                 ),
+      .AXI_DATA_WIDTH ( 32                 ),
+      .AXI_ID_WIDTH   ( AXI_SLAVE_ID_WIDTH ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_slaves_reversed[NR_AXI_SLAVE_PORTS-1:0]();
 
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
         `AXI_ASSIGN(axi_bridge_2_axi_xbar_reversed[i], axi_bridge_2_axi_xbar[i])
@@ -303,20 +307,20 @@ module soc_interconnect
         `AXI_ASSIGN(axi_slaves[i], axi_slaves_reversed[i])
     end
 
-    axi_xbar_intf #(
-                    .AXI_USER_WIDTH(AXI_USER_WIDTH),
-                    .Cfg(AXI_XBAR_CFG),
-                    .rule_t(addr_map_rule_t)
-                    ) i_axi_xbar (
-                    .clk_i,
-                    .rst_ni,
-                    .test_i(test_en_i),
-                    .slv_ports(axi_bridge_2_axi_xbar_reversed),
-                    .mst_ports(axi_slaves_reversed),
-                    .addr_map_i(addr_space_axi),
-                    .en_default_mst_port_i('0),
-                    .default_mst_port_i('0)
-                    );
+    axi_xbar_intf # (
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH  ),
+      .Cfg            ( AXI_XBAR_CFG    ),
+      .rule_t         ( addr_map_rule_t )
+      ) i_axi_xbar    (
+      .clk_i,
+      .rst_ni,
+      .test_i                ( test_en_i                      ),
+      .slv_ports             ( axi_bridge_2_axi_xbar_reversed ),
+      .mst_ports             ( axi_slaves_reversed            ),
+      .addr_map_i            ( addr_space_axi                 ),
+      .en_default_mst_port_i ( '0                             ),
+      .default_mst_port_i    ( '0                             )
+    );
 
 
 endmodule : soc_interconnect
