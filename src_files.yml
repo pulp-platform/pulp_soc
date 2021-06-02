@@ -1,13 +1,15 @@
 pulp_soc:
   incdirs: [
-    ../../rtl/includes,
     rtl/include,
+    ../../rtl/includes,
     ../axi/axi/include,
+    ../register_interface/include,
   ]
   files: [
     ../axi/axi/src/axi_pkg.sv,
     ../../rtl/includes/control_pulp_pkg.sv,
     ../cv32e40p/rtl/include/cv32e40p_apu_core_pkg.sv,
+    ../plic/rv_plic/rtl/rv_plic_reg_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
@@ -31,6 +33,7 @@ pulp_soc:
   ]
   vlog_opts : [
     -L riscv_dbg_lib,
+    -L register_interface_lib,
   ]
 udma_subsystem:
   incdirs: [

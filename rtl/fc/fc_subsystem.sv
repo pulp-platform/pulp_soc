@@ -48,6 +48,10 @@ module fc_subsystem #(
     output logic                      event_fifo_fulln_o,
     input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
     input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
+
+    input  logic                      plic_irq_valid_i,
+    output logic                      plic_irq_ready_o,
+
     output logic [1:0]                hwpe_events_o,
 
     output logic                      supervisor_mode_o
@@ -268,6 +272,8 @@ module fc_subsystem #(
         .event_fifo_valid_i ( event_fifo_valid_i ),
         .event_fifo_fulln_o ( event_fifo_fulln_o ),
         .event_fifo_data_i  ( event_fifo_data_i  ),
+        .plic_irq_valid_i,
+        .plic_irq_ready_o,
         .core_secure_mode_i ( 1'b0               ),
         .core_irq_id_o      ( core_irq_id        ),
         .core_irq_req_o     ( core_irq_req       ),

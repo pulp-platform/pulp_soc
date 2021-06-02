@@ -24,6 +24,7 @@ module periph_bus_wrap #(
     APB_BUS.Master soc_ctrl_master,
     APB_BUS.Master adv_timer_master,
     APB_BUS.Master soc_evnt_gen_master,
+    APB_BUS.Master plic_master,
     APB_BUS.Master eu_master,
     APB_BUS.Master mmap_debug_master,
     APB_BUS.Master timer_master,
@@ -108,6 +109,10 @@ module periph_bus_wrap #(
     `APB_ASSIGN_MASTER(s_masters[13], i2c_slv_1_master);
     assign s_start_addr[13] = `I2CSLAVE_1_START_ADDR;
     assign s_end_addr[13]   = `I2CSLAVE_1_END_ADDR;
+
+    `APB_ASSIGN_MASTER(s_masters[14], plic_master);
+    assign s_start_addr[14] = `PLIC_START_ADDR;
+    assign s_end_addr[14]   = `PLIC_END_ADDR;
 
     //********************************************************
     //**************** SOC BUS *******************************

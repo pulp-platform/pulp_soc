@@ -212,8 +212,15 @@ module pulp_soc import dm::*; #(
     input logic                                       jtag_tms_i,
     input logic                                       jtag_tdi_i,
     output logic                                      jtag_tdo_o,
-    output logic [NB_CORES-1:0]                       cluster_dbg_irq_valid_o
+    output logic [NB_CORES-1:0]                       cluster_dbg_irq_valid_o,
     ///////////////////////////////////////////////////
+
+    // external interrupts
+    input logic                           scg_irq_i,
+    input logic                           scp_irq_i,
+    input logic                           scp_secure_irq_i,
+    input logic [71:0]                    mbox_irq_i,
+    input logic [71:0]                    mbox_secure_irq_i
 );
 
     localparam int unsigned AXI_DATA_EXT_WIDTH = 64;
@@ -294,6 +301,9 @@ module pulp_soc import dm::*; #(
     logic [EVNT_WIDTH-1:0] s_fc_event_data ;
     logic                  s_fc_event_valid;
     logic                  s_fc_event_ready;
+
+    logic                  s_plic_irq_valid;
+    logic                  s_plic_irq_ready;
 
     logic [7:0][31:0]      s_apb_mpu_rules;
     logic                  s_supervisor_mode;
@@ -640,6 +650,12 @@ module pulp_soc import dm::*; #(
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
         .pf_evt_i               ( s_pf_evt               ),
 
+        .scg_irq_i,
+        .scp_irq_i,
+        .scp_secure_irq_i,
+        .mbox_irq_i,
+        .mbox_secure_irq_i,
+
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
@@ -703,6 +719,9 @@ module pulp_soc import dm::*; #(
         .fc_event_data_o        ( s_fc_event_data        ),
         .fc_event_valid_o       ( s_fc_event_valid       ),
         .fc_event_ready_i       ( s_fc_event_ready       ),
+
+        .plic_irq_valid_o       ( s_plic_irq_valid       ),
+        .plic_irq_ready_i       ( s_plic_irq_ready       ),
 
         .cluster_pow_o          ( cluster_pow_o          ),
         .cluster_byp_o          ( cluster_byp_o          ),
@@ -790,6 +809,10 @@ module pulp_soc import dm::*; #(
         .event_fifo_fulln_o  ( s_fc_event_ready    ),
         .event_fifo_data_i   ( s_fc_event_data     ),
         .events_i            ( s_fc_events         ),
+
+        .plic_irq_valid_i    ( s_plic_irq_valid    ),
+        .plic_irq_ready_o    ( s_plic_irq_ready    ),
+
         .hwpe_events_o       ( s_fc_hwpe_events    ),
 
         .supervisor_mode_o   ( s_supervisor_mode   )
