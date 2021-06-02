@@ -8,9 +8,15 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-`include "pulp_soc_defines.sv"
+`include "soc_mem_map.svh"
+`include "apb/typedef.svh"
+`include "apb/assign.svh"
+`include "axi/typedef.svh"
+`include "axi/assign.svh"
 
-module soc_peripherals #(
+module soc_peripherals
+    import pkg_soc_interconnect::addr_map_rule_t;
+#(
     parameter MEM_ADDR_WIDTH = 13,
     parameter APB_ADDR_WIDTH = 32,
     parameter APB_DATA_WIDTH = 32,
@@ -50,10 +56,10 @@ module soc_peripherals #(
 
     // SLAVE PORTS
     // APB SLAVE PORT
-    APB_BUS.Slave                      apb_slave,
-    APB_BUS.Master                     apb_eu_master,
-    APB_BUS.Master                     apb_hwpe_master,
-    APB_BUS.Master                     apb_debug_master,
+    AXI_LITE.Slave                     axi_lite_slave,
+    APB.Master                         apb_intrpt_ctrl_master,
+    APB.Master                         apb_hwpe_master,
+    APB.Master                         apb_debug_master,
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,
@@ -64,21 +70,12 @@ module soc_peripherals #(
     FLL_BUS.out                        per_fll_master,
     // MASTER PORT TO CLUSTER FLL
     FLL_BUS.out                        cluster_fll_master,
-/*
-    input  logic                       jtag_req_valid_i,
-    output logic                       debug_req_ready_o,
-    input  logic                       jtag_resp_ready_i,
-    output logic                       jtag_resp_valid_o,
-    input  dm::dmi_req_t               jtag_dmi_req_i,
-    output dm::dmi_resp_t              debug_resp_o,
-    output logic                       ndmreset_o,
-    output logic                       dm_debug_req_o,
-*/
+
     input  logic                       dma_pe_evt_i,
     input  logic                       dma_pe_irq_i,
     input  logic                       pf_evt_i,
     input  logic [1:0]                 fc_hwpe_events_i,
-    output logic [31:0]                fc_events_o,
+    output logic [31:0]                fc_interrupts_o,
 
     input  logic [NGPIO-1:0]           gpio_in,
     output logic [NGPIO-1:0]           gpio_out,
@@ -168,16 +165,8 @@ module soc_peripherals #(
     output logic                       cluster_irq_o
 );
 
-    APB_BUS s_fll_bus ();
 
-    APB_BUS s_gpio_bus ();
-    APB_BUS s_udma_bus ();
-    APB_BUS s_soc_ctrl_bus ();
-    APB_BUS s_adv_timer_bus ();
-    APB_BUS s_soc_evnt_gen_bus ();
-    APB_BUS s_stdout_bus ();
-    APB_BUS s_apb_timer_bus ();
-
+    //---------- Wiring Signals and internal parameters ----------
     localparam UDMA_EVENTS = 16*8;
 
     logic [31:0] s_gpio_sync;
@@ -208,6 +197,9 @@ module soc_peripherals #(
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
 
+
+    //-------------------- Events Assignments --------------------
+
     assign s_events[UDMA_EVENTS-1:0]  = s_udma_events;
     assign s_events[135]              = s_adv_timer_events[0];
     assign s_events[136]              = s_adv_timer_events[1];
@@ -218,36 +210,39 @@ module soc_peripherals #(
     assign s_events[141]              = fc_hwpe_events_i[1];
     assign s_events[159:142]          = '0;
 
-    assign fc_events_o[7:0] = 8'h0; //RESERVED for sw events
-    assign fc_events_o[8]   = dma_pe_evt_i;
-    assign fc_events_o[9]   = dma_pe_irq_i;
-    assign fc_events_o[10]  = s_timer_lo_event;
-    assign fc_events_o[11]  = s_timer_hi_event;
-    assign fc_events_o[12]  = pf_evt_i;
-    assign fc_events_o[13]  = 1'b0;
-    assign fc_events_o[14]  = s_ref_rise_event | s_ref_fall_event;
-    assign fc_events_o[15]  = s_gpio_event;
-    assign fc_events_o[16]  = 1'b0;
-    assign fc_events_o[17]  = s_adv_timer_events[0];
-    assign fc_events_o[18]  = s_adv_timer_events[1];
-    assign fc_events_o[19]  = s_adv_timer_events[2];
-    assign fc_events_o[20]  = s_adv_timer_events[3];
-    assign fc_events_o[21]  = 1'b0;
-    assign fc_events_o[22]  = 1'b0;
-    assign fc_events_o[23]  = 1'b0;
-    assign fc_events_o[24]  = 1'b0;
-    assign fc_events_o[25]  = 1'b0;
-    assign fc_events_o[26]  = 1'b0; // RESERVED for soc event FIFO
+    //------------------ Interrupt Assignments ------------------
+    assign fc_interrupts_o[7:0] = 8'h0; //RESERVED for sw events
+    assign fc_interrupts_o[8]   = dma_pe_evt_i;
+    assign fc_interrupts_o[9]   = dma_pe_irq_i;
+    assign fc_interrupts_o[10]  = s_timer_lo_event;
+    assign fc_interrupts_o[11]  = s_timer_hi_event;
+    assign fc_interrupts_o[12]  = pf_evt_i;
+    assign fc_interrupts_o[13]  = 1'b0;
+    assign fc_interrupts_o[14]  = s_ref_rise_event | s_ref_fall_event;
+    assign fc_interrupts_o[15]  = s_gpio_event;
+    assign fc_interrupts_o[16]  = 1'b0;
+    assign fc_interrupts_o[17]  = s_adv_timer_events[0];
+    assign fc_interrupts_o[18]  = s_adv_timer_events[1];
+    assign fc_interrupts_o[19]  = s_adv_timer_events[2];
+    assign fc_interrupts_o[20]  = s_adv_timer_events[3];
+    assign fc_interrupts_o[21]  = 1'b0;
+    assign fc_interrupts_o[22]  = 1'b0;
+    assign fc_interrupts_o[23]  = 1'b0;
+    assign fc_interrupts_o[24]  = 1'b0;
+    assign fc_interrupts_o[25]  = 1'b0;
+    assign fc_interrupts_o[26]  = 1'b0; // RESERVED for soc event FIFO
                                     // (many events get implicitely muxed into
                                     // this interrupt. A user that gets such an
                                     // interrupt has to check the event unit's
                                     // registers to see what happened)
-    assign fc_events_o[27]  = 1'b0;
-    assign fc_events_o[28]  = 1'b0;
-    assign fc_events_o[29]  = s_fc_err_events;
-    assign fc_events_o[30]  = s_fc_hp_events[0];
-    assign fc_events_o[31]  = s_fc_hp_events[1];
+    assign fc_interrupts_o[27]  = 1'b0;
+    assign fc_interrupts_o[28]  = 1'b0;
+    assign fc_interrupts_o[29]  = s_fc_err_events;
+    assign fc_interrupts_o[30]  = s_fc_hp_events[0];
+    assign fc_interrupts_o[31]  = s_fc_hp_events[1];
 
+    // Synchronizer to generate synchronous ref_clk rise an fall events (used as
+    // interrupt 14)
     pulp_sync_wedge i_ref_clk_sync (
         .clk_i    ( clk_i            ),
         .rstn_i   ( rst_ni           ),
@@ -267,26 +262,79 @@ module soc_peripherals #(
     // ██║     ███████╗██║  ██║██║██║     ██║  ██║    ██████╔╝╚██████╔╝███████║    ╚███╔███╔╝██║  ██║██║  ██║██║      //
     // ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝  ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝     ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝      //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    periph_bus_wrap #(
-        .APB_ADDR_WIDTH ( 32 ),
-        .APB_DATA_WIDTH ( 32 )
-    ) periph_bus_i (
-        .clk_i               ( clk_i              ),
-        .rst_ni              ( rst_ni             ),
 
-        .apb_slave           ( apb_slave          ),
+    // Typedefs
+    typedef logic [31:0] addr_t;
+    typedef logic [31:0] data_t;
+    typedef logic [3:0] strb_t;
+    `APB_TYPEDEF_REQ_T(apb_req_t, addr_t, data_t, strb_t)
+    `APB_TYPEDEF_RESP_T(apb_resp_t, data_t)
+    `AXI_LITE_TYPEDEF_ALL(axi_lite, addr_t, data_t, strb_t)
 
-        .fll_master          ( s_fll_bus          ),
-        .gpio_master         ( s_gpio_bus         ),
-        .udma_master         ( s_udma_bus         ),
-        .soc_ctrl_master     ( s_soc_ctrl_bus     ),
-        .adv_timer_master    ( s_adv_timer_bus    ),
-        .soc_evnt_gen_master ( s_soc_evnt_gen_bus ),
-        .eu_master           ( apb_eu_master      ),
-        .mmap_debug_master   ( apb_debug_master   ),
-        .hwpe_master         ( apb_hwpe_master    ),
-        .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       )
+    // Convert AXI lite interface to structs
+    axi_lite_req_t s_axi_lite_master_req;
+    axi_lite_resp_t s_axi_lite_master_resp;
+    `AXI_LITE_ASSIGN_TO_REQ(s_axi_lite_master_req, axi_lite_slave)
+    `AXI_LITE_ASSIGN_FROM_RESP(axi_lite_slave, s_axi_lite_master_resp)
+
+    // APB Slaves
+    localparam NumAPBSlaves = 11;
+    addr_map_rule_t [NumAPBSlaves-1:0] apb_addr_ranges;
+    apb_req_t [NumAPBSlaves-1:0] s_apb_slaves_req;
+    apb_resp_t [NumAPBSlaves-1:0] s_apb_slaves_resp;
+
+// Helper Macro to quickly create and attach ne APB slave interfaces.
+// Adding a new slave: Increment value of NumAPBSlaves, call this macro
+// where port_idx is an incrementing port index number (just increase the
+// previously used by one), slave_name must be valid SV identifier, start/end
+// address define the start and end address of the associated address space that
+// will be routed to the new slave. The macro will generate a new APB interface
+// instance with the name s_<slave_name>_slave that should be hooked up to the
+// APB slave module.
+`define SOC_PERIPHERALS_CREATE_SLAVE(port_idx, slave_name, start_address, end_address) \
+  APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_``slave_name``_slave(); \
+  assign apb_addr_ranges[port_idx] = '{ idx: port_idx, start_addr: start_address, end_addr: end_address}; \
+  `APB_ASSIGN_FROM_REQ(s_``slave_name``_slave, s_apb_slaves_req[port_idx]) \
+  `APB_ASSIGN_TO_RESP(s_apb_slaves_resp[port_idx], s_``slave_name``_slave)
+
+    `SOC_PERIPHERALS_CREATE_SLAVE(0,  fll,            `SOC_MEM_MAP_FLL_START_ADDR,            `SOC_MEM_MAP_FLL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(1,  gpio,           `SOC_MEM_MAP_GPIO_START_ADDR,           `SOC_MEM_MAP_GPIO_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(2,  udma,           `SOC_MEM_MAP_UDMA_START_ADDR,           `SOC_MEM_MAP_UDMA_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(3,  soc_ctrl,       `SOC_MEM_MAP_SOC_CTRL_START_ADDR,       `SOC_MEM_MAP_SOC_CTRL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(4,  adv_timer,      `SOC_MEM_MAP_ADV_TIMER_START_ADDR,      `SOC_MEM_MAP_ADV_TIMER_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(5,  soc_event_gen,  `SOC_MEM_MAP_SOC_EVENT_GEN_START_ADDR,  `SOC_MEM_MAP_SOC_EVENT_GEN_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(6,  interrupt_ctrl, `SOC_MEM_MAP_INTERRUPT_CTRL_START_ADDR, `SOC_MEM_MAP_INTERRUPT_CTRL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(7,  apb_timer,      `SOC_MEM_MAP_APB_TIMER_START_ADDR,      `SOC_MEM_MAP_APB_TIMER_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(8,  hwpe,           `SOC_MEM_MAP_HWPE_START_ADDR,           `SOC_MEM_MAP_HWPE_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(9,  virtual_stdout, `SOC_MEM_MAP_VIRTUAL_STDOUT_START_ADDR, `SOC_MEM_MAP_VIRTUAL_STDOUT_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(10, debug,          `SOC_MEM_MAP_DEBUG_START_ADDR,          `SOC_MEM_MAP_DEBUG_END_ADDR)
+
+    // Assign internal slave signals to external APB ports
+    `APB_ASSIGN(apb_intrpt_ctrl_master ,s_interrupt_ctrl_slave)
+    `APB_ASSIGN(apb_hwpe_master, s_hwpe_slave)
+    `APB_ASSIGN(apb_debug_master, s_debug_slave)
+
+
+    axi_lite_to_apb #(
+      .NoApbSlaves      ( NumAPBSlaves+1  ),
+      .NoRules          ( NumAPBSlaves    ),
+      .AddrWidth        ( 32              ),
+      .DataWidth        ( 32              ),
+      .PipelineRequest  ( 1'b0            ),
+      .PipelineResponse ( 1'b0            ),
+      .axi_lite_req_t   ( axi_lite_req_t  ),
+      .axi_lite_resp_t  ( axi_lite_resp_t ),
+      .apb_req_t        ( apb_req_t       ),
+      .apb_resp_t       ( apb_resp_t      ),
+      .rule_t           ( addr_map_rule_t )
+    ) i_axi_lite_to_apb (
+      .clk_i,
+      .rst_ni,
+      .axi_lite_req_i  ( s_axi_lite_master_req  ),
+      .axi_lite_resp_o ( s_axi_lite_master_resp ),
+      .apb_req_o       ( s_apb_slaves_req       ),
+      .apb_resp_i      ( s_apb_slaves_resp      ),
+      .addr_map_i      ( apb_addr_ranges        )
     );
 
     /////////////////////////////////////////////////////////////////////////
@@ -301,14 +349,14 @@ module soc_peripherals #(
         .HCLK        ( clk_i                   ),
         .HRESETn     ( rst_ni                  ),
 
-        .PADDR       ( s_fll_bus.paddr         ),
-        .PWDATA      ( s_fll_bus.pwdata        ),
-        .PWRITE      ( s_fll_bus.pwrite        ),
-        .PSEL        ( s_fll_bus.psel          ),
-        .PENABLE     ( s_fll_bus.penable       ),
-        .PRDATA      ( s_fll_bus.prdata        ),
-        .PREADY      ( s_fll_bus.pready        ),
-        .PSLVERR     ( s_fll_bus.pslverr       ),
+        .PADDR       ( s_fll_slave.paddr         ),
+        .PWDATA      ( s_fll_slave.pwdata        ),
+        .PWRITE      ( s_fll_slave.pwrite        ),
+        .PSEL        ( s_fll_slave.psel          ),
+        .PENABLE     ( s_fll_slave.penable       ),
+        .PRDATA      ( s_fll_slave.prdata        ),
+        .PREADY      ( s_fll_slave.pready        ),
+        .PSLVERR     ( s_fll_slave.pslverr       ),
 
         .fll1_req_o    ( soc_fll_master.req      ),
         .fll1_wrn_o    ( soc_fll_master.wrn      ),
@@ -352,8 +400,8 @@ module soc_peripherals #(
  if (SIM_STDOUT) begin
      logic pready_q;
 
-     assign s_stdout_bus.pready  = pready_q;
-     assign s_stdout_bus.pslverr = 1'b0;
+     assign virtual_stdout_slave.pready  = pready_q;
+     assign virtual_stdout_slave.pslverr = 1'b0;
 
      tb_fs_handler #(
           .ADDR_WIDTH ( 32          ),
@@ -363,25 +411,25 @@ module soc_peripherals #(
      ) i_fs_handler (
           .clk   ( clk_i                                                  ),
           .rst_n ( rst_ni                                                 ),
-          .CSN   ( ~(s_stdout_bus.psel & s_stdout_bus.penable & pready_q) ),
-          .WEN   ( ~s_stdout_bus.pwrite                                   ),
-          .ADDR  ( s_stdout_bus.paddr                                     ),
-          .WDATA ( s_stdout_bus.pwdata                                    ),
+          .CSN   ( ~(virtual_stdout_slave.psel & virtual_stdout_slave.penable & pready_q) ),
+          .WEN   ( ~virtual_stdout_slave.pwrite                                   ),
+          .ADDR  ( virtual_stdout_slave.paddr                                     ),
+          .WDATA ( virtual_stdout_slave.pwdata                                    ),
           .BE    ( 4'hf                                                   ),
-          .RDATA ( s_stdout_bus.prdata                                    )
+          .RDATA ( virtual_stdout_slave.prdata                                    )
      );
 
      always_ff @(posedge clk_i or negedge rst_ni) begin
         if(~rst_ni) begin
            pready_q <= 0;
         end else begin
-           pready_q <= (s_stdout_bus.psel & s_stdout_bus.penable);
+           pready_q <= (virtual_stdout_slave.psel & virtual_stdout_slave.penable);
         end
      end
  end else begin
-     assign s_stdout_bus.pready  = 'h1;
-     assign s_stdout_bus.pslverr = 1'b0;
-     assign s_stdout_bus.prdata  = 'h0;
+     assign virtual_stdout_slave.pready  = 'h1;
+     assign virtual_stdout_slave.pslverr = 1'b0;
+     assign virtual_stdout_slave.prdata  = 'h0;
  end
 
     ///////////////////////////////////////////////////////////////
@@ -403,14 +451,14 @@ module soc_peripherals #(
 
         .dft_cg_enable_i ( dft_cg_enable_i    ),
 
-        .PADDR           ( s_gpio_bus.paddr   ),
-        .PWDATA          ( s_gpio_bus.pwdata  ),
-        .PWRITE          ( s_gpio_bus.pwrite  ),
-        .PSEL            ( s_gpio_bus.psel    ),
-        .PENABLE         ( s_gpio_bus.penable ),
-        .PRDATA          ( s_gpio_bus.prdata  ),
-        .PREADY          ( s_gpio_bus.pready  ),
-        .PSLVERR         ( s_gpio_bus.pslverr ),
+        .PADDR           ( s_gpio_slave.paddr   ),
+        .PWDATA          ( s_gpio_slave.pwdata  ),
+        .PWRITE          ( s_gpio_slave.pwrite  ),
+        .PSEL            ( s_gpio_slave.psel    ),
+        .PENABLE         ( s_gpio_slave.penable ),
+        .PRDATA          ( s_gpio_slave.prdata  ),
+        .PREADY          ( s_gpio_slave.pready  ),
+        .PSLVERR         ( s_gpio_slave.pslverr ),
 
         .gpio_in_sync    ( s_gpio_sync        ),
 
@@ -462,14 +510,14 @@ module soc_peripherals #(
         .periph_clk_i     ( periph_clk_i         ),
         .sys_resetn_i     ( rst_ni               ),
 
-        .udma_apb_paddr   ( s_udma_bus.paddr     ),
-        .udma_apb_pwdata  ( s_udma_bus.pwdata    ),
-        .udma_apb_pwrite  ( s_udma_bus.pwrite    ),
-        .udma_apb_psel    ( s_udma_bus.psel      ),
-        .udma_apb_penable ( s_udma_bus.penable   ),
-        .udma_apb_prdata  ( s_udma_bus.prdata    ),
-        .udma_apb_pready  ( s_udma_bus.pready    ),
-        .udma_apb_pslverr ( s_udma_bus.pslverr   ),
+        .udma_apb_paddr   ( s_udma_slave.paddr     ),
+        .udma_apb_pwdata  ( s_udma_slave.pwdata    ),
+        .udma_apb_pwrite  ( s_udma_slave.pwrite    ),
+        .udma_apb_psel    ( s_udma_slave.psel      ),
+        .udma_apb_penable ( s_udma_slave.penable   ),
+        .udma_apb_prdata  ( s_udma_slave.prdata    ),
+        .udma_apb_pready  ( s_udma_slave.pready    ),
+        .udma_apb_pslverr ( s_udma_slave.pslverr   ),
 
         .events_o         ( s_udma_events        ),
 
@@ -549,14 +597,14 @@ module soc_peripherals #(
         .HCLK                ( clk_i                  ),
         .HRESETn             ( rst_ni                 ),
 
-        .PADDR               ( s_soc_ctrl_bus.paddr   ),
-        .PWDATA              ( s_soc_ctrl_bus.pwdata  ),
-        .PWRITE              ( s_soc_ctrl_bus.pwrite  ),
-        .PSEL                ( s_soc_ctrl_bus.psel    ),
-        .PENABLE             ( s_soc_ctrl_bus.penable ),
-        .PRDATA              ( s_soc_ctrl_bus.prdata  ),
-        .PREADY              ( s_soc_ctrl_bus.pready  ),
-        .PSLVERR             ( s_soc_ctrl_bus.pslverr ),
+        .PADDR               ( s_soc_ctrl_slave.paddr   ),
+        .PWDATA              ( s_soc_ctrl_slave.pwdata  ),
+        .PWRITE              ( s_soc_ctrl_slave.pwrite  ),
+        .PSEL                ( s_soc_ctrl_slave.psel    ),
+        .PENABLE             ( s_soc_ctrl_slave.penable ),
+        .PRDATA              ( s_soc_ctrl_slave.prdata  ),
+        .PREADY              ( s_soc_ctrl_slave.pready  ),
+        .PSLVERR             ( s_soc_ctrl_slave.pslverr ),
 
         .sel_fll_clk_i       ( sel_fll_clk_i          ),
         .boot_l2_i           ( boot_l2_i              ),
@@ -591,14 +639,14 @@ module soc_peripherals #(
 
         .dft_cg_enable_i ( dft_cg_enable_i         ),
 
-        .PADDR           ( s_adv_timer_bus.paddr   ),
-        .PWDATA          ( s_adv_timer_bus.pwdata  ),
-        .PWRITE          ( s_adv_timer_bus.pwrite  ),
-        .PSEL            ( s_adv_timer_bus.psel    ),
-        .PENABLE         ( s_adv_timer_bus.penable ),
-        .PRDATA          ( s_adv_timer_bus.prdata  ),
-        .PREADY          ( s_adv_timer_bus.pready  ),
-        .PSLVERR         ( s_adv_timer_bus.pslverr ),
+        .PADDR           ( s_adv_timer_slave.paddr   ),
+        .PWDATA          ( s_adv_timer_slave.pwdata  ),
+        .PWRITE          ( s_adv_timer_slave.pwrite  ),
+        .PSEL            ( s_adv_timer_slave.psel    ),
+        .PENABLE         ( s_adv_timer_slave.penable ),
+        .PRDATA          ( s_adv_timer_slave.prdata  ),
+        .PREADY          ( s_adv_timer_slave.pready  ),
+        .PSLVERR         ( s_adv_timer_slave.pslverr ),
 
         .low_speed_clk_i ( slow_clk_i              ),
         .ext_sig_i       ( s_gpio_sync             ),
@@ -630,14 +678,14 @@ module soc_peripherals #(
         .HCLK             ( clk_i                      ),
         .HRESETn          ( rst_ni                     ),
 
-        .PADDR            ( s_soc_evnt_gen_bus.paddr   ),
-        .PWDATA           ( s_soc_evnt_gen_bus.pwdata  ),
-        .PWRITE           ( s_soc_evnt_gen_bus.pwrite  ),
-        .PSEL             ( s_soc_evnt_gen_bus.psel    ),
-        .PENABLE          ( s_soc_evnt_gen_bus.penable ),
-        .PRDATA           ( s_soc_evnt_gen_bus.prdata  ),
-        .PREADY           ( s_soc_evnt_gen_bus.pready  ),
-        .PSLVERR          ( s_soc_evnt_gen_bus.pslverr ),
+        .PADDR            ( s_soc_event_gen_slave.paddr   ),
+        .PWDATA           ( s_soc_event_gen_slave.pwdata  ),
+        .PWRITE           ( s_soc_event_gen_slave.pwrite  ),
+        .PSEL             ( s_soc_event_gen_slave.psel    ),
+        .PENABLE          ( s_soc_event_gen_slave.penable ),
+        .PRDATA           ( s_soc_event_gen_slave.prdata  ),
+        .PREADY           ( s_soc_event_gen_slave.pready  ),
+        .PSLVERR          ( s_soc_event_gen_slave.pslverr ),
 
         .low_speed_clk_i  ( slow_clk_i                 ),
         .timer_event_lo_o ( s_timer_in_lo_event        ),
@@ -661,14 +709,14 @@ module soc_peripherals #(
     apb_timer_unit #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_apb_timer_unit (
         .HCLK       ( clk_i                   ),
         .HRESETn    ( rst_ni                  ),
-        .PADDR      ( s_apb_timer_bus.paddr   ),
-        .PWDATA     ( s_apb_timer_bus.pwdata  ),
-        .PWRITE     ( s_apb_timer_bus.pwrite  ),
-        .PSEL       ( s_apb_timer_bus.psel    ),
-        .PENABLE    ( s_apb_timer_bus.penable ),
-        .PRDATA     ( s_apb_timer_bus.prdata  ),
-        .PREADY     ( s_apb_timer_bus.pready  ),
-        .PSLVERR    ( s_apb_timer_bus.pslverr ),
+        .PADDR      ( s_apb_timer_slave.paddr   ),
+        .PWDATA     ( s_apb_timer_slave.pwdata  ),
+        .PWRITE     ( s_apb_timer_slave.pwrite  ),
+        .PSEL       ( s_apb_timer_slave.psel    ),
+        .PENABLE    ( s_apb_timer_slave.penable ),
+        .PRDATA     ( s_apb_timer_slave.prdata  ),
+        .PREADY     ( s_apb_timer_slave.pready  ),
+        .PSLVERR    ( s_apb_timer_slave.pslverr ),
         .ref_clk_i  ( slow_clk_i              ),
         .event_lo_i ( s_timer_in_lo_event     ),
         .event_hi_i ( s_timer_in_hi_event     ),

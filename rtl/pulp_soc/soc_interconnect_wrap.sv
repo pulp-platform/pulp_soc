@@ -52,8 +52,9 @@ module soc_interconnect_wrap
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
        XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
        AXI_BUS.Slave            axi_master_plug, // Normaly used for cluster -> SoC communication
-       AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
-       APB_BUS.Master           apb_peripheral_bus, // Connects to all the SoC Peripherals
+       AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC ->
+                                                // cluster communication
+       AXI_LITE.Master          axi_lite_peripheral_bus,  // Connects to all the SoC Peripherals
        XBAR_TCDM_BUS.Master     l2_interleaved_slaves[NR_L2_PORTS], // Connects to the interleaved memory banks
        XBAR_TCDM_BUS.Master     l2_private_slaves[2], // Connects to core-private memory banks
        XBAR_TCDM_BUS.Master     boot_rom_slave //Connects to the bootrom
@@ -171,104 +172,78 @@ module soc_interconnect_wrap
     `TCDM_ASSIGN_INTF(l2_private_slaves[1], contiguous_slaves[1])
     `TCDM_ASSIGN_INTF(boot_rom_slave, contiguous_slaves[2])
 
-    AXI_BUS #(.AXI_ADDR_WIDTH(32),
-              .AXI_DATA_WIDTH(32),
-              .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
-              .AXI_USER_WIDTH(AXI_USER_WIDTH)
-              ) axi_slaves[2]();
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( 32                                     ),
+      .AXI_DATA_WIDTH ( 32                                     ),
+      .AXI_ID_WIDTH   ( pkg_soc_interconnect::AXI_ID_OUT_WIDTH ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH                         )
+    ) axi_slaves[2]();
+
     `AXI_ASSIGN(axi_slave_plug, axi_slaves[0])
     `AXI_ASSIGN(axi_to_axi_lite_bridge, axi_slaves[1])
 
     //Interconnect instantiation
     soc_interconnect #(
-                       .NR_MASTER_PORTS(pkg_soc_interconnect::NR_TCDM_MASTER_PORTS), // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
-                                              // axi plug
-                       .NR_MASTER_PORTS_INTERLEAVED_ONLY(NR_HWPE_PORTS), // HWPEs (PULP accelerators) only have access
-                                                                         // to the interleaved memory region
-                       .NR_ADDR_RULES_L2_DEMUX(NR_RULES_L2_DEMUX),
-                       .NR_SLAVE_PORTS_INTERLEAVED(NR_L2_PORTS), // Number of interleaved memory banks
-                       .NR_ADDR_RULES_SLAVE_PORTS_INTLVD(NR_RULES_INTERLEAVED_REGION),
-                       .NR_SLAVE_PORTS_CONTIG(3), // Bootrom + number of private memory banks (normally 1 for
-                                                  // programm instructions and 1 for programm stack )
-                       .NR_ADDR_RULES_SLAVE_PORTS_CONTIG(NR_RULES_CONTIG_CROSSBAR),
-                       .NR_AXI_SLAVE_PORTS(2), // 1 for AXI to cluster, 1 for SoC peripherals (converted to APB)
-                       .NR_ADDR_RULES_AXI_SLAVE_PORTS(NR_RULES_AXI_CROSSBAR),
-                       .AXI_MASTER_ID_WIDTH(1), //Doesn't need to be changed. All axi masters in the current
-                                                //interconnect come from a TCDM protocol converter and thus do not have and AXI ID.
-                                                //However, the unerlaying IPs do not support an ID lenght of 0, thus we use 1.
-                       .AXI_USER_WIDTH(AXI_USER_WIDTH)
-                       ) i_soc_interconnect (
-                                             .clk_i,
-                                             .rst_ni,
-                                             .test_en_i,
-                                             .master_ports(master_ports),
-                                             .master_ports_interleaved_only(tcdm_hwpe),
-                                             .addr_space_l2_demux(L2_DEMUX_RULES),
-                                             .addr_space_interleaved(INTERLEAVED_ADDR_SPACE),
-                                             .interleaved_slaves(l2_interleaved_slaves),
-                                             .addr_space_contiguous(CONTIGUOUS_CROSSBAR_RULES),
-                                             .contiguous_slaves(contiguous_slaves),
-                                             .addr_space_axi(AXI_CROSSBAR_RULES),
-                                             .axi_slaves(axi_slaves)
-                                             );
+      // FC instructions, FC data, uDMA RX, uDMA TX, debug access, 4 four 64-bit
+      // axi plug
+      .NR_MASTER_PORTS                  ( pkg_soc_interconnect::NR_TCDM_MASTER_PORTS ),
+      // HWPEs ( PULP accelerators ) only have access to the interleaved memory
+      // region
+      .NR_MASTER_PORTS_INTERLEAVED_ONLY ( NR_HWPE_PORTS                              ),
+      .NR_ADDR_RULES_L2_DEMUX           ( NR_RULES_L2_DEMUX                          ),
+      // Number of interleaved memory banks
+      .NR_SLAVE_PORTS_INTERLEAVED       ( NR_L2_PORTS                                ),
+      .NR_ADDR_RULES_SLAVE_PORTS_INTLVD ( NR_RULES_INTERLEAVED_REGION                ),
+      // Bootrom + number of private memory banks
+      // ( normally 1 for programm instructions and 1 for programm stack )
+      .NR_SLAVE_PORTS_CONTIG            ( 3                                          ),
+      .NR_ADDR_RULES_SLAVE_PORTS_CONTIG ( NR_RULES_CONTIG_CROSSBAR                   ),
+      // 1 for AXI to cluster, 1 for SoC peripherals ( converted to APB )
+      .NR_AXI_SLAVE_PORTS               ( 2                                          ),
+      .NR_ADDR_RULES_AXI_SLAVE_PORTS    ( NR_RULES_AXI_CROSSBAR                      ),
+      // Doesn't need to be changed. All axi masters in the current interconnect
+      // come from a TCDM protocol converter and thus do not have and AXI ID.
+      // However, the unerlaying IPs do not support an ID lenght of 0, thus we
+      // use 1.
+      .AXI_MASTER_ID_WIDTH              ( 1                                          ),
+      .AXI_USER_WIDTH                   ( AXI_USER_WIDTH                             )
+    ) i_soc_interconnect (
+      .clk_i,
+      .rst_ni,
+      .test_en_i,
+      .master_ports                  ( master_ports              ),
+      .master_ports_interleaved_only ( tcdm_hwpe                 ),
+      .addr_space_l2_demux           ( L2_DEMUX_RULES            ),
+      .addr_space_interleaved        ( INTERLEAVED_ADDR_SPACE    ),
+      .interleaved_slaves            ( l2_interleaved_slaves     ),
+      .addr_space_contiguous         ( CONTIGUOUS_CROSSBAR_RULES ),
+      .contiguous_slaves             ( contiguous_slaves         ),
+      .addr_space_axi                ( AXI_CROSSBAR_RULES        ),
+      .axi_slaves                    ( axi_slaves                )
+    );
 
 
     ////////////////////////
     // AXI4 to APB Bridge //
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    // We do the conversion in two steps: We convert AXI4 to AXI4 lite and from there to APB //
-    ///////////////////////////////////////////////////////////////////////////////////////////
-
-    AXI_LITE #(
-               .AXI_ADDR_WIDTH(32),
-               .AXI_DATA_WIDTH(32)) axi_lite_to_apb_bridge();
+    //////////////////////////////////////////////////////////////////////////////
+    // We do the conversion in two steps: We convert AXI4 to AXI4 lite and from //
+    // there to APB within the soc_peripherals module                           //
+    //////////////////////////////////////////////////////////////////////////////
 
     axi_to_axi_lite_intf #(
-                           .AXI_ADDR_WIDTH(32),
-                           .AXI_DATA_WIDTH(32),
-                           .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
-                           .AXI_USER_WIDTH(AXI_USER_WIDTH),
-                           .AXI_MAX_WRITE_TXNS(1),
-                           .AXI_MAX_READ_TXNS(1),
-                           .FALL_THROUGH(1)
-                           ) i_axi_to_axi_lite (
-                                                .clk_i,
-                                                .rst_ni,
-                                                .testmode_i(test_en_i),
-                                                .slv(axi_to_axi_lite_bridge),
-                                                .mst(axi_lite_to_apb_bridge)
-                                                );
-
-    // The AXI-Lite to APB bridge is capable of connecting one AXI to multiple APB ports using address mapping rules.
-    // We do not use this feature and just supply a default rule that matches everything in the peripheral region
-
-    localparam addr_map_rule_t [0:0] APB_BRIDGE_RULES = '{
-        '{ idx: 0, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
-
-    axi_lite_to_apb_intf #(
-                           .NoApbSlaves(1),
-                           .NoRules(1),
-                           .AddrWidth(32),
-                           .DataWidth(32),
-                           .PipelineRequest(1'b0),
-                           .PipelineResponse(1'b0),
-                           .rule_t(addr_map_rule_t)
-                           ) i_axi_lite_to_apb (
-                                                .clk_i,
-                                                .rst_ni,
-                                                .slv(axi_lite_to_apb_bridge),
-                                                .paddr_o(apb_peripheral_bus.paddr),
-                                                .pprot_o(),
-                                                .pselx_o(apb_peripheral_bus.psel),
-                                                .penable_o(apb_peripheral_bus.penable),
-                                                .pwrite_o(apb_peripheral_bus.pwrite),
-                                                .pwdata_o(apb_peripheral_bus.pwdata),
-                                                .pstrb_o(),
-                                                .pready_i(apb_peripheral_bus.pready),
-                                                .prdata_i(apb_peripheral_bus.prdata),
-                                                .pslverr_i(apb_peripheral_bus.pslverr),
-                                                .addr_map_i(APB_BRIDGE_RULES)
-                                                );
-
+      .AXI_ADDR_WIDTH     ( 32                                     ),
+      .AXI_DATA_WIDTH     ( 32                                     ),
+      .AXI_ID_WIDTH       ( pkg_soc_interconnect::AXI_ID_OUT_WIDTH ),
+      .AXI_USER_WIDTH     ( AXI_USER_WIDTH                         ),
+      .AXI_MAX_WRITE_TXNS ( 1                                      ),
+      .AXI_MAX_READ_TXNS  ( 1                                      ),
+      .FALL_THROUGH       ( 1                                      )
+    ) i_axi_to_axi_lite (
+      .clk_i,
+      .rst_ni,
+      .testmode_i ( test_en_i               ),
+      .slv        ( axi_to_axi_lite_bridge  ),
+      .mst        ( axi_lite_peripheral_bus )
+    );
 
 endmodule : soc_interconnect_wrap

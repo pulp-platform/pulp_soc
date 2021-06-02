@@ -21,7 +21,7 @@ module fc_hwpe
     input  logic         test_mode_i,
 
     XBAR_TCDM_BUS.Master hwacc_xbar_master[N_MASTER_PORT-1:0],
-    APB_BUS.Slave        hwacc_cfg_slave,
+    APB.Slave            hwacc_cfg_slave,
 
     output logic [1:0]   evt_o,
     output logic         busy_o

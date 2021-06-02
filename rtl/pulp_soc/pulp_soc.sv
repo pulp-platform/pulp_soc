@@ -278,7 +278,7 @@ module pulp_soc import dm::*; #(
     //***************** SIGNALS DECLARATION ******************
     //********************************************************
     logic [ 1:0]           s_fc_hwpe_events;
-    logic [31:0]           s_fc_events;
+    logic [31:0]           s_fc_interrupts;
 
     logic [7:0]            s_soc_events_ack;
     logic [7:0]            s_soc_events_val;
@@ -357,9 +357,9 @@ module pulp_soc import dm::*; #(
     logic                  s_jtag_axireg_tdo;
 
 
-    APB_BUS                s_apb_eu_bus ();
-    APB_BUS                s_apb_hwpe_bus ();
-    APB_BUS                s_apb_debug_bus();
+    APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_apb_intrpt_ctrl_bus ();
+    APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_apb_hwpe_bus ();
+    APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_apb_debug_bus();
 
 
     AXI_BUS #(
@@ -385,7 +385,7 @@ module pulp_soc import dm::*; #(
 
     FLL_BUS s_cluster_fll_master ();
 
-    APB_BUS s_apb_periph_bus ();
+    AXI_LITE #(.AXI_ADDR_WIDTH(32), .AXI_DATA_WIDTH(32)) s_periph_bus ();
 
     XBAR_TCDM_BUS s_mem_rom_bus ();
 
@@ -611,9 +611,9 @@ module pulp_soc import dm::*; #(
         .fc_bootaddr_o          ( s_fc_bootaddr          ),
         .fc_fetchen_o           ( s_fc_fetchen           ),
 
-        .apb_slave              ( s_apb_periph_bus       ),
+        .axi_lite_slave              ( s_periph_bus       ),
 
-        .apb_eu_master          ( s_apb_eu_bus           ),
+        .apb_intrpt_ctrl_master ( s_apb_intrpt_ctrl_bus  ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
 
@@ -624,7 +624,7 @@ module pulp_soc import dm::*; #(
         .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
 
         .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
-        .fc_events_o            ( s_fc_events            ),
+        .fc_interrupts_o        ( s_fc_interrupts        ),
 
         .dma_pe_evt_i           ( s_dma_pe_evt           ),
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
@@ -769,29 +769,29 @@ module pulp_soc import dm::*; #(
         .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           )
     ) fc_subsystem_i (
-        .clk_i               ( s_soc_clk           ),
-        .rst_ni              ( s_soc_rstn          ),
+        .clk_i              ( s_soc_clk                     ),
+        .rst_ni             ( s_soc_rstn                    ),
 
-        .test_en_i           ( dft_test_mode_i     ),
+        .test_en_i          ( dft_test_mode_i               ),
 
-        .boot_addr_i         ( s_fc_bootaddr       ),
+        .boot_addr_i        ( s_fc_bootaddr                 ),
 
-        .fetch_en_i          ( s_fc_fetchen        ),
+        .fetch_en_i         ( s_fc_fetchen                  ),
 
-        .l2_data_master      ( s_lint_fc_data_bus  ),
-        .l2_instr_master     ( s_lint_fc_instr_bus ),
-        .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-        .apb_slave_eu        ( s_apb_eu_bus        ),
-        .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
-        .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
+        .l2_data_master     ( s_lint_fc_data_bus            ),
+        .l2_instr_master    ( s_lint_fc_instr_bus           ),
+        .l2_hwpe_master     ( s_lint_hwpe_bus               ),
+        .apb_slave_eu       ( s_apb_intrpt_ctrl_bus         ),
+        .apb_slave_hwpe     ( s_apb_hwpe_bus                ),
+        .debug_req_i        ( dm_debug_req[FC_CORE_MHARTID] ),
 
-        .event_fifo_valid_i  ( s_fc_event_valid    ),
-        .event_fifo_fulln_o  ( s_fc_event_ready    ),
-        .event_fifo_data_i   ( s_fc_event_data     ),
-        .events_i            ( s_fc_events         ),
-        .hwpe_events_o       ( s_fc_hwpe_events    ),
+        .event_fifo_valid_i ( s_fc_event_valid              ),
+        .event_fifo_fulln_o ( s_fc_event_ready              ),
+        .event_fifo_data_i  ( s_fc_event_data               ),
+        .interrupts_i       ( s_fc_interrupts               ),
+        .hwpe_events_o      ( s_fc_hwpe_events              ),
 
-        .supervisor_mode_o   ( s_supervisor_mode   )
+        .supervisor_mode_o  ( s_supervisor_mode             )
     );
 
     soc_clk_rst_gen i_clk_rst_gen (
@@ -841,22 +841,22 @@ module pulp_soc import dm::*; #(
       .AXI_IN_ID_WIDTH(AXI_ID_IN_WIDTH),
       .AXI_USER_WIDTH(AXI_USER_WIDTH)
     ) i_soc_interconnect_wrap (
-        .clk_i                 ( s_soc_clk           ),
-        .rst_ni                ( s_soc_rstn          ),
-        .test_en_i             ( dft_test_mode_i     ),
-        .tcdm_fc_data          ( s_lint_fc_data_bus  ),
-        .tcdm_fc_instr         ( s_lint_fc_instr_bus ),
-        .tcdm_udma_rx          ( s_lint_udma_rx_bus  ),
-        .tcdm_udma_tx          ( s_lint_udma_tx_bus  ),
-        .tcdm_debug            ( s_lint_debug_bus    ),
-        .tcdm_hwpe             ( s_lint_hwpe_bus     ),
-        .axi_master_plug       ( s_data_in_bus       ),
-        .axi_slave_plug        ( s_data_out_bus      ),
-        .apb_peripheral_bus    ( s_apb_periph_bus    ),
-        .l2_interleaved_slaves ( s_mem_l2_bus        ),
-        .l2_private_slaves     ( s_mem_l2_pri_bus    ),
-        .boot_rom_slave        ( s_mem_rom_bus       )
-        );
+        .clk_i                   ( s_soc_clk           ),
+        .rst_ni                  ( s_soc_rstn          ),
+        .test_en_i               ( dft_test_mode_i     ),
+        .tcdm_fc_data            ( s_lint_fc_data_bus  ),
+        .tcdm_fc_instr           ( s_lint_fc_instr_bus ),
+        .tcdm_udma_rx            ( s_lint_udma_rx_bus  ),
+        .tcdm_udma_tx            ( s_lint_udma_tx_bus  ),
+        .tcdm_debug              ( s_lint_debug_bus    ),
+        .tcdm_hwpe               ( s_lint_hwpe_bus     ),
+        .axi_master_plug         ( s_data_in_bus       ),
+        .axi_slave_plug          ( s_data_out_bus      ),
+        .axi_lite_peripheral_bus ( s_periph_bus        ),
+        .l2_interleaved_slaves   ( s_mem_l2_bus        ),
+        .l2_private_slaves       ( s_mem_l2_pri_bus    ),
+        .boot_rom_slave          ( s_mem_rom_bus       )
+    );
 
     /* Debug Subsystem */
 

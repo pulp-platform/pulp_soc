@@ -255,7 +255,7 @@ module soc_interconnect
           .rst_ni,
           .master ( l2_demux_2_axi_bridge[i] ),
           .slave  ( axi_bridge_2_axi_xbar[i] )
-          );
+        );
     end
 
 
@@ -311,7 +311,7 @@ module soc_interconnect
       .AXI_USER_WIDTH ( AXI_USER_WIDTH  ),
       .Cfg            ( AXI_XBAR_CFG    ),
       .rule_t         ( addr_map_rule_t )
-      ) i_axi_xbar    (
+    ) i_axi_xbar    (
       .clk_i,
       .rst_ni,
       .test_i                ( test_en_i                      ),
