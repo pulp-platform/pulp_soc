@@ -14,14 +14,13 @@ package:
 
 dependencies:
   L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
-  apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.1.0 }
+  apb:                    { git: "https://github.com/pulp-platform/apb.git", rev: "9dfe0c7be9d689e1fbf84629a4834ad2d17d0964" } # Update once PR #4 got merged
   adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.2 }
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
-  apb_fll_if:             { git: "https://github.com/pulp-platform/apb_fll_if.git", version: 0.1.3 }
+  apb_fll_if:             { git: "https://github.com/pulp-platform/apb_fll_if.git", rev: "0643b11bc9ebc83ca9ebe8a7505c675a49b73708" } # Update once PR #2 got merged
   apb_gpio:               { git: "https://github.com/pulp-platform/apb_gpio.git", rev: "0e9f142f2f11278445c953ad011fce1c7ed85b66" }
-  apb_node:               { git: "https://github.com/pulp-platform/apb_node.git", version: 0.1.1 }
-  apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
+  apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", rev: "297b818b7e528963aa77bf19792a459f482de034" } #Update once PR #4 got merged
   axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
   # axi_node:               { git: "https://github.com/pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
   axi_slice:              { git: "https://github.com/pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
@@ -63,7 +62,6 @@ sources:
       - rtl/pulp_soc/boot_rom.sv
       - rtl/pulp_soc/l2_ram_multi_bank.sv
       - rtl/pulp_soc/lint_jtag_wrap.sv
-      - rtl/pulp_soc/periph_bus_wrap.sv
       - rtl/pulp_soc/soc_clk_rst_gen.sv
       - rtl/pulp_soc/soc_event_arbiter.sv
       - rtl/pulp_soc/soc_event_generator.sv
