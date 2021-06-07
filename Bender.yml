@@ -14,7 +14,7 @@ package:
 
 dependencies:
   L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
-  apb:                    { git: "https://github.com/pulp-platform/apb.git", rev: "9dfe0c7be9d689e1fbf84629a4834ad2d17d0964" } # Update once PR #4 got merged
+  apb:                    { git: "https://github.com/pulp-platform/apb.git", version: 0.2.1 }
   adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.2 }
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
@@ -52,7 +52,6 @@ sources:
       - rtl/pulp_soc/boot_rom.sv
       - rtl/pulp_soc/l2_ram_multi_bank.sv
       - rtl/pulp_soc/lint_jtag_wrap.sv
-      - rtl/pulp_soc/soc_clk_rst_gen.sv
       - rtl/pulp_soc/soc_event_arbiter.sv
       - rtl/pulp_soc/soc_event_generator.sv
       - rtl/pulp_soc/soc_event_queue.sv

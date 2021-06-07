@@ -13,6 +13,8 @@
 `include "apb/assign.svh"
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
+`include "register_interface/typedef.svh"
+`include "register_interface/assign.svh"
 
 module soc_peripherals
     import pkg_soc_interconnect::addr_map_rule_t;
@@ -29,13 +31,14 @@ module soc_peripherals
                                 // the number of GPIOs.
 ) (
     input  logic                       clk_i,
-    input  logic                       periph_clk_i,
     input  logic                       rst_ni,
+    input  logic                       periph_clk_i,
+    input  logic                       periph_rstn_i,
     //check the reset
-    input  logic                       ref_clk_i,
     input  logic                       slow_clk_i,
+    input  logic                       slow_rstn_i,
 
-    input  logic                       sel_fll_clk_i,
+    input  logic                       sel_pll_clk_i,
     input  logic                       dft_test_mode_i,
     input  logic                       dft_cg_enable_i,
     output logic [31:0]                fc_bootaddr_o,
@@ -56,16 +59,14 @@ module soc_peripherals
     APB.Master                         apb_intrpt_ctrl_master,
     APB.Master                         apb_hwpe_master,
     APB.Master                         apb_debug_master,
+    APB.Master                         apb_chip_ctrl_master,
+   // MASTER PORT TO PLLs
+    REG_BUS.out                        regbus_pll_cfg_master,
+
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,
     XBAR_TCDM_BUS.Master               l2_tx_master,
-    // MASTER PORT TO SOC FLL
-    FLL_BUS.out                        soc_fll_master,
-    // MASTER PORT TO PER FLL
-    FLL_BUS.out                        per_fll_master,
-    // MASTER PORT TO CLUSTER FLL
-    FLL_BUS.out                        cluster_fll_master,
 
     input  logic                       dma_pe_evt_i,
     input  logic                       dma_pe_irq_i,
@@ -112,12 +113,7 @@ module soc_peripherals
     output logic                       fc_event_valid_o,
     input  logic                       fc_event_ready_i,
 
-    output logic                       cluster_pow_o,
-    output logic                       cluster_byp_o, // bypass cluster
-    output logic                [63:0] cluster_boot_addr_o,
-    output logic                       cluster_fetch_enable_o,
-    output logic                       cluster_rstn_o,
-    output logic                       cluster_irq_o
+    output logic                       cluster_rstn_req_o
 );
 
 
@@ -224,6 +220,7 @@ module soc_peripherals
     `APB_TYPEDEF_REQ_T(apb_req_t, addr_t, data_t, strb_t)
     `APB_TYPEDEF_RESP_T(apb_resp_t, data_t)
     `AXI_LITE_TYPEDEF_ALL(axi_lite, addr_t, data_t, strb_t)
+    `REG_BUS_TYPEDEF_ALL(regbus, addr_t, data_t, strb_t);
 
     // Convert AXI lite interface to structs
     axi_lite_req_t s_axi_lite_master_req;
@@ -232,7 +229,7 @@ module soc_peripherals
     `AXI_LITE_ASSIGN_FROM_RESP(axi_lite_slave, s_axi_lite_master_resp)
 
     // APB Slaves
-    localparam NumAPBSlaves = 11;
+    localparam NumAPBSlaves = 12;
     addr_map_rule_t [NumAPBSlaves-1:0] apb_addr_ranges;
     apb_req_t [NumAPBSlaves-1:0] s_apb_slaves_req;
     apb_resp_t [NumAPBSlaves-1:0] s_apb_slaves_resp;
@@ -251,24 +248,20 @@ module soc_peripherals
   `APB_ASSIGN_FROM_REQ(s_``slave_name``_slave, s_apb_slaves_req[port_idx]) \
   `APB_ASSIGN_TO_RESP(s_apb_slaves_resp[port_idx], s_``slave_name``_slave)
 
-    `SOC_PERIPHERALS_CREATE_SLAVE(0,  fll,            `SOC_MEM_MAP_FLL_START_ADDR,            `SOC_MEM_MAP_FLL_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(1,  gpio,           `SOC_MEM_MAP_GPIO_START_ADDR,           `SOC_MEM_MAP_GPIO_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(2,  udma,           `SOC_MEM_MAP_UDMA_START_ADDR,           `SOC_MEM_MAP_UDMA_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(3,  soc_ctrl,       `SOC_MEM_MAP_SOC_CTRL_START_ADDR,       `SOC_MEM_MAP_SOC_CTRL_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(4,  adv_timer,      `SOC_MEM_MAP_ADV_TIMER_START_ADDR,      `SOC_MEM_MAP_ADV_TIMER_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(5,  soc_event_gen,  `SOC_MEM_MAP_SOC_EVENT_GEN_START_ADDR,  `SOC_MEM_MAP_SOC_EVENT_GEN_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(6,  interrupt_ctrl, `SOC_MEM_MAP_INTERRUPT_CTRL_START_ADDR, `SOC_MEM_MAP_INTERRUPT_CTRL_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(7,  apb_timer,      `SOC_MEM_MAP_APB_TIMER_START_ADDR,      `SOC_MEM_MAP_APB_TIMER_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(8,  hwpe,           `SOC_MEM_MAP_HWPE_START_ADDR,           `SOC_MEM_MAP_HWPE_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(9,  virtual_stdout, `SOC_MEM_MAP_VIRTUAL_STDOUT_START_ADDR, `SOC_MEM_MAP_VIRTUAL_STDOUT_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(10, debug,          `SOC_MEM_MAP_DEBUG_START_ADDR,          `SOC_MEM_MAP_DEBUG_END_ADDR)
-
-    // Assign internal slave signals to external APB ports
-    `APB_ASSIGN(apb_intrpt_ctrl_master ,s_interrupt_ctrl_slave)
-    `APB_ASSIGN(apb_hwpe_master, s_hwpe_slave)
-    `APB_ASSIGN(apb_debug_master, s_debug_slave)
+    `SOC_PERIPHERALS_CREATE_SLAVE(0,  gpio,           `SOC_MEM_MAP_GPIO_START_ADDR,           `SOC_MEM_MAP_GPIO_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(1,  udma,           `SOC_MEM_MAP_UDMA_START_ADDR,           `SOC_MEM_MAP_UDMA_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(2,  soc_ctrl,       `SOC_MEM_MAP_SOC_CTRL_START_ADDR,       `SOC_MEM_MAP_SOC_CTRL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(3,  adv_timer,      `SOC_MEM_MAP_ADV_TIMER_START_ADDR,      `SOC_MEM_MAP_ADV_TIMER_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(4,  soc_event_gen,  `SOC_MEM_MAP_SOC_EVENT_GEN_START_ADDR,  `SOC_MEM_MAP_SOC_EVENT_GEN_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(5,  interrupt_ctrl, `SOC_MEM_MAP_INTERRUPT_CTRL_START_ADDR, `SOC_MEM_MAP_INTERRUPT_CTRL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(6,  apb_timer,      `SOC_MEM_MAP_APB_TIMER_START_ADDR,      `SOC_MEM_MAP_APB_TIMER_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(7,  hwpe,           `SOC_MEM_MAP_HWPE_START_ADDR,           `SOC_MEM_MAP_HWPE_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(8,  virtual_stdout, `SOC_MEM_MAP_VIRTUAL_STDOUT_START_ADDR, `SOC_MEM_MAP_VIRTUAL_STDOUT_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(9,  debug,          `SOC_MEM_MAP_DEBUG_START_ADDR,          `SOC_MEM_MAP_DEBUG_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(10, chip_ctrl,      `SOC_MEM_MAP_CHIP_CTRL_START_ADDR,      `SOC_MEM_MAP_CHIP_CTRL_END_ADDR)
 
 
+ // AXI Lite to APB converter with integrated APB Crossbar
     axi_lite_to_apb #(
       .NoApbSlaves      ( NumAPBSlaves    ),
       .NoRules          ( NumAPBSlaves    ),
@@ -291,60 +284,11 @@ module soc_peripherals
       .addr_map_i      ( apb_addr_ranges        )
     );
 
-    /////////////////////////////////////////////////////////////////////////
-    //  █████╗ ██████╗ ██████╗     ███████╗██╗     ██╗         ██╗███████╗ //
-    // ██╔══██╗██╔══██╗██╔══██╗    ██╔════╝██║     ██║         ██║██╔════╝ //
-    // ███████║██████╔╝██████╔╝    █████╗  ██║     ██║         ██║█████╗   //
-    // ██╔══██║██╔═══╝ ██╔══██╗    ██╔══╝  ██║     ██║         ██║██╔══╝   //
-    // ██║  ██║██║     ██████╔╝    ██║     ███████╗███████╗    ██║██║      //
-    // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚═╝     ╚══════╝╚══════╝    ╚═╝╚═╝      //
-    /////////////////////////////////////////////////////////////////////////
-    apb_fll_if #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) apb_fll_if_i (
-        .HCLK        ( clk_i                   ),
-        .HRESETn     ( rst_ni                  ),
-
-        .PADDR       ( s_fll_slave.paddr         ),
-        .PWDATA      ( s_fll_slave.pwdata        ),
-        .PWRITE      ( s_fll_slave.pwrite        ),
-        .PSEL        ( s_fll_slave.psel          ),
-        .PENABLE     ( s_fll_slave.penable       ),
-        .PRDATA      ( s_fll_slave.prdata        ),
-        .PREADY      ( s_fll_slave.pready        ),
-        .PSLVERR     ( s_fll_slave.pslverr       ),
-
-        .fll1_req_o    ( soc_fll_master.req      ),
-        .fll1_wrn_o    ( soc_fll_master.wrn      ),
-        .fll1_add_o    ( soc_fll_master.addr[1:0] ),
-        .fll1_data_o   ( soc_fll_master.wdata     ),
-        .fll1_ack_i    ( soc_fll_master.ack      ),
-        .fll1_r_data_i ( soc_fll_master.rdata   ),
-        .fll1_lock_i   ( soc_fll_master.lock     ),
-
-        .fll2_req_o    ( per_fll_master.req      ),
-        .fll2_wrn_o    ( per_fll_master.wrn      ),
-        .fll2_add_o    ( per_fll_master.addr[1:0] ),
-        .fll2_data_o   ( per_fll_master.wdata     ),
-        .fll2_ack_i    ( per_fll_master.ack      ),
-        .fll2_r_data_i ( per_fll_master.rdata   ),
-        .fll2_lock_i   ( per_fll_master.lock     ),
-
-        .fll3_req_o    ( cluster_fll_master.req      ),
-        .fll3_wrn_o    ( cluster_fll_master.wrn      ),
-        .fll3_add_o    ( cluster_fll_master.addr[1:0] ),
-        .fll3_data_o   ( cluster_fll_master.wdata     ),
-        .fll3_ack_i    ( cluster_fll_master.ack      ),
-        .fll3_r_data_i ( cluster_fll_master.rdata   ),
-        .fll3_lock_i   ( cluster_fll_master.lock     ),
-
-        .bbgen_req_o   (),
-        .bbgen_wrn_o   (),
-        .bbgen_sel_o   (),
-        .bbgen_data_o  (),
-        .bbgen_ack_i   (),
-        .bbgen_r_data_i(),
-        .bbgen_lock_i  ()
-    );
-
+    // Assign internal slave signals to external APB ports
+    `APB_ASSIGN(apb_intrpt_ctrl_master ,s_interrupt_ctrl_slave)
+    `APB_ASSIGN(apb_hwpe_master, s_hwpe_slave)
+    `APB_ASSIGN(apb_debug_master, s_debug_slave)
+    `APB_ASSIGN(apb_chip_ctrl_master, s_chip_ctrl_slave)
 
 `ifdef SYNTHESIS
     if (SIM_STDOUT)
@@ -488,7 +432,7 @@ module soc_peripherals
         .PREADY              ( s_soc_ctrl_slave.pready  ),
         .PSLVERR             ( s_soc_ctrl_slave.pslverr ),
 
-        .sel_fll_clk_i       ( sel_fll_clk_i          ),
+        .sel_pll_clk_i       ( sel_pll_clk_i          ),
         .boot_l2_i           ( boot_l2_i              ),
         .bootsel_i           ( bootsel_i              ),
         .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
@@ -505,11 +449,11 @@ module soc_peripherals
         .cluster_pow_o       ( cluster_pow_o          ),
         .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
 
-        .cluster_byp_o            ( cluster_byp_o          ),
-        .cluster_boot_addr_o      ( cluster_boot_addr_o    ),
-        .cluster_fetch_enable_o   ( cluster_fetch_enable_o ),
-        .cluster_rstn_o           ( cluster_rstn_o         ),
-        .cluster_irq_o            ( cluster_irq_o          )
+        .cluster_byp_o            (                        ), // Not used anymore
+        .cluster_boot_addr_o      (                        ), // Not used anymore
+        .cluster_fetch_enable_o   (                        ), // Not used anymore
+        .cluster_rstn_o           ( cluster_rstn_req_o     ),
+        .cluster_irq_o            (                        )  // Not used anymore
     );
 
     apb_adv_timer #(
