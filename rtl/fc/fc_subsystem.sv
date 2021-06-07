@@ -131,9 +131,13 @@ module fc_subsystem #(
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
+`ifndef PULP_FPGA_EMUL
+    cv32e40p_wrapper #(
+`else
     cv32e40p_core #(
+`endif
         .PULP_XPULP       (1),
-        .PULP_CLUSTER     (0),
+        .PULP_CLUSTER     (1),
         .FPU              (1),
         .PULP_ZFINX       (0),
         .NUM_MHPMCOUNTERS (1)
