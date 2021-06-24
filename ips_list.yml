@@ -69,7 +69,7 @@ jtag_pulp:
   commit: v0.1
   domain: [soc]
 cv32e40p:
-  commit: pulpissimo-v3.4.0-rev2
+  commit: pulpissimo-v3.4.0-rev3
   domain: [cluster, soc]
 ibex:
   commit: pulpissimo-v6.1.1
