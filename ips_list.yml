@@ -85,7 +85,7 @@ tech_cells_generic:
   commit: v0.2.3
   domain: [cluster, soc]
 udma/udma_core:
-  commit: v1.0.2
+  commit: v1.1.0
   domain: [soc]
 udma/udma_uart:
   commit: v1.0.1

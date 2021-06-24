@@ -35,7 +35,7 @@ dependencies:
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
-  udma_core:              { git: "https://github.com/pulp-platform/udma_core.git", version: 1.0.2 }
+  udma_core:              { git: "https://github.com/pulp-platform/udma_core.git", version: 1.1.0 }
   udma_uart:              { git: "https://github.com/pulp-platform/udma_uart.git", version: 1.0.1 }
   udma_i2c:               { git: "https://github.com/pulp-platform/udma_i2c.git", version: 1.0.0 }
   udma_i2s:               { git: "https://github.com/pulp-platform/udma_i2s.git", version: 1.1.2 }

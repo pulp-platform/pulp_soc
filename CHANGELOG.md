@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced latency of APB and AXI transactions
 - Bumped register interface IP Version to 0.3.1
 - Bumped cv32e40p IP Version to pulpissimo-v3.4.0-rev3
+- Bumped udma_core IP version to 1.1.0
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
 - Removed dependency to archived legacy axi_slice_dc
