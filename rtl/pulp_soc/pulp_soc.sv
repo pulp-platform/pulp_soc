@@ -14,43 +14,43 @@
 `include "axi/assign.svh"
 
 module pulp_soc import dm::*; #(
-    parameter CORE_TYPE               = 0,
-    parameter USE_FPU                 = 1,
-    parameter USE_HWPE                = 1,
-    parameter USE_CLUSTER_EVENT       = 1,
-    parameter AXI_ADDR_WIDTH          = 32,
-    parameter AXI_DATA_IN_WIDTH       = 64,
-    parameter AXI_DATA_OUT_WIDTH      = 32,
-    parameter AXI_ID_IN_WIDTH         = 6,
-    localparam AXI_ID_OUT_WIDTH       = pkg_soc_interconnect::AXI_ID_OUT_WIDTH,
-    parameter AXI_USER_WIDTH          = 6,
-    parameter AXI_STRB_WIDTH_IN       = AXI_DATA_IN_WIDTH/8,
-    parameter AXI_STRB_WIDTH_OUT      = AXI_DATA_OUT_WIDTH/8,
-    parameter C2S_AW_WIDTH            = 80,
-    parameter C2S_W_WIDTH             = 79,
-    parameter C2S_B_WIDTH             = 15,
-    parameter C2S_AR_WIDTH            = 74,
-    parameter C2S_R_WIDTH             = 80,
-    parameter S2C_AW_WIDTH            = 78,
-    parameter S2C_W_WIDTH             = 43,
-    parameter S2C_B_WIDTH             = 13,
-    parameter S2C_AR_WIDTH            = 72,
-    parameter S2C_R_WIDTH             = 46,
-    parameter CDC_FIFOS_LOG_DEPTH     = 3,
-    parameter EVNT_WIDTH              = 8,
-    parameter NB_CORES                = 8,
-    parameter NB_HWPE_PORTS           = 4,
-    parameter NGPIO                   = 43,
-    parameter NPAD                    = 64, //Must not be changed as other parts
+    parameter CORE_TYPE           = 0,
+    parameter USE_FPU             = 1,
+    parameter USE_HWPE            = 1,
+    parameter USE_CLUSTER_EVENT   = 1,
+    parameter AXI_ADDR_WIDTH      = 32,
+    parameter AXI_DATA_IN_WIDTH   = 64,
+    parameter AXI_DATA_OUT_WIDTH  = 32,
+    parameter AXI_ID_IN_WIDTH     = 6,
+    localparam AXI_ID_OUT_WIDTH   = pkg_soc_interconnect::AXI_ID_OUT_WIDTH,
+    parameter AXI_USER_WIDTH      = 6,
+    parameter AXI_STRB_WIDTH_IN   = AXI_DATA_IN_WIDTH/8,
+    parameter AXI_STRB_WIDTH_OUT  = AXI_DATA_OUT_WIDTH/8,
+    parameter CDC_FIFOS_LOG_DEPTH = 3,
+    parameter EVNT_WIDTH          = 8,
+    parameter NB_CORES            = 8,
+    parameter NB_HWPE_PORTS       = 4,
+    parameter NGPIO               = 43,
+    parameter NPAD                = 64, //Must not be changed as other parts
                                        //downstreams are not parametrci
-    parameter NBIT_PADCFG             = 6, //Must not be changed as other parts
+    parameter NBIT_PADCFG         = 6, //Must not be changed as other parts
                                       //downstreams are not parametrci
-    parameter NBIT_PADMUX             = 2,
+    parameter NBIT_PADMUX         = 2,
 
-    parameter int unsigned N_UART     = 1,
-    parameter int unsigned N_SPI      = 1,
-    parameter int unsigned N_I2C      = 2,
-    parameter USE_ZFINX               = 1
+    parameter int unsigned N_UART = 1,
+    parameter int unsigned N_SPI  = 1,
+    parameter int unsigned N_I2C  = 2,
+    parameter USE_ZFINX           = 1,
+    localparam C2S_AW_WIDTH       = AXI_ID_IN_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+$bits(axi_pkg::atop_t)+1,
+    localparam C2S_W_WIDTH        = AXI_USER_WIDTH+AXI_STRB_WIDTH_IN+AXI_DATA_IN_WIDTH+1,
+    localparam C2S_R_WIDTH        = AXI_ID_IN_WIDTH+AXI_DATA_IN_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::resp_t)+1,
+    localparam C2S_B_WIDTH        = AXI_USER_WIDTH+AXI_ID_IN_WIDTH+$bits(axi_pkg::resp_t),
+    localparam C2S_AR_WIDTH       = AXI_ID_IN_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+1,
+    localparam S2C_AW_WIDTH       = AXI_ID_OUT_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+$bits(axi_pkg::atop_t)+1,
+    localparam S2C_W_WIDTH        = AXI_USER_WIDTH+AXI_STRB_WIDTH_OUT+AXI_DATA_OUT_WIDTH+1,
+    localparam S2C_R_WIDTH        = AXI_ID_OUT_WIDTH+AXI_DATA_OUT_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::resp_t)+1,
+    localparam S2C_B_WIDTH        = AXI_USER_WIDTH+AXI_ID_OUT_WIDTH+$bits(axi_pkg::resp_t),
+    localparam S2C_AR_WIDTH       = AXI_ID_OUT_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+1
 ) (
     input logic                           ref_clk_i,
     input logic                           slow_clk_i,
@@ -124,9 +124,11 @@ module pulp_soc import dm::*; #(
     input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][S2C_B_WIDTH-1:0]  async_data_master_b_data_i,
     output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_data_master_b_rptr_o,
 
+    // EVENT BUS
     output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_cluster_events_wptr_o,
     input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_cluster_events_rptr_i,
     output logic [EVNT_WIDTH-1:0][2**CDC_FIFOS_LOG_DEPTH-1:0]  async_cluster_events_data_o,
+
     output logic                          cluster_clk_o,
     input logic                           cluster_busy_i,
     output logic                          dma_pe_evt_ack_o,
