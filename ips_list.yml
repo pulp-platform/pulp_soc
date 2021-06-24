@@ -121,5 +121,5 @@ riscv-dbg:
   commit: v0.4.1
   domain: [soc]
 register_interface:
-  commit: v0.2.1
+  commit: v0.3.1
   domain: [soc]
