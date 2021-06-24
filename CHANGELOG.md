@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched to common cells CDC for cluster event exchange
 - Bumped axi IP Version to 0.29.1
 - Reduced latency of APB and AXI transactions
+- Bumped register interface IP Version to 0.3.1
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
 - Removed dependency to archived legacy axi_slice_dc
