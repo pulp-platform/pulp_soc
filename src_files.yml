@@ -66,6 +66,7 @@ components:
     rtl/components/scm_512x32.sv,
     rtl/components/tcdm_arbiter_2x1.sv,
     rtl/components/obi_pulp_adapter.sv,
+    rtl/components/apb_intf.sv, # TODO Added to workaround missing src_files.yml in apb repo. Should be removed once issue is resolved.
   ]
 
 components_rtl:
