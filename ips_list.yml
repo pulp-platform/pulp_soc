@@ -51,7 +51,7 @@ apb_interrupt_cntrl:
   commit: v0.1.1
   domain: [soc]
 axi/axi:
-  commit: v0.28.0
+  commit: v0.29.1
   domain: [cluster, soc]
 # axi/axi_node:
 #   commit: v1.1.4
