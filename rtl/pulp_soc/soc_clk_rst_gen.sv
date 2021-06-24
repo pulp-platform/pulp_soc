@@ -74,7 +74,9 @@ module soc_clk_rst_gen (
     logic four_req;
     logic four_ack;
 
-    logic [7:0]  soc_pwdata_q, soc_pwdata_d;
+    logic [7:0]  soc_pwdata_q, soc_pwdata_d,
+                 soc_prdata_q, soc_prdata_d,
+                 soc_clk_div, cluster_clk_div, periph_clk_div;
     logic        soc_pwrite_q, soc_pwrite_d;
     logic [11:0] soc_paddr_q, soc_paddr_d;
 
@@ -144,11 +146,13 @@ module soc_clk_rst_gen (
         if (!rstn_glob_i) begin
             from_soc_state_q <= SOC_APB_IDLE;
             soc_pwdata_q <= '0;
+            soc_prdata_q <= '0;
             soc_pwrite_q <= '0;
             soc_paddr_q  <= '0;
         end else begin
             from_soc_state_q <= from_soc_state_d;
             soc_pwdata_q <= soc_pwdata_d;
+            soc_prdata_q <= soc_prdata_d;
             soc_pwrite_q <= soc_pwrite_d;
             soc_paddr_q  <= soc_paddr_d;
         end
@@ -201,6 +205,8 @@ module soc_clk_rst_gen (
         cluster_div_valid = 1'b0;
         periph_div_valid = 1'b0;
 
+        soc_prdata_d = '0;
+
         clk_div_state_d = clk_div_state_q;
 
         unique case(clk_div_state_q)
@@ -225,7 +231,14 @@ module soc_clk_rst_gen (
                     if (soc_div_ready || cluster_div_ready || periph_div_ready || dummy_access)
                         clk_div_state_d = CLK_DIV_ACK;
                 end else begin // if (soc_pwrite_q)
-                    // handle reads: just progress
+                    // handle reads
+                    if (soc_div_access)
+                        soc_prdata_d = soc_clk_div;
+                    else if (cluster_div_access)
+                        soc_prdata_d = cluster_clk_div;
+                    else if (periph_div_access)
+                        soc_prdata_d = periph_clk_div;
+
                     clk_div_state_d = CLK_DIV_ACK;
                 end
             end
@@ -249,8 +262,7 @@ module soc_clk_rst_gen (
         end
     end
 
-    // We just return garbage data on read
-    assign apb_slave.prdata = 32'hdeadda7a;
+    assign apb_slave.prdata = soc_prdata_q;
 
     // We don't support pslverr. At some point this should be routed to an
     // interrupt.
@@ -269,6 +281,7 @@ module soc_clk_rst_gen (
         .clk_div_data_i(soc_pwdata_q),
         .clk_div_valid_i(soc_div_valid),
         .clk_div_ack_o(soc_div_ready),
+        .clk_div_data_o(soc_clk_div),
         .clk_o(s_clk_for_soc)
     );
 
@@ -284,6 +297,7 @@ module soc_clk_rst_gen (
         .clk_div_data_i(soc_pwdata_q),
         .clk_div_valid_i(cluster_div_valid),
         .clk_div_ack_o(cluster_div_ready),
+        .clk_div_data_o(cluster_clk_div),
         .clk_o(s_clk_for_cluster)
     );
 
@@ -299,6 +313,7 @@ module soc_clk_rst_gen (
         .clk_div_data_i(soc_pwdata_q), // 8 bit might not be enough for periph
         .clk_div_valid_i(periph_div_valid),
         .clk_div_ack_o(periph_div_ready),
+        .clk_div_data_o(periph_clk_div),
         .clk_o(s_clk_for_per)
     );
 
