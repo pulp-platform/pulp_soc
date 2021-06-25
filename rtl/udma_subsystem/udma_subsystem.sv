@@ -140,7 +140,7 @@ module udma_subsystem
 `endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER + N_CH_HYPER;
-    localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_FPGA + N_EXT_PER + N_CH_HYPER;
+    localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + 2*N_I2C + N_I2S + N_FPGA + N_EXT_PER + N_CH_HYPER;
 
     localparam N_RX_EXT_CHANNELS =   N_FILTER;
     localparam N_TX_EXT_CHANNELS = 2*N_FILTER;
@@ -154,7 +154,8 @@ module udma_subsystem
     localparam CH_ID_TX_SPIM    = N_UART;
     localparam CH_ID_CMD_SPIM   = CH_ID_TX_SPIM  + N_SPI  ;
     localparam CH_ID_TX_I2C     = CH_ID_CMD_SPIM + N_SPI  ;
-    localparam CH_ID_TX_SDIO    = CH_ID_TX_I2C   + N_I2C  ;
+    localparam CH_ID_CMD_I2C    = CH_ID_TX_I2C   + N_I2C  ;
+    localparam CH_ID_TX_SDIO    = CH_ID_CMD_I2C  + N_I2C  ;
     localparam CH_ID_TX_I2S     = CH_ID_TX_SDIO  + N_SDIO ;
     localparam CH_ID_TX_CAM     = CH_ID_TX_I2S   + N_I2S  ;
     localparam CH_ID_TX_HYPER   = CH_ID_TX_CAM   + N_CAM  ;
@@ -273,6 +274,7 @@ module udma_subsystem
 
     logic            [N_SPI-1:0] s_spi_eot;
     logic            [N_I2C-1:0] s_i2c_evt;
+    logic            [N_I2C-1:0] s_i2c_eot;
     logic           [N_UART-1:0] s_uart_evt;
 
     logic         [3:0] s_trigger_events;
@@ -606,13 +608,14 @@ module udma_subsystem
         begin: i_i2c_gen
             assign s_events[4*(PER_ID_I2C+g_i2c)+0] = s_rx_ch_events[CH_ID_RX_I2C+g_i2c];
             assign s_events[4*(PER_ID_I2C+g_i2c)+1] = s_tx_ch_events[CH_ID_TX_I2C+g_i2c];
-            assign s_events[4*(PER_ID_I2C+g_i2c)+2] = 1'b0;
-            assign s_events[4*(PER_ID_I2C+g_i2c)+3] = 1'b0;
+            assign s_events[4*(PER_ID_I2C+g_i2c)+2] = s_tx_ch_events[CH_ID_CMD_I2C+g_i2c];
+            assign s_events[4*(PER_ID_I2C+g_i2c)+3] = s_i2c_eot[g_i2c];
 
             assign s_rx_cfg_stream[CH_ID_RX_I2C+g_i2c] = 'h0;
             assign s_rx_cfg_stream_id[CH_ID_RX_I2C+g_i2c] = 'h0;
             assign s_rx_ch_destination[CH_ID_RX_I2C+g_i2c] = 'h0;
             assign s_tx_ch_destination[CH_ID_TX_I2C+g_i2c] = 'h0;
+            assign s_tx_ch_destination[CH_ID_CMD_I2C+g_i2c] = 'h0;
 
             udma_i2c_top #(
                 .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
@@ -621,59 +624,76 @@ module udma_subsystem
             //
             // inputs & outputs
             //
-                .sys_clk_i           ( s_clk_periphs_core[PER_ID_I2C+g_i2c] ),
-                .periph_clk_i        ( s_clk_periphs_per[PER_ID_I2C+g_i2c]  ),
-                .rstn_i              ( sys_resetn_i                  ),
+                .sys_clk_i           ( s_clk_periphs_core[PER_ID_I2C+g_i2c]      ),
+                .periph_clk_i        ( s_clk_periphs_per[PER_ID_I2C+g_i2c]       ),
+                .rstn_i              ( sys_resetn_i                              ),
+                .i2c_eot_o           ( s_i2c_eot[g_i2c]                          ),
 
-                .cfg_data_i          ( s_periph_data_to                  ),
-                .cfg_addr_i          ( s_periph_addr                     ),
-                .cfg_valid_i         ( s_periph_valid[PER_ID_I2C+g_i2c]       ),
-                .cfg_rwn_i           ( s_periph_rwn                      ),
-                .cfg_data_o          ( s_periph_data_from[PER_ID_I2C+g_i2c]   ),
-                .cfg_ready_o         (  s_periph_ready[PER_ID_I2C+g_i2c] ),
+                .cfg_data_i          ( s_periph_data_to                          ),
+                .cfg_addr_i          ( s_periph_addr                             ),
+                .cfg_valid_i         ( s_periph_valid[PER_ID_I2C+g_i2c]          ),
+                .cfg_rwn_i           ( s_periph_rwn                              ),
+                .cfg_data_o          ( s_periph_data_from[PER_ID_I2C+g_i2c]      ),
+                .cfg_ready_o         (  s_periph_ready[PER_ID_I2C+g_i2c]         ),
 
+                .cmd_req_o           ( s_tx_ch_req[CH_ID_CMD_I2C+g_i2c]          ),
+                .cmd_gnt_i           ( s_tx_ch_gnt[CH_ID_CMD_I2C+g_i2c]          ),
+                .cmd_datasize_o      ( s_tx_ch_datasize[CH_ID_CMD_I2C+g_i2c]     ),
+                .cmd_i               ( s_tx_ch_data[CH_ID_CMD_I2C+g_i2c]         ),
+                .cmd_valid_i         ( s_tx_ch_valid[CH_ID_CMD_I2C+g_i2c]        ),
+                .cmd_ready_o         ( s_tx_ch_ready[CH_ID_CMD_I2C+g_i2c]        ),
 
-                .cfg_tx_startaddr_o  ( s_tx_cfg_startaddr[CH_ID_TX_I2C+g_i2c]   ),
-                .cfg_tx_size_o       ( s_tx_cfg_size[CH_ID_TX_I2C+g_i2c]        ),
-                .cfg_tx_continuous_o ( s_tx_cfg_continuous[CH_ID_TX_I2C+g_i2c]  ),
-                .cfg_tx_en_o         ( s_tx_cfg_en[CH_ID_TX_I2C+g_i2c]          ),
-                .cfg_tx_clr_o        ( s_tx_cfg_clr[CH_ID_TX_I2C+g_i2c]         ),
-                .cfg_tx_en_i         ( s_tx_ch_en[CH_ID_TX_I2C+g_i2c]           ),
-                .cfg_tx_pending_i    ( s_tx_ch_pending[CH_ID_TX_I2C+g_i2c]      ),
-                .cfg_tx_curr_addr_i  ( s_tx_ch_curr_addr[CH_ID_TX_I2C+g_i2c]    ),
-                .cfg_tx_bytes_left_i ( s_tx_ch_bytes_left[CH_ID_TX_I2C+g_i2c]   ),
+                .cfg_cmd_startaddr_o  ( s_tx_cfg_startaddr[CH_ID_CMD_I2C+g_i2c]  ),
+                .cfg_cmd_size_o       ( s_tx_cfg_size[CH_ID_CMD_I2C+g_i2c]       ),
+                .cfg_cmd_continuous_o ( s_tx_cfg_continuous[CH_ID_CMD_I2C+g_i2c] ),
+                .cfg_cmd_en_o         ( s_tx_cfg_en[CH_ID_CMD_I2C+g_i2c]         ),
+                .cfg_cmd_clr_o        ( s_tx_cfg_clr[CH_ID_CMD_I2C+g_i2c]        ),
+                .cfg_cmd_en_i         ( s_tx_ch_en[CH_ID_CMD_I2C+g_i2c]          ),
+                .cfg_cmd_pending_i    ( s_tx_ch_pending[CH_ID_CMD_I2C+g_i2c]     ),
+                .cfg_cmd_curr_addr_i  ( s_tx_ch_curr_addr[CH_ID_CMD_I2C+g_i2c]   ),
+                .cfg_cmd_bytes_left_i ( s_tx_ch_bytes_left[CH_ID_CMD_I2C+g_i2c]  ),
 
-                .cfg_rx_startaddr_o  ( s_rx_cfg_startaddr[CH_ID_RX_I2C+g_i2c]   ),
-                .cfg_rx_size_o       ( s_rx_cfg_size[CH_ID_RX_I2C+g_i2c]        ),
-                .cfg_rx_continuous_o ( s_rx_cfg_continuous[CH_ID_RX_I2C+g_i2c]  ),
-                .cfg_rx_en_o         ( s_rx_cfg_en[CH_ID_RX_I2C+g_i2c]          ),
-                .cfg_rx_clr_o        ( s_rx_cfg_clr[CH_ID_RX_I2C+g_i2c]         ),
-                .cfg_rx_en_i         ( s_rx_ch_en[CH_ID_RX_I2C+g_i2c]           ),
-                .cfg_rx_pending_i    ( s_rx_ch_pending[CH_ID_RX_I2C+g_i2c]      ),
-                .cfg_rx_curr_addr_i  ( s_rx_ch_curr_addr[CH_ID_RX_I2C+g_i2c]    ),
-                .cfg_rx_bytes_left_i ( s_rx_ch_bytes_left[CH_ID_RX_I2C+g_i2c]   ),
+                .cfg_tx_startaddr_o  ( s_tx_cfg_startaddr[CH_ID_TX_I2C+g_i2c]    ),
+                .cfg_tx_size_o       ( s_tx_cfg_size[CH_ID_TX_I2C+g_i2c]         ),
+                .cfg_tx_continuous_o ( s_tx_cfg_continuous[CH_ID_TX_I2C+g_i2c]   ),
+                .cfg_tx_en_o         ( s_tx_cfg_en[CH_ID_TX_I2C+g_i2c]           ),
+                .cfg_tx_clr_o        ( s_tx_cfg_clr[CH_ID_TX_I2C+g_i2c]          ),
+                .cfg_tx_en_i         ( s_tx_ch_en[CH_ID_TX_I2C+g_i2c]            ),
+                .cfg_tx_pending_i    ( s_tx_ch_pending[CH_ID_TX_I2C+g_i2c]       ),
+                .cfg_tx_curr_addr_i  ( s_tx_ch_curr_addr[CH_ID_TX_I2C+g_i2c]     ),
+                .cfg_tx_bytes_left_i ( s_tx_ch_bytes_left[CH_ID_TX_I2C+g_i2c]    ),
 
-                .data_tx_req_o       ( s_tx_ch_req[CH_ID_TX_I2C+g_i2c]          ),
-                .data_tx_gnt_i       ( s_tx_ch_gnt[CH_ID_TX_I2C+g_i2c]          ),
-                .data_tx_datasize_o  ( s_tx_ch_datasize[CH_ID_TX_I2C+g_i2c]     ),
-                .data_tx_i           ( s_tx_ch_data[CH_ID_TX_I2C+g_i2c][7:0]    ),
-                .data_tx_valid_i     ( s_tx_ch_valid[CH_ID_TX_I2C+g_i2c]        ),
-                .data_tx_ready_o     ( s_tx_ch_ready[CH_ID_TX_I2C+g_i2c]        ),
+                .cfg_rx_startaddr_o  ( s_rx_cfg_startaddr[CH_ID_RX_I2C+g_i2c]    ),
+                .cfg_rx_size_o       ( s_rx_cfg_size[CH_ID_RX_I2C+g_i2c]         ),
+                .cfg_rx_continuous_o ( s_rx_cfg_continuous[CH_ID_RX_I2C+g_i2c]   ),
+                .cfg_rx_en_o         ( s_rx_cfg_en[CH_ID_RX_I2C+g_i2c]           ),
+                .cfg_rx_clr_o        ( s_rx_cfg_clr[CH_ID_RX_I2C+g_i2c]          ),
+                .cfg_rx_en_i         ( s_rx_ch_en[CH_ID_RX_I2C+g_i2c]            ),
+                .cfg_rx_pending_i    ( s_rx_ch_pending[CH_ID_RX_I2C+g_i2c]       ),
+                .cfg_rx_curr_addr_i  ( s_rx_ch_curr_addr[CH_ID_RX_I2C+g_i2c]     ),
+                .cfg_rx_bytes_left_i ( s_rx_ch_bytes_left[CH_ID_RX_I2C+g_i2c]    ),
 
-                .data_rx_datasize_o  ( s_rx_ch_datasize[CH_ID_RX_I2C+g_i2c]     ),
-                .data_rx_o           ( s_rx_ch_data[CH_ID_RX_I2C+g_i2c][7:0]    ),
-                .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_I2C+g_i2c]        ),
-                .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_I2C+g_i2c]        ),
+                .data_tx_req_o       ( s_tx_ch_req[CH_ID_TX_I2C+g_i2c]           ),
+                .data_tx_gnt_i       ( s_tx_ch_gnt[CH_ID_TX_I2C+g_i2c]           ),
+                .data_tx_datasize_o  ( s_tx_ch_datasize[CH_ID_TX_I2C+g_i2c]      ),
+                .data_tx_i           ( s_tx_ch_data[CH_ID_TX_I2C+g_i2c][7:0]     ),
+                .data_tx_valid_i     ( s_tx_ch_valid[CH_ID_TX_I2C+g_i2c]         ),
+                .data_tx_ready_o     ( s_tx_ch_ready[CH_ID_TX_I2C+g_i2c]         ),
 
-                .err_o               ( s_i2c_evt[g_i2c]                        ),
+                .data_rx_datasize_o  ( s_rx_ch_datasize[CH_ID_RX_I2C+g_i2c]      ),
+                .data_rx_o           ( s_rx_ch_data[CH_ID_RX_I2C+g_i2c][7:0]     ),
+                .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_I2C+g_i2c]         ),
+                .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_I2C+g_i2c]         ),
 
-                .scl_i               ( i2c_scl_i[g_i2c]                      ),
-                .scl_o               ( i2c_scl_o[g_i2c]                      ),
-                .scl_oe              ( i2c_scl_oe[g_i2c]                     ),
-                .sda_i               ( i2c_sda_i[g_i2c]                      ),
-                .sda_o               ( i2c_sda_o[g_i2c]                      ),
-                .sda_oe              ( i2c_sda_oe[g_i2c]                     ),
-                .ext_events_i        ( s_trigger_events                  )
+                .err_o               ( s_i2c_evt[g_i2c]                          ),
+
+                .scl_i               ( i2c_scl_i[g_i2c]                          ),
+                .scl_o               ( i2c_scl_o[g_i2c]                          ),
+                .scl_oe              ( i2c_scl_oe[g_i2c]                         ),
+                .sda_i               ( i2c_sda_i[g_i2c]                          ),
+                .sda_o               ( i2c_sda_o[g_i2c]                          ),
+                .sda_oe              ( i2c_sda_oe[g_i2c]                         ),
+                .ext_events_i        ( s_trigger_events                          )
             );
             assign s_rx_ch_data[CH_ID_RX_I2C+g_i2c][31:8]= 'h0;
         end
