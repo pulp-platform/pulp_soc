@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed APB Bus interface from repository. The identical version defined in the APB depedency is now used 
 - Removed dependency to archived legacy axi_slice_dc
+- Removed ifdef for separate FPGA RAM instantiation. This is now supposed to be handled by tc_sram wrapping a Xilinx XPM.
 ### Fixed
 - Fixed Genus SystemVerilog incompatibility in soc_interconnect
 
