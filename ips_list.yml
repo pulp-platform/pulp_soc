@@ -35,9 +35,7 @@ apb/apb_node:
 apb_interrupt_cntrl:
   commit: tags/pulpissimo-v1.0
 axi/axi:
-  commit: tags/v0.7.0
-axi/axi_node:
-  commit: tags/v1.1.2
+  commit: v0.29.1
 axi/axi_slice:
   commit: tags/v1.1.4
 axi/axi_slice_dc:
@@ -62,7 +60,7 @@ scm:
 generic_FLL:
   commit: tags/pulpissimo-v1.0
 tech_cells_generic:
-  commit: 78e817972307bcb9f6c77d18d64480ef595f03c9
+  commit: v0.2.3
 udma/udma_core:
   commit: vega_v1.0.6
 udma/udma_uart:
