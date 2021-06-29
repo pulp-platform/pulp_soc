@@ -7,6 +7,7 @@ pulp_soc:
   files: [
     ../axi/axi/src/axi_pkg.sv,
     ../../rtl/includes/control_pulp_pkg.sv,
+    ../cv32e40p/rtl/include/cv32e40p_apu_core_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
@@ -25,7 +26,7 @@ pulp_soc:
     rtl/pulp_soc/soc_interconnect.sv,
     rtl/pulp_soc/soc_interconnect_wrap.sv,
     rtl/pulp_soc/soc_peripherals.sv,
-    rtl/pulp_soc/pulp_soc.sv,
+    rtl/pulp_soc/pulp_soc.sv
   ]
   vlog_opts : [
     -L riscv_dbg_lib,
@@ -44,9 +45,14 @@ fc:
     ../../rtl/includes,
     .,
   ]
+  vlog_opts : [
+    -L fpnew_lib,
+    -L cv32e40p_lib,
+  ]
   files: [
     rtl/fc/fc_demux.sv,
     rtl/fc/fc_subsystem.sv,
+    rtl/fc/cv32e40p_fp_wrapper.sv,
   ]
 
 components:
@@ -64,7 +70,7 @@ components:
     rtl/components/scm_512x32.sv,
     rtl/components/tcdm_arbiter_2x1.sv,
     rtl/components/axi_verif_ram.sv,
-    rtl/components/obi_pulp_adapter.sv,
+    rtl/components/obi_pulp_adapter.sv
   ]
 
 components_rtl:

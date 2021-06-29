@@ -52,6 +52,8 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o
 );
 
+    import cv32e40p_apu_core_pkg::*;
+
     localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
     localparam IBEX_RV32M = CORE_TYPE == 1;
     localparam IBEX_RV32E = CORE_TYPE == 2;
@@ -113,6 +115,19 @@ module fc_subsystem #(
 
     XBAR_TCDM_BUS core_data_bus ();
     XBAR_TCDM_BUS core_instr_bus ();
+
+    // APU Core to FP Wrapper
+    logic                               apu_req;
+    logic [    APU_NARGS_CPU-1:0][31:0] apu_operands;
+    logic [      APU_WOP_CPU-1:0]       apu_op;
+    logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags;
+
+
+    // APU FP Wrapper to Core
+    logic                               apu_gnt;
+    logic                               apu_rvalid;
+    logic [                 31:0]       apu_rdata;
+    logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags;
 
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
@@ -190,16 +205,16 @@ module fc_subsystem #(
 
         // apu-interconnect
         // handshake signals
-        .apu_req_o             (),
-        .apu_gnt_i             (1'b1),
+        .apu_req_o             (apu_req),
+        .apu_gnt_i             (apu_gnt),
         // request channel
-        .apu_operands_o        (),
-        .apu_op_o              (),
-        .apu_flags_o           (),
+        .apu_operands_o        (apu_operands),
+        .apu_op_o              (apu_op),
+        .apu_flags_o           (apu_flags),
         // response channel
-        .apu_rvalid_i          ('0),
-        .apu_result_i          ('0),
-        .apu_flags_i           ('0),
+        .apu_rvalid_i          (apu_rvalid),
+        .apu_result_i          (apu_rdata),
+        .apu_flags_i           (apu_rflags),
 
         // Interrupt inputs
         .irq_i                 (core_irq_x),  // CLINT interrupts + CLINT extension interrupts
@@ -372,6 +387,36 @@ module fc_subsystem #(
             assign l2_hwpe_master[ii].add   = '0;
         end
     end
+    endgenerate
+
+
+    //*************************************
+    //****** APU INTERFACE WITH FPU *******
+    //*************************************
+
+    generate
+     if (1) begin
+       cv32e40p_fp_wrapper fp_wrapper_i (
+           .clk_i         (clk_i),
+           .rst_ni        (rst_ni),
+           .apu_req_i     (apu_req),
+           .apu_gnt_o     (apu_gnt),
+           .apu_operands_i(apu_operands),
+           .apu_op_i      (apu_op),
+           .apu_flags_i   (apu_flags),
+           .apu_rvalid_o  (apu_rvalid),
+           .apu_rdata_o   (apu_rdata),
+           .apu_rflags_o  (apu_rflags)
+       );
+     end else begin
+       assign apu_gnt_o      = '0;
+       assign apu_operands_i = '0;
+       assign apu_op_i       = '0;
+       assign apu_flags_i    = '0;
+       assign apu_rvalid_o   = '0;
+       assign apu_rdata_o    = '0;
+       assign apu_rflags_o   = '0;
+     end
     endgenerate
 
 endmodule

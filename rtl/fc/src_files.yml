@@ -7,4 +7,5 @@ fc:
     fc_demux.sv,
     fc_subsystem.sv,
     fc_hwpe.sv,
+    cv32e40p_fp_wrapper.sv
   ]
