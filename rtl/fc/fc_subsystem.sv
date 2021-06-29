@@ -8,13 +8,17 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+`ifndef PULP_FPGA_EMUL
+ `ifdef SYNTHESIS
+  `define ASIC_SYNTHESIS
+ `endif
+`endif
 
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_FPU             = 1,
     parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
-    parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
@@ -51,6 +55,17 @@ module fc_subsystem #(
     localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
     localparam IBEX_RV32M = CORE_TYPE == 1;
     localparam IBEX_RV32E = CORE_TYPE == 2;
+
+    // Number of performance counters. As previously in RI5CY (riscv_cs_registers.sv),
+    // we distinguish between:
+    // (a) ASIC implementation: 1 performance counter active
+    // (b) RTL simulation/FPGA emulation: 16 performance counters active, one for each event
+
+    `ifdef ASIC_SYNTHESIS
+      localparam int unsigned NUM_MHPMCOUNTERS = 1;
+    `else
+      localparam int unsigned NUM_MHPMCOUNTERS = 16;
+    `endif
 
     // Interrupt signals
     logic        core_irq_req   ;
@@ -137,10 +152,10 @@ module fc_subsystem #(
     cv32e40p_core #(
 `endif
         .PULP_XPULP       (1),
-        .PULP_CLUSTER     (1),
-        .FPU              (1),
-        .PULP_ZFINX       (0),
-        .NUM_MHPMCOUNTERS (1)
+        .PULP_CLUSTER     (0),
+        .FPU              (USE_FPU),
+        .PULP_ZFINX       (ZFINX),
+        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS)
     ) lFC_CORE (
 
         // Clock and Reset
