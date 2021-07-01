@@ -16,6 +16,7 @@
 
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
+    parameter PULP_XPULP          = 1,
     parameter USE_FPU             = 1,
     parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
@@ -166,7 +167,7 @@ module fc_subsystem #(
 `else
     cv32e40p_core #(
 `endif
-        .PULP_XPULP       (1),
+        .PULP_XPULP       (PULP_XPULP),
         .PULP_CLUSTER     (0),
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
