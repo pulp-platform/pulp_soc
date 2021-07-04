@@ -397,7 +397,7 @@ module pulp_soc import dm::*; #(
 
     // 5 inputs to AXI Mux from external: cl_slv, spi_slv, i2c_slv_1, i2c_slv_2, ext_slv (i.e. nci_cp_top)
 
-    localparam int unsigned N_EXT_MASTERS_TO_SOC = 3; //TODO: Add i2c slaves (x2) once they are complete
+    localparam int unsigned N_EXT_MASTERS_TO_SOC = 5; // 3 + 2 i2c
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -431,8 +431,8 @@ module pulp_soc import dm::*; #(
     `AXI_ASSIGN(ext_masters_to_soc[0], s_data_in_bus);    // from cluster
     `AXI_ASSIGN(ext_masters_to_soc[1], s_axi_spi);        // from spi_slv
     `AXI_ASSIGN(ext_masters_to_soc[2], axi_ext_slv);      // from ext (nci_cp_top)
-    //`AXI_ASSIGN(ext_masters_to_soc[3], axi_i2c_slv_1);    // from i2c_slv_1
-    //`AXI_ASSIGN(ext_masters_to_soc[4], axi_i2c_slv_bmc);  // from i2c_slv_2
+    `AXI_ASSIGN(ext_masters_to_soc[3], axi_i2c_slv_1);    // from i2c_slv_1
+    `AXI_ASSIGN(ext_masters_to_soc[4], axi_i2c_slv_bmc);  // from i2c_slv_2
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
