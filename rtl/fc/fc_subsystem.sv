@@ -53,6 +53,17 @@ module fc_subsystem #(
     localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
     localparam IBEX_RV32E = CORE_TYPE == 2;
 
+    // Number of performance counters. As previously in RI5CY (riscv_cs_registers.sv),
+    // we distinguish between:
+    // (a) ASIC implementation: 1 performance counter active
+    // (b) RTL simulation/FPGA emulation: 16 performance counters active, one for each event
+
+    `ifdef ASIC_SYNTHESIS
+      localparam int unsigned NUM_MHPMCOUNTERS = 1;
+    `else
+      localparam int unsigned NUM_MHPMCOUNTERS = 16;
+    `endif
+
     // Interrupt signals
     logic        core_irq_req   ;
     logic        core_irq_sec   ;
