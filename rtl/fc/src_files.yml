@@ -4,6 +4,7 @@ fc:
     .,
   ]
   files: [
+    fpnew_wrapper.sv,
     fc_demux.sv,
     fc_subsystem.sv,
     fc_hwpe.sv,

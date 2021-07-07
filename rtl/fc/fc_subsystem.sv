@@ -357,4 +357,29 @@ module fc_subsystem #(
     end
     endgenerate
 
+    generate
+      if (1) begin
+        cv32e40p_fp_wrapper fp_wrapper_i (
+            .clk_i         (clk_i),
+            .rst_ni        (rst_ni),
+            .apu_req_i     (apu_req),
+            .apu_gnt_o     (apu_gnt),
+            .apu_operands_i(apu_operands),
+            .apu_op_i      (apu_op),
+            .apu_flags_i   (apu_flags),
+            .apu_rvalid_o  (apu_rvalid),
+            .apu_rdata_o   (apu_rdata),
+            .apu_rflags_o  (apu_rflags)
+        );
+      end else begin
+        assign apu_gnt_o      = '0;
+        assign apu_operands_i = '0;
+        assign apu_op_i       = '0;
+        assign apu_flags_i    = '0;
+        assign apu_rvalid_o   = '0;
+        assign apu_rdata_o    = '0;
+        assign apu_rflags_o   = '0;
+      end
+     endgenerate
+
 endmodule
