@@ -61,6 +61,11 @@ module fc_subsystem #(
     logic        core_irq_ack   ;
     logic [31:0] core_irq_x;
 
+    // Signals for OBI-PULP conversion
+    logic        obi_instr_req;
+    logic        pulp_instr_req, pulp_data_req;
+
+
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
     logic        fetch_en_int     ;
@@ -90,6 +95,19 @@ module fc_subsystem #(
 
     XBAR_TCDM_BUS core_data_bus ();
     XBAR_TCDM_BUS core_instr_bus ();
+
+    // APU Core to FP Wrapper
+    logic                               apu_req;
+    logic [    APU_NARGS_CPU-1:0][31:0] apu_operands;
+    logic [      APU_WOP_CPU-1:0]       apu_op;
+    logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags;
+
+
+    // APU FP Wrapper to Core
+    logic                               apu_gnt;
+    logic                               apu_rvalid;
+    logic [                 31:0]       apu_rdata;
+    logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags;
 
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
@@ -141,7 +159,7 @@ module fc_subsystem #(
 
         // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
         .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
+        .instr_req_o           ( obi_instr_req     ),
         .instr_rdata_i         ( core_instr_rdata  ),
         .instr_gnt_i           ( core_instr_gnt    ),
         .instr_rvalid_i        ( core_instr_rvalid ),
@@ -158,16 +176,16 @@ module fc_subsystem #(
 
         // apu-interconnect
         // handshake signals
-        .apu_req_o             (                   ),
-        .apu_gnt_i             ( 1'b1              ),
+        .apu_req_o             ( apu_req           ),
+        .apu_gnt_i             ( apu_gnt           ),
         // request channel
-        .apu_operands_o        (                   ),
-        .apu_op_o              (                   ),
-        .apu_flags_o           (                   ),
+        .apu_operands_o        ( apu_operands      ),
+        .apu_op_o              ( apu_op            ),
+        .apu_flags_o           ( apu_flags         ),
         // response channel
-        .apu_rvalid_i          ( '0                ),
-        .apu_result_i          ( '0                ),
-        .apu_flags_i           ( '0                ),
+        .apu_rvalid_i          ( apu_rvalid        ),
+        .apu_result_i          ( apu_rdata         ),
+        .apu_flags_i           ( apu_rflags        ),
 
         .irq_i                 ( core_irq_x        ),
         .irq_ack_o             ( core_irq_ack      ),
@@ -178,6 +196,30 @@ module fc_subsystem #(
         .fetch_enable_i        ( fetch_en_int      ),
         .core_sleep_o          (                   )
     );
+
+    // PULP-OBI adapter
+    obi_pulp_adapter i_obi_pulp_adapter_instr (
+      .rst_ni(rst_ni),
+      .clk_i(clk_i),
+      .core_req_i(obi_instr_req),
+      .mem_gnt_i(core_instr_gnt),
+      .mem_rvalid_i(core_instr_rvalid),
+      .mem_req_o(pulp_instr_req)
+    );
+
+    // PULP-OBI adapter
+    obi_pulp_adapter i_obi_pulp_adapter_data (
+      .rst_ni(rst_ni),
+      .clk_i(clk_i),
+      .core_req_i(core_data_req),
+      .mem_gnt_i(core_data_gnt),
+      .mem_rvalid_i(core_data_rvalid),
+      .mem_req_o(pulp_data_req)
+    );
+
+    // core_instr_req is already PULP-compliant
+    assign core_instr_req = pulp_instr_req;
+
     end else begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
