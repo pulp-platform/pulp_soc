@@ -692,7 +692,8 @@ module soc_peripherals #(
         .AXI_ADDR_WIDTH         ( AXI_ADDR_WIDTH                           ),
         .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                        ), //TODO: Add AXI dwc converter
         .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                       ),
-        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        )
+        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        ),
+        .BASE_ADDRESS           ( 32'h1A14_0000                            )
     ) i_axi_apb_i2c_slave_bmc (
         .clk_i                  ( clk_i                                    ),
         .rstn_i                 ( rst_ni                                   ),
@@ -793,7 +794,8 @@ module soc_peripherals #(
         .AXI_ADDR_WIDTH         ( AXI_ADDR_WIDTH                               ),
         .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                            ), //TODO: Add AXI dwc converter
         .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                           ),
-        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                            )
+        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                            ),
+        .BASE_ADDRESS           ( 32'h1A15_0000                                )		
     ) i_axi_apb_i2c_slave_1 (
         .clk_i                  ( clk_i                                        ),
         .rstn_i                 ( rst_ni                                       ),
