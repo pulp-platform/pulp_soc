@@ -127,7 +127,7 @@ module pulp_soc import dm::*; #(
     // EVENT BUS
     output logic [CDC_FIFOS_LOG_DEPTH:0]                       async_cluster_events_wptr_o,
     input logic [CDC_FIFOS_LOG_DEPTH:0]                        async_cluster_events_rptr_i,
-    output logic [EVNT_WIDTH-1:0][2**CDC_FIFOS_LOG_DEPTH-1:0]  async_cluster_events_data_o,
+    output logic [2**CDC_FIFOS_LOG_DEPTH-1:0][EVNT_WIDTH-1:0]  async_cluster_events_data_o,
 
     output logic                          cluster_clk_o,
     input logic                           cluster_busy_i,
