@@ -33,11 +33,6 @@ module pulp_soc import dm::*; #(
     parameter NB_CORES            = 8,
     parameter NB_HWPE_PORTS       = 4,
     parameter NGPIO               = 43,
-    parameter NPAD                = 64, //Must not be changed as other parts
-                                       //downstreams are not parametrci
-    parameter NBIT_PADCFG         = 6, //Must not be changed as other parts
-                                      //downstreams are not parametrci
-    parameter NBIT_PADMUX         = 2,
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
@@ -142,63 +137,38 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
     //      To I/O Controller and padframe           //
     ///////////////////////////////////////////////////
-    output logic [127:0]                  pad_mux_o,
     output logic [383:0]                  pad_cfg_o,
     input logic [NGPIO-1:0]               gpio_in_i,
     output logic [NGPIO-1:0]              gpio_out_o,
     output logic [NGPIO-1:0]              gpio_dir_o,
     output logic [191:0]                  gpio_cfg_o,
-    output logic                          uart_tx_o,
-    input logic                           uart_rx_i,
-    input logic                           cam_clk_i,
-    input logic [7:0]                     cam_data_i,
-    input logic                           cam_hsync_i,
-    input logic                           cam_vsync_i,
-    output logic [3:0]                    timer_ch0_o,
-    output logic [3:0]                    timer_ch1_o,
-    output logic [3:0]                    timer_ch2_o,
-    output logic [3:0]                    timer_ch3_o,
 
-    input logic [N_I2C-1:0]               i2c_scl_i,
-    output logic [N_I2C-1:0]              i2c_scl_o,
-    output logic [N_I2C-1:0]              i2c_scl_oe_o,
-    input logic [N_I2C-1:0]               i2c_sda_i,
-    output logic [N_I2C-1:0]              i2c_sda_o,
-    output logic [N_I2C-1:0]              i2c_sda_oe_o,
+    // uDMA Connections
+    // UART
+    output  uart_pkg::uart_to_pad_t [udma_cfg_pkg::N_UART-1:0]  uart_to_pad_o,
+    input   uart_pkg::pad_to_uart_t [udma_cfg_pkg::N_UART-1:0]  pad_to_uart_i,
+    // I2C
+    output  i2c_pkg::i2c_to_pad_t   [udma_cfg_pkg::N_I2C-1:0]  i2c_to_pad_o,
+    input   i2c_pkg::pad_to_i2c_t   [udma_cfg_pkg::N_I2C-1:0]  pad_to_i2c_i,
+    // SDIO
+    output  sdio_pkg::sdio_to_pad_t [udma_cfg_pkg::N_SDIO-1:0]  sdio_to_pad_o,
+    input   sdio_pkg::pad_to_sdio_t [udma_cfg_pkg::N_SDIO-1:0]  pad_to_sdio_i,
+    // I2S
+    output  i2s_pkg::i2s_to_pad_t   [udma_cfg_pkg::N_I2S-1:0]    i2s_to_pad_o,
+    input   i2s_pkg::pad_to_i2s_t   [udma_cfg_pkg::N_I2S-1:0]    pad_to_i2s_i,
+    // QSPI
+    output  qspi_pkg::qspi_to_pad_t [udma_cfg_pkg::N_QSPIM-1:0]  qspi_to_pad_o,
+    input   qspi_pkg::pad_to_qspi_t [udma_cfg_pkg::N_QSPIM-1:0]  pad_to_qspi_i,
+    // CPI
+    input   cpi_pkg::pad_to_cpi_t   [udma_cfg_pkg::N_CPI-1:0] pad_to_cpi_i,
+    // HYPER
+    output hyper_pkg::hyper_to_pad_t [udma_cfg_pkg::N_HYPER-1:0] hyper_to_pad_o,
+    input  hyper_pkg::pad_to_hyper_t [udma_cfg_pkg::N_HYPER-1:0] pad_to_hyper_i,
+    // GPIO
+    input logic [NGPIO-1:0]               gpio_i,
+    output logic [NGPIO-1:0]              gpio_o,
+    output logic [NGPIO-1:0]              gpio_tx_en_o,
 
-    input logic                           i2s_slave_sd0_i,
-    input logic                           i2s_slave_sd1_i,
-    input logic                           i2s_slave_ws_i,
-    output logic                          i2s_slave_ws_o,
-    output logic                          i2s_slave_ws_oe,
-    input logic                           i2s_slave_sck_i,
-    output logic                          i2s_slave_sck_o,
-    output logic                          i2s_slave_sck_oe,
-
-    output logic [N_SPI-1:0]              spi_clk_o,
-    output logic [N_SPI-1:0][3:0]         spi_csn_o,
-    output logic [N_SPI-1:0][3:0]         spi_oen_o,
-    output logic [N_SPI-1:0][3:0]         spi_sdo_o,
-    input logic [N_SPI-1:0][3:0]          spi_sdi_i,
-
-    output logic                          sdio_clk_o,
-    output logic                          sdio_cmd_o,
-    input logic                           sdio_cmd_i,
-    output logic                          sdio_cmd_oen_o,
-    output logic [3:0]                    sdio_data_o,
-    input logic [3:0]                     sdio_data_i,
-    output logic [3:0]                    sdio_data_oen_o,
-
-    output logic [1:0]                    hyper_cs_no,
-    output logic                          hyper_ck_o,
-    output logic                          hyper_ck_no,
-    output logic [1:0]                    hyper_rwds_o,
-    input logic                           hyper_rwds_i,
-    output logic [1:0]                    hyper_rwds_oe_o,
-    input logic [15:0]                    hyper_dq_i,
-    output logic [15:0]                   hyper_dq_o,
-    output logic [1:0]                    hyper_dq_oe_o,
-    output logic                          hyper_reset_no,
 
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
@@ -298,10 +268,6 @@ module pulp_soc import dm::*; #(
     logic                  s_supervisor_mode;
 
     logic [31:0]           s_fc_bootaddr;
-
-    logic [NGPIO-1:0][NBIT_PADCFG-1:0] s_gpio_cfg;
-    logic [63:0][1:0]      s_pad_mux;
-    logic [63:0][5:0]      s_pad_cfg;
 
     logic                  s_periph_clk;
     logic                  s_periph_rstn;
@@ -586,9 +552,6 @@ module pulp_soc import dm::*; #(
         .NPAD               ( NPAD                                  ),
         .NBIT_PADCFG        ( NBIT_PADCFG                           ),
         .NBIT_PADMUX        ( NBIT_PADMUX                           ),
-        .N_UART             ( N_UART                                ),
-        .N_SPI              ( N_SPI                                 ),
-        .N_I2C              ( N_I2C                                 ),
         .SIM_STDOUT         ( SIM_STDOUT                            )
     ) soc_peripherals_i (
 
@@ -638,65 +601,26 @@ module pulp_soc import dm::*; #(
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
         .gpio_padcfg            ( s_gpio_cfg             ),
-
-        .pad_mux_o              ( s_pad_mux              ),
-        .pad_cfg_o              ( s_pad_cfg              ),
-
-        //CAMERA
-        .cam_clk_i              ( cam_clk_i              ),
-        .cam_data_i             ( cam_data_i             ),
-        .cam_hsync_i            ( cam_hsync_i            ),
-        .cam_vsync_i            ( cam_vsync_i            ),
-
-        //UART
-        .uart_tx                ( uart_tx_o              ),
-        .uart_rx                ( uart_rx_i              ),
-
-        //I2C
-        .i2c_scl_i              ( i2c_scl_i              ),
-        .i2c_scl_o              ( i2c_scl_o              ),
-        .i2c_scl_oe_o           ( i2c_scl_oe_o           ),
-        .i2c_sda_i              ( i2c_sda_i              ),
-        .i2c_sda_o              ( i2c_sda_o              ),
-        .i2c_sda_oe_o           ( i2c_sda_oe_o           ),
-
-        //I2S
-        .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),
-        .i2s_slave_sd1_i        ( i2s_slave_sd1_i        ),
-        .i2s_slave_ws_i         ( i2s_slave_ws_i         ),
-        .i2s_slave_ws_o         ( i2s_slave_ws_o         ),
-        .i2s_slave_ws_oe        ( i2s_slave_ws_oe        ),
-        .i2s_slave_sck_i        ( i2s_slave_sck_i        ),
-        .i2s_slave_sck_o        ( i2s_slave_sck_o        ),
-        .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
-
-         //SPI
-        .spi_clk_o              ( spi_clk_o              ),
-        .spi_csn_o              ( spi_csn_o              ),
-        .spi_oen_o              ( spi_oen_o              ),
-        .spi_sdo_o              ( spi_sdo_o              ),
-        .spi_sdi_i              ( spi_sdi_i              ),
-
-        //SDIO
-        .sdclk_o                ( sdio_clk_o             ),
-        .sdcmd_o                ( sdio_cmd_o             ),
-        .sdcmd_i                ( sdio_cmd_i             ),
-        .sdcmd_oen_o            ( sdio_cmd_oen_o         ),
-        .sddata_o               ( sdio_data_o            ),
-        .sddata_i               ( sdio_data_i            ),
-        .sddata_oen_o           ( sdio_data_oen_o        ),
-
-        //Hyper Bus
-        .hyper_cs_no            ( hyper_cs_no            ),
-        .hyper_ck_o             ( hyper_ck_o             ),
-        .hyper_ck_no            ( hyper_ck_no            ),
-        .hyper_rwds_o           ( hyper_rwds_o           ),
-        .hyper_rwds_i           ( hyper_rwds_i           ),
-        .hyper_rwds_oe_o        ( hyper_rwds_oe_o        ),
-        .hyper_dq_i             ( hyper_dq_i             ),
-        .hyper_dq_o             ( hyper_dq_o             ),
-        .hyper_dq_oe_o          ( hyper_dq_oe_o          ),
-        .hyper_reset_no         ( hyper_reset_no         ),
+        // UART
+        .uart_to_pad_o,
+        .pad_to_uart_i,
+        // I2C
+        .i2c_to_pad_o,
+        .pad_to_i2c_i,
+        // SDIO
+        .sdio_to_pad_o,
+        .pad_to_sdio_i,
+        // I2S
+        .i2s_to_pad_o,
+        .pad_to_i2s_i,
+        // QSPI
+        .qspi_to_pad_o,
+        .pad_to_qspi_i,
+        // CPI
+        .pad_to_cpi_i,
+        // HYPER
+        .hyper_to_pad_o,
+        .pad_to_hyper_i,
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
@@ -1021,27 +945,5 @@ module pulp_soc import dm::*; #(
              slave_valid <= slave_grant;
          end
      end
-
-    //********************************************************
-    //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
-    //********************************************************
-
-    for (genvar i = 0; i < 32; i++) begin : gen_gpio_cfg_outer
-        for (genvar j = 0; j < 6; j++) begin : gen_gpip_cfg_inner
-            assign gpio_cfg_o[j+6*i] = s_gpio_cfg[i][j];
-        end
-    end
-
-    for (genvar i = 0; i < 64; i++) begin : gen_pad_mux_outer
-        for (genvar j = 0; j < 2; j++) begin : gen_pad_mux_innter
-            assign pad_mux_o[j+2*i] = s_pad_mux[i][j];
-        end
-    end
-
-    for (genvar i = 0; i < 64; i++) begin : gen_pad_cfg_outer
-        for (genvar j = 0; j < 6; j++) begin : gen_pad_cfg_inner
-            assign pad_cfg_o[j+6*i] = s_pad_cfg[i][j];
-        end
-    end
 
 endmodule

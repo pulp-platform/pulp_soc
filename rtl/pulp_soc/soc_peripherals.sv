@@ -27,9 +27,6 @@ module soc_peripherals
     parameter NPAD           = 64,
     parameter NBIT_PADCFG    = 4,
     parameter NBIT_PADMUX    = 2,
-    parameter N_UART         = 1,
-    parameter N_SPI          = 1,
-    parameter N_I2C          = 2,
     parameter SIM_STDOUT     = 1
 ) (
     input  logic                       clk_i,
@@ -92,36 +89,30 @@ module soc_peripherals
 
     // uDMA Connections
     // UART
-    output  uart_to_pad_t [  N_UART-1:0]  uart_to_pad_o,
-    input   pad_to_uart_t [  N_UART-1:0]  pad_to_uart_i,
+    output  uart_pkg::uart_to_pad_t [udma_cfg_pkg::N_UART-1:0]  uart_to_pad_o,
+    input   uart_pkg::pad_to_uart_t [udma_cfg_pkg::N_UART-1:0]  pad_to_uart_i,
     // I2C
-    output  i2c_to_pad_t  [   N_I2C-1:0]  i2c_to_pad_o,
-    input   pad_to_i2c_t  [   N_I2C-1:0]  pad_to_i2c_i,
+    output  i2c_pkg::i2c_to_pad_t   [udma_cfg_pkg::N_I2C-1:0]  i2c_to_pad_o,
+    input   i2c_pkg::pad_to_i2c_t   [udma_cfg_pkg::N_I2C-1:0]  pad_to_i2c_i,
     // SDIO
-    output  sdio_to_pad_t [  N_SDIO-1:0]  sdio_to_pad_o,
-    input   pad_to_sdio_t [  N_SDIO-1:0]  pad_to_sdio_i,
+    output  sdio_pkg::sdio_to_pad_t [udma_cfg_pkg::N_SDIO-1:0]  sdio_to_pad_o,
+    input   sdio_pkg::pad_to_sdio_t [udma_cfg_pkg::N_SDIO-1:0]  pad_to_sdio_i,
     // I2S
-    output  i2s_to_pad_t  [ N_I2S-1:0]    i2s_to_pad_o,
-    input   pad_to_i2s_t  [ N_I2S-1:0]    pad_to_i2s_i,
+    output  i2s_pkg::i2s_to_pad_t   [udma_cfg_pkg::N_I2S-1:0]    i2s_to_pad_o,
+    input   i2s_pkg::pad_to_i2s_t   [udma_cfg_pkg::N_I2S-1:0]    pad_to_i2s_i,
     // QSPI
-    output  qspi_to_pad_t [ N_QSPIM-1:0]  qspi_to_pad_o,
-    input   pad_to_qspi_t [ N_QSPIM-1:0]  pad_to_qspi_i,
+    output  qspi_pkg::qspi_to_pad_t [udma_cfg_pkg::N_QSPIM-1:0]  qspi_to_pad_o,
+    input   qspi_pkg::pad_to_qspi_t [udma_cfg_pkg::N_QSPIM-1:0]  pad_to_qspi_i,
     // CPI
-    input   pad_to_cpi_t   [   N_CPI-1:0] pad_to_cpi_i,
+    input   cpi_pkg::pad_to_cpi_t   [udma_cfg_pkg::N_CPI-1:0] pad_to_cpi_i,
+    // HYPER
+    output hyper_pkg::hyper_to_pad_t [udma_cfg_pkg::N_HYPER-1:0] hyper_to_pad_o,
+    input  hyper_pkg::pad_to_hyper_t [udma_cfg_pkg::N_HYPER-1:0] pad_to_hyper_i,
     // GPIO
     input logic [NGPIO-1:0]               gpio_i,
     output logic [NGPIO-1:0]              gpio_o,
     output logic [NGPIO-1:0]              gpio_tx_en_o,
 
-    // HYPER (exposed udma plug)
-    output udma_pkg::cfg_req_t [udma_cfg_pkg::N_HYPER-1:0]           hyper_cfg_req_o,
-    input udma_pkg::cfg_rsp_t [udma_cfg_pkg::N_HYPER-1:0]            hyper_cfg_rsp_i,
-    output udma_pkg::udma_linch_tx_req_t [udma_cfg_pkg::N_HYPER-1:0] hyper_linch_tx_req_o,
-    input udma_pkg::udma_linch_tx_rsp_t [udma_cfg_pkg::N_HYPER-1:0]  hyper_linch_tx_rsp_i,
-    input udma_pkg::udma_linch_rx_req_t [udma_cfg_pkg::N_HYPER-1:0]  hyper_linch_rx_req_i,
-    output udma_pkg::udma_linch_rx_rsp_t [udma_cfg_pkg::N_HYPER-1:0] hyper_linch_rx_rsp_o,
-    input udma_pkg::udma_evt_t [udma_cfg_pkg::N_HYPER-1:0]           hyper_macro_evt_i,
-    output udma_pkg::udma_evt_t [udma_cfg_pkg::N_HYPER-1:0]          hyper_macro_evt_o,
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -164,12 +155,11 @@ module soc_peripherals
     logic [7:0] s_pr_event_data ;
     logic       s_pr_event_ready;
 
-    logic [UDMA_EVENTS-1:0] s_udma_events;
-    logic [          159:0] s_events;
+    logic [31:0][3:0] s_udma_events;
+    logic [159:0] s_events;
 
     logic s_timer_in_lo_event;
     logic s_timer_in_hi_event;
-
 
     //-------------------- Events Assignments --------------------
 
@@ -442,112 +432,72 @@ module soc_peripherals
         .interrupt       ( s_gpio_event       )
     );
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ██╗   ██╗██████╗ ███╗   ███╗ █████╗     ███████╗██╗   ██╗██████╗ ███████╗██╗   ██╗███████╗ //
-    // ██║   ██║██╔══██╗████╗ ████║██╔══██╗    ██╔════╝██║   ██║██╔══██╗██╔════╝╚██╗ ██╔╝██╔════╝ //
-    // ██║   ██║██║  ██║██╔████╔██║███████║    ███████╗██║   ██║██████╔╝███████╗ ╚████╔╝ ███████╗ //
-    // ██║   ██║██║  ██║██║╚██╔╝██║██╔══██║    ╚════██║██║   ██║██╔══██╗╚════██║  ╚██╔╝  ╚════██║ //
-    // ╚██████╔╝██████╔╝██║ ╚═╝ ██║██║  ██║    ███████║╚██████╔╝██████╔╝███████║   ██║   ███████║ //
-    //  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ //
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    udma_subsystem #(
-        .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
-        .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
-        .N_SPI (N_SPI),
-        .N_UART(N_UART),
-        .N_I2C (N_I2C)
-    ) i_udma (
-        .L2_ro_req_o      ( l2_tx_master.req     ),
-        .L2_ro_gnt_i      ( l2_tx_master.gnt     ),
-        .L2_ro_wen_o      ( l2_tx_master.wen     ),
-        .L2_ro_addr_o     ( l2_tx_master.add     ),
-        .L2_ro_wdata_o    ( l2_tx_master.wdata   ),
-        .L2_ro_be_o       ( l2_tx_master.be      ),
-        .L2_ro_rdata_i    ( l2_tx_master.r_rdata ),
-        .L2_ro_rvalid_i   ( l2_tx_master.r_valid ),
+    logic sys_rst_ni;
+    logic sys_clk_i;
 
-        .L2_wo_req_o      ( l2_rx_master.req     ),
-        .L2_wo_gnt_i      ( l2_rx_master.gnt     ),
-        .L2_wo_wen_o      ( l2_rx_master.wen     ),
-        .L2_wo_addr_o     ( l2_rx_master.add     ),
-        .L2_wo_wdata_o    ( l2_rx_master.wdata   ),
-        .L2_wo_be_o       ( l2_rx_master.be      ),
-        .L2_wo_rdata_i    ( l2_rx_master.r_rdata ),
-        .L2_wo_rvalid_i   ( l2_rx_master.r_valid ),
+    pulp_io #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)) i_pulp_io (
+        .sys_rst_ni      (rst_ni              ),
+        .sys_clk_i       (clk_i               ),
+        .periph_clk_i    (periph_clk_i        ),
 
-        .dft_test_mode_i  ( dft_test_mode_i      ),
-        .dft_cg_enable_i  ( 1'b0                 ),
+        .L2_ro_wen_o     (l2_tx_master.wen    ),
+        .L2_ro_req_o     (l2_tx_master.req    ),
+        .L2_ro_gnt_i     (l2_tx_master.gnt    ),
+        .L2_ro_addr_o    (l2_tx_master.addr   ),
+        .L2_ro_be_o      (l2_tx_master.be     ),
+        .L2_ro_wdata_o   (l2_tx_master.wdata  ),
+        .L2_ro_rvalid_i  (l2_tx_master.rvalid ),
+        .L2_ro_rdata_i   (l2_tx_master.rdata  ),
 
-        .sys_clk_i        ( clk_i                ),
-        .periph_clk_i     ( periph_clk_i         ),
-        .sys_resetn_i     ( rst_ni               ),
+        .L2_wo_wen_o     (l2_rx_master.wen    ),
+        .L2_wo_req_o     (l2_rx_master.req    ),
+        .L2_wo_gnt_i     (l2_rx_master.gnt    ),
+        .L2_wo_addr_o    (l2_rx_master.addr   ),
+        .L2_wo_wdata_o   (l2_rx_master.wdata  ),
+        .L2_wo_be_o      (l2_rx_master.be     ),
+        .L2_wo_rvalid_i  (l2_rx_master.rvalid ),
+        .L2_wo_rdata_i   (l2_rx_master.rdata  ),
 
-        .udma_apb_paddr   ( s_udma_slave.paddr     ),
-        .udma_apb_pwdata  ( s_udma_slave.pwdata    ),
-        .udma_apb_pwrite  ( s_udma_slave.pwrite    ),
-        .udma_apb_psel    ( s_udma_slave.psel      ),
-        .udma_apb_penable ( s_udma_slave.penable   ),
-        .udma_apb_prdata  ( s_udma_slave.prdata    ),
-        .udma_apb_pready  ( s_udma_slave.pready    ),
-        .udma_apb_pslverr ( s_udma_slave.pslverr   ),
+        .dft_test_mode_i (dft_test_mode_i     ),
+        .dft_cg_enable_i (dft_cg_enable_i     ),
 
-        .events_o         ( s_udma_events        ),
+        .udma_apb_paddr  (s_udma_slave.paddr  ),
+        .udma_apb_pwdata (s_udma_slave.pwdata ),
+        .udma_apb_pwrite (s_udma_slave.pwrite ),
+        .udma_apb_psel   (s_udma_slave.psel   ),
+        .udma_apb_penable(s_udma_slave.penable),
+        .udma_apb_prdata (s_udma_slave.prdata ),
+        .udma_apb_pready (s_udma_slave.pready ),
+        .udma_apb_pslverr(s_udma_slave.pslverr),
 
-        .event_valid_i    ( s_pr_event_valid     ),
-        .event_data_i     ( s_pr_event_data      ),
-        .event_ready_o    ( s_pr_event_ready     ),
+        // .gpio_apb_paddr  (gpio_apb_paddr     ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_pwdata (gpio_apb_pwdata    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_pwrite (gpio_apb_pwrite    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_psel   (gpio_apb_psel      ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_penable(gpio_apb_penable   ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_prdata (gpio_apb_prdata    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_pready (gpio_apb_pready    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        // .gpio_apb_pslverr(gpio_apb_pslverr   ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
 
-        .spi_clk          ( spi_clk_o            ),
-        .spi_csn          ( spi_csn_o            ),
-        .spi_oen          ( spi_oen_o            ),
-        .spi_sdo          ( spi_sdo_o            ),
-        .spi_sdi          ( spi_sdi_i            ),
+        .events_o        (s_udma_events       ),
+        .event_valid_i   (s_pr_event_valid    ),
+        .event_data_i    (s_pr_event_data     ),
+        .event_ready_o   (s_pr_event_ready    ),
 
-        .sdio_clk_o       ( sdclk_o              ),
-        .sdio_cmd_o       ( sdcmd_o              ),
-        .sdio_cmd_i       ( sdcmd_i              ),
-        .sdio_cmd_oen_o   ( sdcmd_oen_o          ),
-        .sdio_data_o      ( sddata_o             ),
-        .sdio_data_i      ( sddata_i             ),
-        .sdio_data_oen_o  ( sddata_oen_o         ),
-
-        .cam_clk_i        ( cam_clk_i            ),
-        .cam_data_i       ( cam_data_i           ),
-        .cam_hsync_i      ( cam_hsync_i          ),
-        .cam_vsync_i      ( cam_vsync_i          ),
-
-        .i2s_slave_sd0_i  ( i2s_slave_sd0_i      ),
-        .i2s_slave_sd1_i  ( i2s_slave_sd1_i      ),
-        .i2s_slave_ws_i   ( i2s_slave_ws_i       ),
-        .i2s_slave_ws_o   ( i2s_slave_ws_o       ),
-        .i2s_slave_ws_oe  ( i2s_slave_ws_oe      ),
-        .i2s_slave_sck_i  ( i2s_slave_sck_i      ),
-        .i2s_slave_sck_o  ( i2s_slave_sck_o      ),
-        .i2s_slave_sck_oe ( i2s_slave_sck_oe     ),
-
-        .uart_rx_i        ( uart_rx              ),
-        .uart_tx_o        ( uart_tx              ),
-
-        .i2c_scl_i        ( i2c_scl_i            ),
-        .i2c_scl_o        ( i2c_scl_o            ),
-        .i2c_scl_oe       ( i2c_scl_oe_o         ),
-        .i2c_sda_i        ( i2c_sda_i            ),
-        .i2c_sda_o        ( i2c_sda_o            ),
-        .i2c_sda_oe       ( i2c_sda_oe_o         ),
-
-
-        .hyper_cs_no      ( hyper_cs_no          ),
-        .hyper_ck_o       ( hyper_ck_o           ),
-        .hyper_ck_no      ( hyper_ck_no          ),
-        .hyper_rwds_o     ( hyper_rwds_o         ),
-        .hyper_rwds_i     ( hyper_rwds_i         ),
-        .hyper_rwds_oe_o  ( hyper_rwds_oe_o      ),
-        .hyper_dq_i       ( hyper_dq_i           ),
-        .hyper_dq_o       ( hyper_dq_o           ),
-        .hyper_dq_oe_o    ( hyper_dq_oe_o        ),
-        .hyper_reset_no   ( hyper_reset_no       )
-
+        .uart_to_pad     (uart_to_pad_o  ),
+        .pad_to_uart     (pad_to_uart_i  ),
+        .i2c_to_pad      (i2c_to_pad_o   ),
+        .pad_to_i2c      (pad_to_i2c_i   ),
+        .sdio_to_pad     (sdio_to_pad_o  ),
+        .pad_to_sdio     (pad_to_sdio_i  ),
+        .i2s_to_pad      (i2s_to_pad_o   ),
+        .pad_to_i2s      (pad_to_i2s_i   ),
+        .qspi_to_pad     (qspi_to_pad_o  ),
+        .pad_to_qspi     (pad_to_qspi_i  ),
+        .pad_to_cpi      (pad_to_cpi_i   ),
+        .hyper_to_pad    (hyper_to_pad_o ),
+        .pad_to_hyper    (pad_to_hyper_i )
     );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
