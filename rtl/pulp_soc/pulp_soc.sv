@@ -13,7 +13,9 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module pulp_soc import dm::*; #(
+module pulp_soc
+    import dm::*;
+#(
     parameter CORE_TYPE          = 0,
     parameter PULP_XPULP         = 1,
     parameter USE_FPU            = 1,
@@ -23,8 +25,8 @@ module pulp_soc import dm::*; #(
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
-    parameter AXI_ID_IN_WIDTH    = 6,
-    parameter AXI_ID_OUT_WIDTH   = 6,
+    parameter AXI_ID_IN_WIDTH    = 7,
+    parameter AXI_ID_OUT_WIDTH   = 5,
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
     parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
@@ -43,7 +45,7 @@ module pulp_soc import dm::*; #(
     parameter EVNT_WIDTH         = 8,
     parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
-    parameter NGPIO              = 43,
+    parameter NGPIO              = 32,
     parameter NPAD               = 64, //Must not be changed as other parts
                                        //downstreams are not parametrci
     parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
@@ -55,16 +57,18 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_I2C  = 2,
     parameter int unsigned N_I2C_SLV  = 2,
 
-    parameter int unsigned N_L2_BANKS = 0,
-    parameter int unsigned N_L2_BANKS_PRI = 0,
-    parameter int unsigned L2_BANK_SIZE = 0,
-    parameter int unsigned L2_BANK_SIZE_PRI = 0
+    parameter int unsigned N_L2_BANKS = 4,
+    parameter int unsigned N_L2_BANKS_PRI = 2,
+    parameter int unsigned L2_BANK_SIZE = 32768,
+    parameter int unsigned L2_BANK_SIZE_PRI = 8192
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
     output logic                          soc_clk_o,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
+
+    output logic                          soc_clk_o,
 
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
@@ -164,12 +168,8 @@ module pulp_soc import dm::*; #(
     output logic [NGPIO-1:0]                  gpio_dir_o,
     output logic [NGPIO-1:0][NBIT_PADCFG-1:0] gpio_cfg_o,
 
-    output logic                          uart_tx_o,
-    input  logic                          uart_rx_i,
-    input  logic                          cam_clk_i,
-    input  logic [7:0]                    cam_data_i,
-    input  logic                          cam_hsync_i,
-    input  logic                          cam_vsync_i,
+    output logic [N_UART-1:0]             uart_tx_o,
+    input  logic [N_UART-1:0]             uart_rx_i,
     output logic [3:0]                    timer_ch0_o,
     output logic [3:0]                    timer_ch1_o,
     output logic [3:0]                    timer_ch2_o,
@@ -188,15 +188,6 @@ module pulp_soc import dm::*; #(
     input logic  [N_I2C_SLV-1:0]          i2c_slv_sda_i,
     output logic [N_I2C_SLV-1:0]          i2c_slv_sda_o,
     output logic [N_I2C_SLV-1:0]          i2c_slv_sda_oe_o,
-
-    input  logic                          i2s_slave_sd0_i,
-    input  logic                          i2s_slave_sd1_i,
-    input  logic                          i2s_slave_ws_i,
-    output logic                          i2s_slave_ws_o,
-    output logic                          i2s_slave_ws_oe,
-    input  logic                          i2s_slave_sck_i,
-    output logic                          i2s_slave_sck_o,
-    output logic                          i2s_slave_sck_oe,
 
     output logic [N_SPI-1:0]              spi_clk_o,
     output logic [N_SPI-1:0][3:0]         spi_csn_o,
@@ -668,12 +659,6 @@ module pulp_soc import dm::*; #(
         .pad_mux_o              ( pad_mux_o              ),
         .pad_cfg_o              ( pad_cfg_o              ),
 
-        //CAMERA
-        .cam_clk_i              ( cam_clk_i              ),
-        .cam_data_i             ( cam_data_i             ),
-        .cam_hsync_i            ( cam_hsync_i            ),
-        .cam_vsync_i            ( cam_vsync_i            ),
-
         //UART
         .uart_tx                ( uart_tx_o              ),
         .uart_rx                ( uart_rx_i              ),
@@ -693,16 +678,6 @@ module pulp_soc import dm::*; #(
         .i2c_slv_sda_i          ( i2c_slv_sda_i          ),
         .i2c_slv_sda_o          ( i2c_slv_sda_o          ),
         .i2c_slv_sda_oe_o       ( i2c_slv_sda_oe_o       ),
-
-        //I2S
-        .i2s_slave_sd0_i        ( i2s_slave_sd0_i        ),
-        .i2s_slave_sd1_i        ( i2s_slave_sd1_i        ),
-        .i2s_slave_ws_i         ( i2s_slave_ws_i         ),
-        .i2s_slave_ws_o         ( i2s_slave_ws_o         ),
-        .i2s_slave_ws_oe        ( i2s_slave_ws_oe        ),
-        .i2s_slave_sck_i        ( i2s_slave_sck_i        ),
-        .i2s_slave_sck_o        ( i2s_slave_sck_o        ),
-        .i2s_slave_sck_oe       ( i2s_slave_sck_oe       ),
 
          //SPI MASTER
         .spi_clk_o              ( spi_clk_o              ),
@@ -855,9 +830,12 @@ module pulp_soc import dm::*; #(
         .clk_slow_o                 ( s_slow_clk                    )
     );
 
+    // Clock needed by the external wrapper
+    assign soc_clk_o = s_soc_clk;
+    
     soc_interconnect_wrap #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
-        .NR_L2_PORTS         ( N_L2_BANKS       ),
+        .NR_L2_PORTS         ( control_pulp_pkg::N_L2_BANKS       ),
         .AXI_USER_WIDTH      ( AXI_USER_WIDTH   ),
         .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  ),
         .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC )
