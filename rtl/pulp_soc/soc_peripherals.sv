@@ -18,7 +18,7 @@ module soc_peripherals #(
     parameter NB_CORES            = 4,
     parameter NB_CLUSTERS         = 0,
     parameter EVNT_WIDTH          = 8,
-    parameter NGPIO               = 64,
+    parameter NGPIO               = 32,
     parameter NPAD                = 64,
     parameter NBIT_PADCFG         = 4,
     parameter NBIT_PADMUX         = 2,
@@ -86,17 +86,9 @@ module soc_peripherals #(
     output logic [3:0]                        timer_ch2_o,
     output logic [3:0]                        timer_ch3_o,
 
-    //CAMERA
-    input logic                               cam_clk_i,
-    input logic [7:0]                         cam_data_i,
-    input logic                               cam_hsync_i,
-    input logic                               cam_vsync_i,
-
     //UART
-    // output logic [N_UART-1:0]          uart_tx,
-    // input  logic [N_UART-1:0]          uart_rx,
-    output logic                              uart_tx,
-    input logic                               uart_rx,
+    output logic [N_UART-1:0]                 uart_tx,
+    input  logic [N_UART-1:0]                 uart_rx,
 
 
     //I2C
@@ -114,16 +106,6 @@ module soc_peripherals #(
     input logic  [N_I2C_SLV-1:0]              i2c_slv_sda_i,
     output logic [N_I2C_SLV-1:0]              i2c_slv_sda_o,
     output logic [N_I2C_SLV-1:0]              i2c_slv_sda_oe_o,
-
-    //I2S
-    input logic                               i2s_slave_sd0_i,
-    input logic                               i2s_slave_sd1_i,
-    input logic                               i2s_slave_ws_i,
-    output logic                              i2s_slave_ws_o,
-    output logic                              i2s_slave_ws_oe,
-    input logic                               i2s_slave_sck_i,
-    output logic                              i2s_slave_sck_o,
-    output logic                              i2s_slave_sck_oe,
 
     //SPI MASTER
     output logic [N_SPI-1:0]                  spi_clk_o,
@@ -189,7 +171,8 @@ module soc_peripherals #(
 
     localparam UDMA_EVENTS = 16*8;
 
-    logic [31:0] s_gpio_sync;
+    logic [NGPIO-1:0] s_gpio_sync;
+
     logic       s_sel_hyper_axi;
     logic       s_sel_spi_dir;
 
@@ -450,20 +433,6 @@ module soc_peripherals #(
         .sdio_data_o      ( sddata_o             ),
         .sdio_data_i      ( sddata_i             ),
         .sdio_data_oen_o  ( sddata_oen_o         ),
-
-        .cam_clk_i        ( cam_clk_i            ),
-        .cam_data_i       ( cam_data_i           ),
-        .cam_hsync_i      ( cam_hsync_i          ),
-        .cam_vsync_i      ( cam_vsync_i          ),
-
-        .i2s_slave_sd0_i  ( i2s_slave_sd0_i      ),
-        .i2s_slave_sd1_i  ( i2s_slave_sd1_i      ),
-        .i2s_slave_ws_i   ( i2s_slave_ws_i       ),
-        .i2s_slave_ws_o   ( i2s_slave_ws_o       ),
-        .i2s_slave_ws_oe  ( i2s_slave_ws_oe      ),
-        .i2s_slave_sck_i  ( i2s_slave_sck_i      ),
-        .i2s_slave_sck_o  ( i2s_slave_sck_o      ),
-        .i2s_slave_sck_oe ( i2s_slave_sck_oe     ),
 
         .uart_rx_i        ( uart_rx              ),
         .uart_tx_o        ( uart_tx              ),
