@@ -61,6 +61,7 @@ module pulp_soc import dm::*; #(
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
+    output logic                          soc_clk_o,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
@@ -363,6 +364,9 @@ module pulp_soc import dm::*; #(
     logic                  spi_master0_csn3, spi_master0_csn2;
 
     logic                  wdt_reset_o;
+
+    // Propagate soc_clk to top-level (it feeds AXI ports)
+    assign soc_clk_o = s_soc_clk;
 
     // tap to lint wrap
     logic                  s_jtag_shift_dr;
