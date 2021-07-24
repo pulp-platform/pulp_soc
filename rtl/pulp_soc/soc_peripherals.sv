@@ -233,7 +233,12 @@ module soc_peripherals #(
 
     generate
     if ( USE_IBEX == 0) begin: FC_EVENTS
+// TODO Remove this once the bug is fixed
+`ifndef PULP_FPGA_EMUL
     assign fc_events_o[7:0] = 8'h0; //RESERVED for sw events
+`else
+    assign fc_events_o[7:0] = 8'h1; //Actually FPGA PnR fails when this is all zeros. Temporary workaround, one bit is set to 1
+`endif
     assign fc_events_o[8]   = dma_pe_evt_i;
     assign fc_events_o[9]   = dma_pe_irq_i;
     assign fc_events_o[10]  = s_timer_lo_event;
