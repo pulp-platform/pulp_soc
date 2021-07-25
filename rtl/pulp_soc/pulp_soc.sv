@@ -68,8 +68,6 @@ module pulp_soc
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
 
-    output logic                          soc_clk_o,
-
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
@@ -829,9 +827,6 @@ module pulp_soc
         .clk_per_o                  ( s_periph_clk                  ),
         .clk_slow_o                 ( s_slow_clk                    )
     );
-
-    // Clock needed by the external wrapper
-    assign soc_clk_o = s_soc_clk;
     
     soc_interconnect_wrap #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
