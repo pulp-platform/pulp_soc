@@ -15,6 +15,7 @@
 
 module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
+    parameter PULP_XPULP         = 1,
     parameter USE_FPU            = 1,
     parameter USE_HWPE           = 1,
     parameter USE_CLUSTER_EVENT  = 1,
@@ -798,6 +799,7 @@ module pulp_soc import dm::*; #(
 
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
+        .PULP_XPULP ( PULP_XPULP         ),
         .USE_FPU    ( USE_FPU            ),
         .ZFINX      ( ZFINX              ),
         .CORE_ID    ( FC_CORE_CORE_ID    ),
