@@ -52,6 +52,7 @@ module apb_soc_ctrl #(
     output logic                      PSLVERR,
 
     input  logic                      sel_clk_i,
+    input  logic                      bootsel_valid_i,
     input  logic [1:0]                bootsel_i,
     input  logic                      fc_fetch_en_valid_i,
     input  logic                      fc_fetch_en_i,
@@ -133,6 +134,7 @@ module apb_soc_ctrl #(
         r_jtag_regi_sync[1]    <= 'h0;
         r_jtag_rego            <= 'h0;
         r_bootaddr             <= 32'h1A000080;
+        r_bootsel              <= 2'h0;
         r_fetchen              <= 1'h0; // on reset, fc doesn't do anything
         r_cluster_pow          <= 1'b0;
         r_cluster_byp          <= 1'b1;
@@ -152,12 +154,21 @@ module apb_soc_ctrl #(
         if (fc_fetch_en_valid_i)
             r_fetchen <= fc_fetch_en_i;
 
+        // allow bootsel to be controlled through a signal
+        if (bootsel_valid_i)
+            r_bootsel <= bootsel_i;
+
         if (PSEL && PENABLE && PWRITE)
         begin
           case (s_apb_addr)
                 `REG_FCBOOT:
                  begin
                    r_bootaddr <= PWDATA;
+                 end
+                `REG_BOOTSEL:
+                 begin
+                   // allow bootsel to be controlled through JTAG
+                   r_bootsel <= PWDATA[0];
                  end
                 `REG_FCFETCH:
                  begin
@@ -212,6 +223,8 @@ module apb_soc_ctrl #(
     begin
         PRDATA = '0;
         case (s_apb_addr)
+          `REG_BOOTSEL:
+            PRDATA = r_bootsel;
           `REG_FCBOOT:
             PRDATA = r_bootaddr;
           `REG_FCFETCH:
@@ -256,18 +269,6 @@ module apb_soc_ctrl #(
             end
         endcase
     end
-
-   always_ff @(posedge HCLK, negedge HRESETn)
-    begin
-      if(~HRESETn) begin
-        r_bootsel <= 2'b00;
-      end
-      else
-      begin
-        r_bootsel <= bootsel_i;
-      end
-    end
-
 
    assign n_cores    = NB_CORES;
    assign n_clusters = NB_CLUSTERS;

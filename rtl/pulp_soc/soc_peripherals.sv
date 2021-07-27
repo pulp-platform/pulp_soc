@@ -48,6 +48,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     input logic [7:0]                         soc_jtag_reg_i,
     output logic [7:0]                        soc_jtag_reg_o,
 
+    input logic                               bootsel_valid_i,
     input logic [1:0]                         bootsel_i,
     // fc fetch enable can be controlled through this signal or through an APB
     // write to the fc fetch enable register
@@ -482,6 +483,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
         .PSLVERR             ( s_soc_ctrl_bus.pslverr ),
 
         .sel_clk_i           ( sel_clk_i              ),
+        .bootsel_valid_i     ( bootsel_valid_i        ),
         .bootsel_i           ( bootsel_i              ),
         .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
         .fc_fetch_en_i       ( fc_fetch_en_i          ),
@@ -861,7 +863,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
         .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                            ), //TODO: Add AXI dwc converter
         .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                           ),
         .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                            ),
-        .BASE_ADDRESS           ( 32'h1A15_0000                                )		
+        .BASE_ADDRESS           ( 32'h1A15_0000                                )
     ) i_axi_apb_i2c_slave_1 (
         .clk_i                  ( clk_i                                        ),
         .rstn_i                 ( rst_ni                                       ),

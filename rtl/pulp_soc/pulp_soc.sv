@@ -67,6 +67,7 @@ module pulp_soc import dm::*; #(
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
     input  logic                          mode_select_i,
+    input  logic                          bootsel_valid_i,
     input  logic [1:0]                    bootsel_i,
 
     input  logic                          fc_fetch_en_valid_i,
@@ -620,6 +621,7 @@ module pulp_soc import dm::*; #(
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( 1'b0                   ),
 
+        .bootsel_valid_i        ( bootsel_valid_i        ),
         .bootsel_i              ( bootsel_i              ),
 
         .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
