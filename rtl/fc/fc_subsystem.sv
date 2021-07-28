@@ -55,10 +55,6 @@ module fc_subsystem #(
 
     import cv32e40p_apu_core_pkg::*;
 
-    localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
-    localparam IBEX_RV32M = CORE_TYPE == 1;
-    localparam IBEX_RV32E = CORE_TYPE == 2;
-
     // Number of performance counters. As previously in RI5CY (riscv_cs_registers.sv),
     // we distinguish between:
     // (a) ASIC implementation: 1 performance counter active
@@ -159,8 +155,6 @@ module fc_subsystem #(
     //********************************************************
     assign core_rst = rst_ni  & ~wdt_reset_i;
 
-    generate
-    if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
 `ifndef PULP_FPGA_EMUL
     cv32e40p_wrapper #(
@@ -172,7 +166,7 @@ module fc_subsystem #(
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
         .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS)
-    ) lFC_CORE (
+    ) FC_CORE_i (
 
         // Clock and Reset
         .clk_i                (clk_i),
@@ -244,82 +238,7 @@ module fc_subsystem #(
       );
     assign core_instr_req = pulp_instr_req;
 
-    end else begin: FC_CORE
-    assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
-`ifdef VERILATOR
-    ibex_core #(
-`elsif TRACE_EXECUTION
-    ibex_core_tracing #(
-`else
-    ibex_core #(
-`endif
-        .PMPEnable           ( 0            ),
-        .MHPMCounterNum      ( 8            ),
-        .MHPMCounterWidth    ( 40           ),
-        .RV32E               ( IBEX_RV32E   ),
-        .RV32M               ( IBEX_RV32M   ),
-        .DmHaltAddr          ( 32'h1A110800 ),
-        .DmExceptionAddr     ( 32'h1A110808 )
-    ) lFC_CORE (
-        .clk_i                 ( clk_i             ),
-        .rst_ni                ( core_rst          ),
-
-        .test_en_i             ( test_en_i         ),
-
-        .hart_id_i             ( hart_id           ),
-        .boot_addr_i           ( boot_addr         ),
-
-        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
-        .instr_gnt_i           ( core_instr_gnt    ),
-        .instr_rvalid_i        ( core_instr_rvalid ),
-        .instr_err_i           ( core_instr_err    ),
-
-        // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
-        .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
-        .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
-        .data_rvalid_i         ( core_data_rvalid  ),
-        .data_err_i            ( core_data_err     ),
-
-        .irq_software_i        ( 1'b0              ),
-        .irq_timer_i           ( 1'b0              ),
-        .irq_external_i        ( 1'b0              ),
-        .irq_fast_i            ( core_irq_fast     ),
-        .irq_nm_i              ( 1'b0              ),
-
-        .irq_ack_o             ( core_irq_ack      ),
-        .irq_ack_id_o          ( irq_ack_id        ),
-
-        .debug_req_i           ( debug_req_i       ),
-
-        .fetch_enable_i        ( fetch_en_int      ),
-        .core_sleep_o          (                   )
-    );
-    end
-    endgenerate
-
     assign supervisor_mode_o = 1'b1;
-
-    generate
-    if ( USE_IBEX == 1) begin : convert_irqs
-    // Ibex supports 15 fast interrupts and reads the interrupt lines directly
-    // Convert ID back to interrupt lines
-    always_comb begin : gen_core_irq_fast
-        core_irq_fast = '0;
-        if (core_irq_req && (core_irq_id == 26)) begin
-            // remap SoC Event FIFO
-            core_irq_fast[10] = 1'b1;
-        end else if (core_irq_req && (core_irq_id < 15)) begin
-            core_irq_fast[core_irq_id] = 1'b1;
-        end
-    end
 
     //// remap ack ID for SoC Event FIFO
     //always_comb begin : gen_core_irq_ack_id
@@ -329,9 +248,6 @@ module fc_subsystem #(
     //        core_irq_ack_id = {1'b0, irq_ack_id};
     //    end
     //end
-
-    end
-    endgenerate
 
     always_comb begin : gen_core_irq_x
         core_irq_x = '0;
@@ -395,29 +311,17 @@ module fc_subsystem #(
     //****** APU INTERFACE WITH FPU *******
     //*************************************
 
-    generate
-     if (1) begin
-       cv32e40p_fp_wrapper fp_wrapper_i (
-           .clk_i         (clk_i),
-           .rst_ni        (rst_ni),
-           .apu_req_i     (apu_req),
-           .apu_gnt_o     (apu_gnt),
-           .apu_operands_i(apu_operands),
-           .apu_op_i      (apu_op),
-           .apu_flags_i   (apu_flags),
-           .apu_rvalid_o  (apu_rvalid),
-           .apu_rdata_o   (apu_rdata),
-           .apu_rflags_o  (apu_rflags)
-       );
-     end else begin
-       assign apu_gnt_o      = '0;
-       assign apu_operands_i = '0;
-       assign apu_op_i       = '0;
-       assign apu_flags_i    = '0;
-       assign apu_rvalid_o   = '0;
-       assign apu_rdata_o    = '0;
-       assign apu_rflags_o   = '0;
-     end
-    endgenerate
+    cv32e40p_fp_wrapper fp_wrapper_i (
+        .clk_i         (clk_i),
+        .rst_ni        (rst_ni),
+        .apu_req_i     (apu_req),
+        .apu_gnt_o     (apu_gnt),
+        .apu_operands_i(apu_operands),
+        .apu_op_i      (apu_op),
+        .apu_flags_i   (apu_flags),
+        .apu_rvalid_o  (apu_rvalid),
+        .apu_rdata_o   (apu_rdata),
+        .apu_rflags_o  (apu_rflags)
+    );
 
 endmodule
