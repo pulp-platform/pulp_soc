@@ -39,6 +39,7 @@ module soc_clk_rst_gen (
     logic s_clk_for_soc;
     logic s_clk_for_per;
     logic s_clk_for_cluster;
+    logic s_clk_for_slow;
 
     logic s_rstn_soc;
 
@@ -327,7 +328,7 @@ module soc_clk_rst_gen (
         .rst_ni(rstn_glob_i),
         .testmode_i(test_mode_i),
         .en_i(1'b1), // TODO: maybe we can map this to reg
-        .clk_o(s_clk_slow)
+        .clk_o(s_clk_for_slow)
     );
 
     pulp_clock_mux2 clk_mux_fll_soc_i (
@@ -361,6 +362,17 @@ module soc_clk_rst_gen (
         .clk1_i    ( ref_clk_i          ),
         .clk_sel_i ( sel_clk_i          ),
         .clk_o     ( s_clk_cluster      )
+    );
+
+    pulp_clock_mux2 clk_mux_fll_slow_i (
+`ifdef TEST_FLL
+        .clk0_i    ( 1'bz               ),
+`else
+        .clk0_i    ( s_clk_for_slow     ),
+`endif
+        .clk1_i    ( ref_clk_i          ),
+        .clk_sel_i ( sel_clk_i          ),
+        .clk_o     ( s_clk_slow         )
     );
 
 `else // !`ifndef PULP_FPGA_EMUL
