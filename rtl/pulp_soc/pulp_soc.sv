@@ -46,11 +46,8 @@ module pulp_soc
     parameter NB_CORES           = 8,
     parameter NB_HWPE_PORTS      = 4,
     parameter NGPIO              = 32,
-    parameter NPAD               = 64, //Must not be changed as other parts
-                                       //downstreams are not parametrci
     parameter NBIT_PADCFG        = 4, //Must not be changed as other parts
                                       //downstreams are not parametrci
-    parameter NBIT_PADMUX        = 2,
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
@@ -157,9 +154,6 @@ module pulp_soc
     ///////////////////////////////////////////////////
     //      To I/O Controller and padframe           //
     ///////////////////////////////////////////////////
-
-    output logic [NPAD-1:0][NBIT_PADMUX-1:0] pad_mux_o,
-    output logic [NPAD-1:0][NBIT_PADCFG-1:0] pad_cfg_o,
 
     input  logic [NGPIO-1:0]                  gpio_in_i,
     output logic [NGPIO-1:0]                  gpio_out_o,
@@ -592,9 +586,7 @@ module pulp_soc
         .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
         .EVNT_WIDTH         ( EVNT_WIDTH                            ),
         .NGPIO              ( NGPIO                                 ),
-        .NPAD               ( NPAD                                  ),
         .NBIT_PADCFG        ( NBIT_PADCFG                           ),
-        .NBIT_PADMUX        ( NBIT_PADMUX                           ),
         .N_UART             ( N_UART                                ),
         .N_SPI              ( N_SPI                                 ),
         .N_I2C              ( N_I2C                                 ),
@@ -653,9 +645,6 @@ module pulp_soc
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
         .gpio_padcfg            ( gpio_cfg_o             ),
-
-        .pad_mux_o              ( pad_mux_o              ),
-        .pad_cfg_o              ( pad_cfg_o              ),
 
         //UART
         .uart_tx                ( uart_tx_o              ),

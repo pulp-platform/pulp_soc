@@ -19,9 +19,7 @@ module soc_peripherals #(
     parameter NB_CLUSTERS         = 0,
     parameter EVNT_WIDTH          = 8,
     parameter NGPIO               = 32,
-    parameter NPAD                = 64,
     parameter NBIT_PADCFG         = 4,
-    parameter NBIT_PADMUX         = 2,
     parameter N_UART              = 1,
     parameter N_SPI               = 1,
     parameter N_I2C               = 2,
@@ -77,9 +75,6 @@ module soc_peripherals #(
     output logic [NGPIO-1:0]                  gpio_out,
     output logic [NGPIO-1:0]                  gpio_dir,
     output logic [NGPIO-1:0][NBIT_PADCFG-1:0] gpio_padcfg,
-
-    output logic [NPAD-1:0][NBIT_PADMUX-1:0]  pad_mux_o,
-    output logic [NPAD-1:0][NBIT_PADCFG-1:0]  pad_cfg_o,
 
     output logic [3:0]                        timer_ch0_o,
     output logic [3:0]                        timer_ch1_o,
@@ -334,12 +329,10 @@ module soc_peripherals #(
     if (NBIT_PADCFG != 4)
         $error("apb_gpio doesn't support a NBIT_PADCFG bitwidth other than 4");
 
-    if (NBIT_PADMUX != 2)
-        $error("apb_gpio doesn't support a NBIT_PADMUX bitwidth other than 2");
-
     apb_gpio #(
         .APB_ADDR_WIDTH (APB_ADDR_WIDTH),
-        .PAD_NUM        (NGPIO)
+        .PAD_NUM        (NGPIO),
+        .PAD_CFG        (NBIT_PADCFG)
     ) i_apb_gpio (
         .HCLK            ( clk_i              ),
         .HRESETn         ( rst_ni             ),
@@ -454,14 +447,11 @@ module soc_peripherals #(
     // ██║  ██║██║     ██████╔╝    ███████║╚██████╔╝╚██████╗    ╚██████╗   ██║   ██║  ██║███████╗ //
     // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    if (NPAD != 64)
-        $error("apb_soc_ctrl doesn't support any other value than NPAD=64");
 
     apb_soc_ctrl #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
-        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .NBIT_PADCFG    ( NBIT_PADCFG    )
+        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
     ) i_apb_soc_ctrl (
         .HCLK                ( clk_i                  ),
         .HRESETn             ( rst_ni                 ),
@@ -486,8 +476,6 @@ module soc_peripherals #(
         .soc_jtag_reg_i      ( soc_jtag_reg_i         ),
         .soc_jtag_reg_o      ( soc_jtag_reg_o         ),
 
-        .pad_mux             ( pad_mux_o              ),
-        .pad_cfg             ( pad_cfg_o              ),
         .cluster_pow_o       ( cluster_pow_o          ),
         .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
         .sel_spi_dir_o       ( s_sel_spi_dir          ),
