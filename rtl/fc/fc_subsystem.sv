@@ -157,7 +157,11 @@ module fc_subsystem #(
 
     assign boot_addr = boot_addr_i;
 `ifndef PULP_FPGA_EMUL
+  `ifdef SYNTHESIS
+    cv32e40p_core #(
+  `else
     cv32e40p_wrapper #(
+  `endif
 `else
     cv32e40p_core #(
 `endif
