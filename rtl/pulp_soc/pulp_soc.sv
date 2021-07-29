@@ -13,9 +13,7 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
-module pulp_soc
-    import dm::*;
-#(
+module pulp_soc import dm::*; #(
     parameter CORE_TYPE          = 0,
     parameter PULP_XPULP         = 1,
     parameter USE_FPU            = 1,
