@@ -62,6 +62,7 @@ module pulp_soc import dm::*; #(
     output logic                          soc_clk_o,
     input  logic                          test_clk_i,
     input  logic                          rstn_glob_i,
+    output logic                          rst_l2_no,
 
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
@@ -794,6 +795,8 @@ module pulp_soc import dm::*; #(
         .supervisor_mode_o   ( s_supervisor_mode   )
     );
 
+    assign rst_l2_no = s_soc_rstn;
+
     soc_clk_rst_gen i_clk_rst_gen (
         .sys_clk_i                  ( sys_clk_i                     ),
         .ref_clk_i                  ( ref_clk_i                     ),
@@ -814,7 +817,7 @@ module pulp_soc import dm::*; #(
         .clk_per_o                  ( s_periph_clk                  ),
         .clk_slow_o                 ( s_slow_clk                    )
     );
-    
+
     soc_interconnect_wrap #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
         .NR_L2_PORTS         ( control_pulp_pkg::N_L2_BANKS       ),
