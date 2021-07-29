@@ -52,10 +52,10 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_I2C  = 2,
     parameter int unsigned N_I2C_SLV  = 2,
 
-    parameter int unsigned N_L2_BANKS = 4,
-    parameter int unsigned N_L2_BANKS_PRI = 2,
-    parameter int unsigned L2_BANK_SIZE = 32768,
-    parameter int unsigned L2_BANK_SIZE_PRI = 8192
+    parameter int unsigned N_L2_BANKS = 0,
+    parameter int unsigned N_L2_BANKS_PRI = 0,
+    parameter int unsigned L2_BANK_SIZE = 0,
+    parameter int unsigned L2_BANK_SIZE_PRI = 0
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
