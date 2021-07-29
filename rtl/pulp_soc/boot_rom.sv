@@ -40,7 +40,7 @@ module boot_rom #(
 
     `ifndef PULP_FPGA_EMUL
 
-        generic_rom #(
+        asic_autogen_rom #(
             .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
             .DATA_WIDTH(32)
          ) rom_mem_i (
@@ -55,7 +55,7 @@ module boot_rom #(
 
     `else // !`ifndef PULP_FPGA_EMUL
 
-    fpga_bootrom #(
+    fpga_autogen_rom #(
                    .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
                    .DATA_WIDTH(32)
                    ) rom_mem_i (

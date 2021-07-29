@@ -15,6 +15,7 @@ pulp_soc:
     rtl/pulp_soc/interleaved_crossbar.sv,
     rtl/pulp_soc/tcdm_demux.sv,
     rtl/pulp_soc/boot_rom.sv,
+    rtl/pulp_soc/asic_autogen_rom.sv,
     rtl/pulp_soc/l2_ram_multi_bank.sv,
     rtl/pulp_soc/lint_jtag_wrap.sv,
     rtl/pulp_soc/periph_bus_wrap.sv,
