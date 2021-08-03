@@ -8,6 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+`include "pulp_soc_defines.sv"
+
 `ifndef PULP_FPGA_EMUL
  `ifdef SYNTHESIS
   `define ASIC_SYNTHESIS
@@ -321,7 +323,10 @@ module fc_subsystem #(
     //****** APU INTERFACE WITH FPU *******
     //*************************************
 
-    cv32e40p_fp_wrapper fp_wrapper_i (
+`ifdef FPU_SOC
+    cv32e40p_fp_wrapper #(
+        .FP_DIVSQRT (1)
+    ) fp_wrapper_i (
         .clk_i         (clk_i),
         .rst_ni        (rst_ni),
         .apu_req_i     (apu_req),
@@ -333,5 +338,15 @@ module fc_subsystem #(
         .apu_rdata_o   (apu_rdata),
         .apu_rflags_o  (apu_rflags)
     );
+`else
+    assign apu_req      = 1'b0;
+    assign apu_gnt      = 1'b0;
+    assign apu_operands = 1'b0;
+    assign apu_op       = 1'b0;
+    assign apu_flags    = 1'b0;
+    assign apu_rvalid   = 1'b0;
+    assign apu_rdata    = 1'b0;
+    assign apu_rflags   = 1'b0;
+`endif // !`ifdef FPU_SOC
 
 endmodule

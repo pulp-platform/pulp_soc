@@ -11,7 +11,9 @@
 // Wrapper for a fpnew
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
-module cv32e40p_fp_wrapper import cv32e40p_apu_core_pkg::*;
+module cv32e40p_fp_wrapper import cv32e40p_apu_core_pkg::*; #(
+   parameter FP_DIVSQRT = 0
+)
 (
    // Clock and Reset
    input  logic                                   clk_i,
@@ -52,7 +54,7 @@ assign {fpu_vec_op, fpu_op_mod, fpu_op}                     = apu_op_i;
 
 assign {fpu_int_fmt, fpu_src_fmt, fpu_dst_fmt, fp_rnd_mode} = apu_flags_i;
 
-
+localparam C_DIV = FP_DIVSQRT ? fpnew_pkg::MERGED : fpnew_pkg::DISABLED;
 
 // -----------
 // FPU Config
@@ -74,7 +76,7 @@ localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
                '{default: C_LAT_NONCOMP}, // NONCOMP
                '{default: C_LAT_CONV}},   // CONV
   UnitTypes: '{'{default: fpnew_pkg::MERGED},   // ADDMUL
-               '{default: fpnew_pkg::MERGED},   // DIVSQRT
+               '{default: C_DIV},   // DIVSQRT
                '{default: fpnew_pkg::PARALLEL}, // NONCOMP
                '{default: fpnew_pkg::MERGED}},  // CONV
   PipeConfig: fpnew_pkg::AFTER
@@ -112,4 +114,3 @@ fpnew_top #(
 );
 
 endmodule // cv32e40p_fp_wrapper
-
