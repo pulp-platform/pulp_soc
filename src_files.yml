@@ -46,12 +46,14 @@ udma_subsystem:
 
 fc:
   incdirs: [
-    ../../rtl/includes,
     .,
+    ../../rtl/includes,
+    ../register_interface/include,
   ]
   vlog_opts : [
     -L fpnew_lib,
     -L cv32e40p_lib,
+    -L register_interface_lib,
   ]
   files: [
     rtl/fc/fc_demux.sv,

@@ -55,7 +55,8 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_L2_BANKS = 0,
     parameter int unsigned N_L2_BANKS_PRI = 0,
     parameter int unsigned L2_BANK_SIZE = 0,
-    parameter int unsigned L2_BANK_SIZE_PRI = 0
+    parameter int unsigned L2_BANK_SIZE_PRI = 0,
+    parameter int unsigned NUM_INTERRUPTS = 0
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
@@ -303,9 +304,6 @@ module pulp_soc import dm::*; #(
     logic                  s_fc_event_valid;
     logic                  s_fc_event_ready;
 
-    logic                  s_plic_irq_valid;
-    logic                  s_plic_irq_ready;
-
     logic [7:0][31:0]      s_apb_mpu_rules;
     logic                  s_supervisor_mode;
 
@@ -371,6 +369,7 @@ module pulp_soc import dm::*; #(
     logic                  s_jtag_axireg_tdo;
 
     APB_BUS                s_apb_eu_bus ();
+    APB_BUS                s_apb_clic_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
     APB_BUS                s_apb_clk_ctrl_bus();
@@ -633,6 +632,7 @@ module pulp_soc import dm::*; #(
         .apb_slave              ( s_apb_periph_bus       ),
 
         .apb_eu_master          ( s_apb_eu_bus           ),
+        .apb_clic_master        ( s_apb_clic_bus         ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
         .apb_clk_ctrl_master    ( s_apb_clk_ctrl_bus     ),
@@ -652,11 +652,11 @@ module pulp_soc import dm::*; #(
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
         .pf_evt_i               ( s_pf_evt               ),
 
-        .scg_irq_i,
-        .scp_irq_i,
-        .scp_secure_irq_i,
-        .mbox_irq_i,
-        .mbox_secure_irq_i,
+//        .scg_irq_i,
+//        .scp_irq_i,
+//        .scp_secure_irq_i,
+//        .mbox_irq_i,
+//        .mbox_secure_irq_i,
 
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
@@ -722,9 +722,6 @@ module pulp_soc import dm::*; #(
         .fc_event_valid_o       ( s_fc_event_valid       ),
         .fc_event_ready_i       ( s_fc_event_ready       ),
 
-        .plic_irq_valid_o       ( s_plic_irq_valid       ),
-        .plic_irq_ready_i       ( s_plic_irq_ready       ),
-
         .cluster_pow_o          ( cluster_pow_o          ),
         .cluster_byp_o          ( cluster_byp_o          ),
         .cluster_boot_addr_o    ( cluster_boot_addr_o    ),
@@ -786,7 +783,8 @@ module pulp_soc import dm::*; #(
         .ZFINX      ( ZFINX              ),
         .CORE_ID    ( FC_CORE_CORE_ID    ),
         .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
-        .USE_HWPE   ( USE_HWPE           )
+        .USE_HWPE   ( USE_HWPE           ),
+        .NUM_INTERRUPTS ( NUM_INTERRUPTS )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
@@ -804,6 +802,7 @@ module pulp_soc import dm::*; #(
         .l2_instr_master     ( s_lint_fc_instr_bus ),
         .l2_hwpe_master      ( s_lint_hwpe_bus     ),
         .apb_slave_eu        ( s_apb_eu_bus        ),
+        .apb_slave_clic      ( s_apb_clic_bus      ),
         .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
         .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
 
@@ -812,12 +811,16 @@ module pulp_soc import dm::*; #(
         .event_fifo_data_i   ( s_fc_event_data     ),
         .events_i            ( s_fc_events         ),
 
-        .plic_irq_valid_i    ( s_plic_irq_valid    ),
-        .plic_irq_ready_o    ( s_plic_irq_ready    ),
-
         .hwpe_events_o       ( s_fc_hwpe_events    ),
 
-        .supervisor_mode_o   ( s_supervisor_mode   )
+        .supervisor_mode_o   ( s_supervisor_mode   ),
+
+        // External interrupts
+        .scg_irq_i,
+        .scp_irq_i,
+        .scp_secure_irq_i,
+        .mbox_irq_i,
+        .mbox_secure_irq_i
     );
 
     assign rst_l2_no = s_soc_rstn;

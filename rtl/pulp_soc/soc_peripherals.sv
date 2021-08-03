@@ -13,7 +13,7 @@
 `include "register_interface/assign.svh"
 
 
-module soc_peripherals import rv_plic_reg_pkg::*; #(
+module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     parameter CORE_TYPE           = 0,
     parameter MEM_ADDR_WIDTH      = 13,
     parameter APB_ADDR_WIDTH      = 32,
@@ -59,6 +59,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     // APB SLAVE PORT
     APB_BUS.Slave                             apb_slave,
     APB_BUS.Master                            apb_eu_master,
+    APB_BUS.Master                            apb_clic_master,
     APB_BUS.Master                            apb_hwpe_master,
     APB_BUS.Master                            apb_debug_master,
     // MASTER PORT TO SOC CLK CTRL
@@ -75,12 +76,12 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     input logic [1:0]                         fc_hwpe_events_i,
     output logic [31:0]                       fc_events_o,
 
-    // external interrupts
-    input logic                               scg_irq_i,
-    input logic                               scp_irq_i,
-    input logic                               scp_secure_irq_i,
-    input logic [71:0]                        mbox_irq_i,
-    input logic [71:0]                        mbox_secure_irq_i,
+//    // external interrupts
+//    input logic                               scg_irq_i,
+//    input logic                               scp_irq_i,
+//    input logic                               scp_secure_irq_i,
+//    input logic [71:0]                        mbox_irq_i,
+//    input logic [71:0]                        mbox_secure_irq_i,
 
     input logic [NGPIO-1:0]                   gpio_in,
     output logic [NGPIO-1:0]                  gpio_out,
@@ -148,9 +149,6 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     output logic                              fc_event_valid_o,
     input logic                               fc_event_ready_i,
 
-    output logic                              plic_irq_valid_o,
-    input  logic                              plic_irq_ready_i,
-
     output logic                              cluster_pow_o,
     output logic                              cluster_byp_o, // bypass cluster
     output logic [63:0]                       cluster_boot_addr_o,
@@ -172,7 +170,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     APB_BUS s_soc_ctrl_bus ();
     APB_BUS s_adv_timer_bus ();
     APB_BUS s_soc_evnt_gen_bus ();
-    APB_BUS s_plic_bus ();
+    APB_BUS s_clic_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
 
@@ -312,7 +310,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
         .soc_ctrl_master     ( s_soc_ctrl_bus        ),
         .adv_timer_master    ( s_adv_timer_bus       ),
         .soc_evnt_gen_master ( s_soc_evnt_gen_bus    ),
-        .plic_master         ( s_plic_bus            ),
+        .clic_master         ( apb_clic_master       ),
         .eu_master           ( apb_eu_master         ),
         .mmap_debug_master   ( apb_debug_master      ),
         .hwpe_master         ( apb_hwpe_master       ),
@@ -528,93 +526,6 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
         .ch_2_o          ( timer_ch2_o             ),
         .ch_3_o          ( timer_ch3_o             )
     );
-
-    //
-    // PLIC
-    //
-
-    localparam int unsigned REG_BUS_ADDR_WIDTH = 32;
-    localparam int unsigned REG_BUS_DATA_WIDTH = 32;
-    REG_BUS #(
-        .ADDR_WIDTH (REG_BUS_ADDR_WIDTH),
-        .DATA_WIDTH (REG_BUS_DATA_WIDTH)
-    ) reg_bus (clk_i);
-
-    // TODO: rename s_soc_event_gen_bus
-    apb_to_reg i_apb_to_reg (
-        .clk_i,
-        .rst_ni,
-        .penable_i (s_plic_bus.penable),
-        .pwrite_i  (s_plic_bus.pwrite),
-        .paddr_i   (s_plic_bus.paddr),
-        .psel_i    (s_plic_bus.psel),
-        .pwdata_i  (s_plic_bus.pwdata),
-        .prdata_o  (s_plic_bus.prdata),
-        .pready_o  (s_plic_bus.pready),
-        .pslverr_o (s_plic_bus.pslverr),
-        .reg_o     (reg_bus)
-    );
-
-    typedef logic [REG_BUS_ADDR_WIDTH-1:0] addr_t;
-    typedef logic [REG_BUS_DATA_WIDTH-1:0] data_t;
-    typedef logic [REG_BUS_DATA_WIDTH/8-1:0] strb_t;
-
-    `REG_BUS_TYPEDEF_REQ(reg_a32_d32_req_t, addr_t, data_t, strb_t)
-    `REG_BUS_TYPEDEF_RSP(reg_a32_d32_rsp_t, data_t)
-
-    // reg_intf::reg_intf_resp_d32 plic_resp;
-    // reg_intf::reg_intf_req_a32_d32 plic_req;
-    reg_a32_d32_req_t plic_req;
-    reg_a32_d32_rsp_t plic_rsp;
-
-    assign plic_req.addr  = reg_bus.addr;
-    assign plic_req.write = reg_bus.write;
-    assign plic_req.wdata = reg_bus.wdata;
-    assign plic_req.wstrb = reg_bus.wstrb;
-    assign plic_req.valid = reg_bus.valid;
-
-    assign reg_bus.rdata = plic_rsp.rdata;
-    assign reg_bus.error = plic_rsp.error;
-    assign reg_bus.ready = plic_rsp.ready;
-
-    // TODO: propagate from top-level (?) // TODO: not used
-    localparam int unsigned N_SOURCE = 256;
-    localparam int unsigned N_TARGET = 1;
-    localparam int unsigned MAX_PRIO = 6;
-
-
-    logic [255:0] external_irqs;
-    assign external_irqs = {
-        {108{1'b0}},       // 108 (systemverilog has default:0 but that doesn't work reliably)
-        mbox_secure_irq_i, // 72
-        mbox_irq_i,        // 72
-        scp_secure_irq_i,  // 1
-        scp_irq_i,         // 1
-        scg_irq_i,         // 1
-        1'b0               // 1 (plic requires 0th interrupt to be zero)
-    };
-
-    rv_plic #(
-        .reg_req_t ( reg_a32_d32_req_t ),
-        .reg_rsp_t ( reg_a32_d32_rsp_t )
-    ) i_plic (
-        .clk_i,
-        .rst_ni,
-         // Bus Interface
-        .reg_req_i   ( plic_req           ),
-        .reg_rsp_o   ( plic_rsp           ),
-        // Interrupt Sources
-        .intr_src_i  ( external_irqs      ),
-        // Interrupt notification to targets
-        .irq_valid_o ( plic_irq_valid_o   ),
-        .irq_ready_i ( plic_irq_ready_i   ),
-        // irq id is already mapped to the plic claim register which is being
-        // accessed in the interrupt handler to confirm the acceptance of an
-        // interrupt, so no need to also map it in a register in the
-        // apb_interrupt_ctrl
-        .irq_id_o    ()
-    );
-
 
     //
     // event generator (now only for cluster)

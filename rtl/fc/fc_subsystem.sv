@@ -16,6 +16,9 @@
  `endif
 `endif
 
+`include "register_interface/typedef.svh"
+`include "register_interface/assign.svh"
+
 module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter PULP_XPULP          = 1,
@@ -28,7 +31,8 @@ module fc_subsystem #(
     parameter PULP_SECURE         = 1,
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
-    parameter CLUSTER_ID          = 6'h1F
+    parameter CLUSTER_ID          = 6'h1F,
+    parameter NUM_INTERRUPTS      = 0
 ) (
     input  logic                      clk_i,
     input  logic                      rst_ni,
@@ -40,6 +44,7 @@ module fc_subsystem #(
     XBAR_TCDM_BUS.Master              l2_instr_master,
     XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS-1:0],
     APB_BUS.Slave                     apb_slave_eu,
+    APB_BUS.Slave                     apb_slave_clic,
     APB_BUS.Slave                     apb_slave_hwpe,
 
     input  logic                      fetch_en_i,
@@ -51,12 +56,19 @@ module fc_subsystem #(
     input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
     input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
 
-    input  logic                      plic_irq_valid_i,
-    output logic                      plic_irq_ready_o,
+//    input  logic                      plic_irq_valid_i,
+//    output logic                      plic_irq_ready_o,
 
     output logic [1:0]                hwpe_events_o,
 
-    output logic                      supervisor_mode_o
+    output logic                      supervisor_mode_o,
+
+    // external interrupts
+    input logic                           scg_irq_i,
+    input logic                           scp_irq_i,
+    input logic                           scp_secure_irq_i,
+    input logic [71:0]                    mbox_irq_i,
+    input logic [71:0]                    mbox_secure_irq_i
 );
 
     import cv32e40p_apu_core_pkg::*;
@@ -72,14 +84,17 @@ module fc_subsystem #(
       localparam int unsigned NUM_MHPMCOUNTERS = 16;
     `endif
 
+
     // Interrupt signals
     logic        core_irq_req   ;
     logic        core_irq_sec   ;
-    logic [4:0]  core_irq_id    ;
-    logic [4:0]  core_irq_ack_id;
+    logic [$clog2(NUM_INTERRUPTS)-1:0]  core_irq_id    ;
+    logic [7:0]  core_irq_level ;
+    logic        core_irq_shv   ;
+    //logic [4:0]  core_irq_ack_id;
     logic        core_irq_ack   ;
     logic [14:0] core_irq_fast  ;
-    logic [31:0] core_irq_x     ;
+    logic [NUM_INTERRUPTS-1:0] core_irq_x     ;
 
     logic [3:0]  irq_ack_id;
 
@@ -175,7 +190,8 @@ module fc_subsystem #(
         .PULP_CLUSTER     (0),
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
-        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS)
+        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS),
+        .NUM_INTERRUPTS   (NUM_INTERRUPTS)
     ) FC_CORE_i (
 
         // Clock and Reset
@@ -187,6 +203,7 @@ module fc_subsystem #(
         .scan_cg_en_i         (test_mode_i),
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (),
+        .mtvt_addr_i          (32'h0),
         .dm_halt_addr_i       (32'h1A110800),
         .hart_id_i            (hart_id),
         .dm_exception_addr_i  (32'h1A11080c),
@@ -223,8 +240,10 @@ module fc_subsystem #(
 
         // Interrupt inputs
         .irq_i                 (core_irq_x),  // CLINT interrupts + CLINT extension interrupts
+        .irq_level_i           (core_irq_level),
+        .irq_shv_i             (core_irq_shv),
         .irq_ack_o             (core_irq_ack),
-        .irq_id_o              (core_irq_ack_id),
+        .irq_id_o              (/*core_irq_ack_id*/),
 
         // Debug Interface
         .debug_req_i           (debug_req_i),
@@ -250,15 +269,6 @@ module fc_subsystem #(
 
     assign supervisor_mode_o = 1'b1;
 
-    //// remap ack ID for SoC Event FIFO
-    //always_comb begin : gen_core_irq_ack_id
-    //    if (irq_ack_id == 10) begin
-    //        core_irq_ack_id = 26;
-    //    end else begin
-    //        core_irq_ack_id = {1'b0, irq_ack_id};
-    //    end
-    //end
-
     always_comb begin : gen_core_irq_x
         core_irq_x = '0;
         if (core_irq_req) begin
@@ -266,25 +276,94 @@ module fc_subsystem #(
         end
     end
 
-    apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
-        .clk_i              ( clk_i              ),
-        .rst_ni             ( rst_ni             ),
-        .test_mode_i        ( test_en_i          ),
-        .events_i           ( events_i           ),
-        .event_fifo_valid_i ( event_fifo_valid_i ),
-        .event_fifo_fulln_o ( event_fifo_fulln_o ),
-        .event_fifo_data_i  ( event_fifo_data_i  ),
-        .plic_irq_valid_i,
-        .plic_irq_ready_o,
-        .core_secure_mode_i ( 1'b0               ),
-        .core_irq_id_o      ( core_irq_id        ),
-        .core_irq_req_o     ( core_irq_req       ),
-        .core_irq_ack_i     ( core_irq_ack       ),
-        .core_irq_id_i      ( core_irq_ack_id    ),
-        .core_irq_sec_o     ( /* SECURE IRQ */   ),
-        .core_clock_en_o    ( core_clock_en      ),
-        .fetch_en_o         ( fetch_en_eu        ),
-        .apb_slave          ( apb_slave_eu       )
+    // warnings for transitioning off apb_interrupt_cntrl
+`ifndef SYNTHESIS
+    assert property (@(posedge clk_i)
+        !(apb_slave_eu.psel == 1'b1
+         && apb_slave_eu.penable == 1'b1))
+        else $info("[soc_clk_rst_gen]  %t - Detected legacy CLINT access", $time);
+`endif
+    // progress, but drop apb_interrupt_cntrl requests
+    assign apb_slave_eu.pready = apb_slave_eu.psel & apb_slave_eu.penable;
+
+    // TODO: imported this hardcoded stuff from apb_interrupt_cntrl. Why was
+    // this even the job of the interrupt controller?
+    assign fetch_en_eu = 1'b1;
+    assign core_clock_en = 1'b1;
+
+    localparam int unsigned REG_BUS_ADDR_WIDTH = 32;
+    localparam int unsigned REG_BUS_DATA_WIDTH = 32;
+
+    REG_BUS #(
+        .ADDR_WIDTH (REG_BUS_ADDR_WIDTH),
+        .DATA_WIDTH (REG_BUS_DATA_WIDTH)
+    ) reg_bus (clk_i);
+
+    apb_to_reg i_apb_to_reg (
+        .clk_i,
+        .rst_ni,
+        .penable_i (apb_slave_clic.penable),
+        .pwrite_i  (apb_slave_clic.pwrite),
+        .paddr_i   (apb_slave_clic.paddr),
+        .psel_i    (apb_slave_clic.psel),
+        .pwdata_i  (apb_slave_clic.pwdata),
+        .prdata_o  (apb_slave_clic.prdata),
+        .pready_o  (apb_slave_clic.pready),
+        .pslverr_o (apb_slave_clic.pslverr),
+        .reg_o     (reg_bus)
+    );
+
+    typedef logic [REG_BUS_ADDR_WIDTH-1:0] addr_t;
+    typedef logic [REG_BUS_DATA_WIDTH-1:0] data_t;
+    typedef logic [REG_BUS_DATA_WIDTH/8-1:0] strb_t;
+
+    `REG_BUS_TYPEDEF_REQ(reg_a32_d32_req_t, addr_t, data_t, strb_t)
+    `REG_BUS_TYPEDEF_RSP(reg_a32_d32_rsp_t, data_t)
+
+    reg_a32_d32_req_t clic_req;
+    reg_a32_d32_rsp_t clic_rsp;
+
+    assign clic_req.addr  = reg_bus.addr;
+    assign clic_req.write = reg_bus.write;
+    assign clic_req.wdata = reg_bus.wdata;
+    assign clic_req.wstrb = reg_bus.wstrb;
+    assign clic_req.valid = reg_bus.valid;
+
+    assign reg_bus.rdata = clic_rsp.rdata;
+    assign reg_bus.error = clic_rsp.error;
+    assign reg_bus.ready = clic_rsp.ready;
+
+    // TODO: make this useful
+    // localparam int unsigned N_SOURCE = 256;
+
+    logic [255:0] clic_irqs;
+    assign clic_irqs = {
+      {77{1'b0}},         // 77 (systemverilog has default:0 but that doesn't work reliably)
+      mbox_secure_irq_i,  // 72
+      mbox_irq_i,         // 72
+      scp_secure_irq_i,   // 1
+      scp_irq_i,          // 1
+      scg_irq_i,          // 1
+      events_i[31:0]      // 31 (regular clint interrupts)
+    };
+
+    clic #(
+        .reg_req_t ( reg_a32_d32_req_t ),
+        .reg_rsp_t ( reg_a32_d32_rsp_t )
+    ) i_clic (
+        .clk_i,
+        .rst_ni,
+         // Bus Interface
+        .reg_req_i   ( clic_req       ),
+        .reg_rsp_o   ( clic_rsp       ),
+        // Interrupt Sources
+        .intr_src_i  ( clic_irqs      ),
+        // Interrupt notification to core
+        .irq_valid_o ( core_irq_req   ),
+        .irq_ready_i ( core_irq_ack   ),
+        .irq_id_o    ( core_irq_id    ),
+        .irq_level_o ( core_irq_level ),
+        .irq_shv_o   ( core_irq_shv   )
     );
 
 
