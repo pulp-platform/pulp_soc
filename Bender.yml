@@ -28,7 +28,7 @@ dependencies:
   timer_unit:             { git: "https://github.com/pulp-platform/timer_unit.git", version: 1.0.2 }
   common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
   cluster_interconnect:   { git: "https://github.com/pulp-platform/cluster_interconnect.git", version: 1.1.1 }
-  fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.5 }
+  fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.6 }
   jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", rev: "v0.1" }
   cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "pulpissimo-v3.4.0-rev3"}
   ibex:                   { git: "https://github.com/lowRISC/ibex.git", rev: "pulpissimo-v6.1.1" }
