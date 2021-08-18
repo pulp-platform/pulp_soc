@@ -32,7 +32,7 @@ module pulp_soc import dm::*; #(
     parameter EVNT_WIDTH          = 8,
     parameter NB_CORES            = 8,
     parameter NB_HWPE_PORTS       = 4,
-    parameter NGPIO               = 43,
+    localparam NGPIO              = gpio_reg_pkg::GPIOCount,
 
     parameter int unsigned N_UART = 1,
     parameter int unsigned N_SPI  = 1,
@@ -137,11 +137,14 @@ module pulp_soc import dm::*; #(
     ///////////////////////////////////////////////////
     //      To I/O Controller and padframe           //
     ///////////////////////////////////////////////////
-    output logic [383:0]                  pad_cfg_o,
-    input logic [NGPIO-1:0]               gpio_in_i,
-    output logic [NGPIO-1:0]              gpio_out_o,
-    output logic [NGPIO-1:0]              gpio_dir_o,
-    output logic [191:0]                  gpio_cfg_o,
+    input logic [NGPIO-1:0]                                     gpio_i,
+    output logic [NGPIO-1:0]                                    gpio_o,
+    output logic [NGPIO-1:0]                                    gpio_tx_en_o,
+
+    output logic [3:0]                                          timer_ch0_o,
+    output logic [3:0]                                          timer_ch1_o,
+    output logic [3:0]                                          timer_ch2_o,
+    output logic [3:0]                                          timer_ch3_o,
 
     // uDMA Connections
     // UART
@@ -548,10 +551,6 @@ module pulp_soc import dm::*; #(
         .NB_CORES           ( NB_CORES                              ),
         .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
         .EVNT_WIDTH         ( EVNT_WIDTH                            ),
-        .NGPIO              ( NGPIO                                 ),
-        .NPAD               ( NPAD                                  ),
-        .NBIT_PADCFG        ( NBIT_PADCFG                           ),
-        .NBIT_PADMUX        ( NBIT_PADMUX                           ),
         .SIM_STDOUT         ( SIM_STDOUT                            )
     ) soc_peripherals_i (
 
@@ -597,10 +596,9 @@ module pulp_soc import dm::*; #(
         .per_fll_master         ( s_per_fll_master       ),
         .cluster_fll_master     ( s_cluster_fll_master   ),
 
-        .gpio_in                ( gpio_in_i              ),
-        .gpio_out               ( gpio_out_o             ),
-        .gpio_dir               ( gpio_dir_o             ),
-        .gpio_padcfg            ( s_gpio_cfg             ),
+        .gpio_i,
+        .gpio_o,
+        .gpio_tx_en_o,
         // UART
         .uart_to_pad_o,
         .pad_to_uart_i,
@@ -945,5 +943,4 @@ module pulp_soc import dm::*; #(
              slave_valid <= slave_grant;
          end
      end
-
 endmodule
