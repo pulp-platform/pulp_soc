@@ -23,11 +23,10 @@ module soc_peripherals
     parameter NB_CORES       = 4,
     parameter NB_CLUSTERS    = 0,
     parameter EVNT_WIDTH     = 8,
-    parameter NGPIO          = 64,
-    parameter NPAD           = 64,
-    parameter NBIT_PADCFG    = 4,
-    parameter NBIT_PADMUX    = 2,
-    parameter SIM_STDOUT     = 1
+    parameter SIM_STDOUT     = 1,
+    localparam NGPIO         = gpio_reg_pkg::GPIOCount // Have a look at the
+                                // README in the GPIO repo in order to change
+                                // the number of GPIOs.
 ) (
     input  logic                       clk_i,
     input  logic                       periph_clk_i,
@@ -73,14 +72,6 @@ module soc_peripherals
     input  logic                       pf_evt_i,
     input  logic [1:0]                 fc_hwpe_events_i,
     output logic [31:0]                fc_interrupts_o,
-
-    input  logic [NGPIO-1:0]           gpio_in,
-    output logic [NGPIO-1:0]           gpio_out,
-    output logic [NGPIO-1:0]           gpio_dir,
-    output logic [NGPIO-1:0][NBIT_PADCFG-1:0] gpio_padcfg,
-
-    output logic [NPAD-1:0][NBIT_PADMUX-1:0] pad_mux_o,
-    output logic [NPAD-1:0][NBIT_PADCFG-1:0] pad_cfg_o,
 
     output logic [3:0]                 timer_ch0_o,
     output logic [3:0]                 timer_ch1_o,
@@ -133,7 +124,7 @@ module soc_peripherals
     //---------- Wiring Signals and internal parameters ----------
     localparam UDMA_EVENTS = 16*8;
 
-    logic [31:0] s_gpio_sync;
+    logic [NGPIO-1:0] s_gpio_sync;
     logic       s_sel_hyper_axi;
 
     logic       s_gpio_event      ;
@@ -246,7 +237,7 @@ module soc_peripherals
     apb_req_t [NumAPBSlaves-1:0] s_apb_slaves_req;
     apb_resp_t [NumAPBSlaves-1:0] s_apb_slaves_resp;
 
-// Helper Macro to quickly create and attach ne APB slave interfaces.
+// Helper Macro to quickly create and attach new APB slave interfaces.
 // Adding a new slave: Increment value of NumAPBSlaves, call this macro
 // where port_idx is an incrementing port index number (just increase the
 // previously used by one), slave_name must be valid SV identifier, start/end
@@ -395,48 +386,10 @@ module soc_peripherals
      assign virtual_stdout_slave.prdata  = 'h0;
  end
 
-    ///////////////////////////////////////////////////////////////
-    //  █████╗ ██████╗ ██████╗      ██████╗ ██████╗ ██╗ ██████╗  //
-    // ██╔══██╗██╔══██╗██╔══██╗    ██╔════╝ ██╔══██╗██║██╔═══██╗ //
-    // ███████║██████╔╝██████╔╝    ██║  ███╗██████╔╝██║██║   ██║ //
-    // ██╔══██║██╔═══╝ ██╔══██╗    ██║   ██║██╔═══╝ ██║██║   ██║ //
-    // ██║  ██║██║     ██████╔╝    ╚██████╔╝██║     ██║╚██████╔╝ //
-    // ╚═╝  ╚═╝╚═╝     ╚═════╝      ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  //
-    ///////////////////////////////////////////////////////////////
-
-    apb_gpio #(
-        .APB_ADDR_WIDTH (APB_ADDR_WIDTH),
-        .PAD_NUM        (NGPIO),
-        .NBIT_PADCFG    (NBIT_PADCFG)
-    ) i_apb_gpio (
-        .HCLK            ( clk_i              ),
-        .HRESETn         ( rst_ni             ),
-
-        .dft_cg_enable_i ( dft_cg_enable_i    ),
-
-        .PADDR           ( s_gpio_slave.paddr   ),
-        .PWDATA          ( s_gpio_slave.pwdata  ),
-        .PWRITE          ( s_gpio_slave.pwrite  ),
-        .PSEL            ( s_gpio_slave.psel    ),
-        .PENABLE         ( s_gpio_slave.penable ),
-        .PRDATA          ( s_gpio_slave.prdata  ),
-        .PREADY          ( s_gpio_slave.pready  ),
-        .PSLVERR         ( s_gpio_slave.pslverr ),
-
-        .gpio_in_sync    ( s_gpio_sync        ),
-
-        .gpio_in         ( gpio_in            ),
-        .gpio_out        ( gpio_out           ),
-        .gpio_dir        ( gpio_dir           ),
-        .gpio_padcfg     ( gpio_padcfg        ),
-        .interrupt       ( s_gpio_event       )
-    );
-
-
     logic sys_rst_ni;
     logic sys_clk_i;
 
-    pulp_io #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH), .PAD_NUM(NGPIO)) i_pulp_io (
+    pulp_io #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_pulp_io (
         .sys_rst_ni      (rst_ni              ),
         .sys_clk_i       (clk_i               ),
         .periph_clk_i    (periph_clk_i        ),
@@ -471,33 +424,38 @@ module soc_peripherals
         .udma_apb_pready (s_udma_slave.pready ),
         .udma_apb_pslverr(s_udma_slave.pslverr),
 
-        // .gpio_apb_paddr  (gpio_apb_paddr     ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_pwdata (gpio_apb_pwdata    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_pwrite (gpio_apb_pwrite    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_psel   (gpio_apb_psel      ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_penable(gpio_apb_penable   ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_prdata (gpio_apb_prdata    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_pready (gpio_apb_pready    ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
-        // .gpio_apb_pslverr(gpio_apb_pslverr   ), // TODO to be connected once the APB GPIO module is moved inside pulp_io
+        .gpio_apb_paddr  (s_gpio_slave.paddr     ),
+        .gpio_apb_pwdata (s_gpio_slave.pwdata    ),
+        .gpio_apb_pwrite (s_gpio_slave.pwrite    ),
+        .gpio_apb_psel   (s_gpio_slave.psel      ),
+        .gpio_apb_penable(s_gpio_slave.penable   ),
+        .gpio_apb_prdata (s_gpio_slave.prdata    ),
+        .gpio_apb_pready (s_gpio_slave.pready    ),
+        .gpio_apb_pslverr(s_gpio_slave.pslverr   ),
 
         .events_o        (s_udma_events       ),
         .event_valid_i   (s_pr_event_valid    ),
         .event_data_i    (s_pr_event_data     ),
         .event_ready_o   (s_pr_event_ready    ),
 
-        .uart_to_pad     (uart_to_pad_o  ),
-        .pad_to_uart     (pad_to_uart_i  ),
-        .i2c_to_pad      (i2c_to_pad_o   ),
-        .pad_to_i2c      (pad_to_i2c_i   ),
-        .sdio_to_pad     (sdio_to_pad_o  ),
-        .pad_to_sdio     (pad_to_sdio_i  ),
-        .i2s_to_pad      (i2s_to_pad_o   ),
-        .pad_to_i2s      (pad_to_i2s_i   ),
-        .qspi_to_pad     (qspi_to_pad_o  ),
-        .pad_to_qspi     (pad_to_qspi_i  ),
-        .pad_to_cpi      (pad_to_cpi_i   ),
-        .hyper_to_pad    (hyper_to_pad_o ),
-        .pad_to_hyper    (pad_to_hyper_i )
+        .uart_to_pad      (uart_to_pad_o  ),
+        .pad_to_uart      (pad_to_uart_i  ),
+        .i2c_to_pad       (i2c_to_pad_o   ),
+        .pad_to_i2c       (pad_to_i2c_i   ),
+        .sdio_to_pad      (sdio_to_pad_o  ),
+        .pad_to_sdio      (pad_to_sdio_i  ),
+        .i2s_to_pad       (i2s_to_pad_o   ),
+        .pad_to_i2s       (pad_to_i2s_i   ),
+        .qspi_to_pad      (qspi_to_pad_o  ),
+        .pad_to_qspi      (pad_to_qspi_i  ),
+        .pad_to_cpi       (pad_to_cpi_i   ),
+        .hyper_to_pad     (hyper_to_pad_o ),
+        .pad_to_hyper     (pad_to_hyper_i ),
+        .gpio_in          (gpio_i         ),
+        .gpio_out         (gpio_o         ),
+        .gpio_tx_en_o     (gpio_tx_en_o   ),
+        .gpio_in_sync_o   (s_gpio_sync    ),
+        .gpio_interrupt_o (s_gpio_event   )
     );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -508,14 +466,15 @@ module soc_peripherals
     // ██║  ██║██║     ██████╔╝    ███████║╚██████╔╝╚██████╗    ╚██████╗   ██║   ██║  ██║███████╗ //
     // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    if (NPAD != 64)
-        $error("apb_soc_ctrl doesn't support any other value than NPAD=64");
 
     apb_soc_ctrl #(
         .NB_CORES       ( NB_CORES       ),
         .NB_CLUSTERS    ( NB_CLUSTERS    ),
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .NBIT_PADCFG    ( NBIT_PADCFG    )
+        .NBIT_PADCFG    ( 3              ) // APB SoC control is no longer
+                                           // responsible for pad config. This is handled
+                                           // by the padmux IP genreated by
+                                           // Padrick. The value here is thus irrelevant.
     ) i_apb_soc_ctrl (
         .HCLK                ( clk_i                  ),
         .HRESETn             ( rst_ni                 ),
@@ -541,8 +500,8 @@ module soc_peripherals
         .soc_jtag_reg_i      ( soc_jtag_reg_i         ),
         .soc_jtag_reg_o      ( soc_jtag_reg_o         ),
 
-        .pad_mux             ( pad_mux_o              ),
-        .pad_cfg             ( pad_cfg_o              ),
+        .pad_mux             (                        ), // Not used. Padmuxing is handled externally.
+        .pad_cfg             (                        ), // Not used. Padmuxing is handled externally.
         .cluster_pow_o       ( cluster_pow_o          ),
         .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
 
@@ -555,7 +514,7 @@ module soc_peripherals
 
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .EXTSIG_NUM     ( 32             )
+        .EXTSIG_NUM     ( NGPIO      )
     ) i_apb_adv_timer (
         .HCLK            ( clk_i                   ),
         .HRESETn         ( rst_ni                  ),
