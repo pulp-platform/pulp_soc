@@ -357,8 +357,8 @@ module pulp_soc import dm::*; #(
 
     XBAR_TCDM_BUS s_mem_rom_bus ();
 
-    XBAR_TCDM_BUS  s_mem_l2_bus[NB_L2_BANKS-1:0]();
-    XBAR_TCDM_BUS  s_mem_l2_pri_bus[NB_L2_BANKS_PRI-1:0]();
+    XBAR_TCDM_BUS  s_mem_l2_bus[NB_L2_BANKS]();
+    XBAR_TCDM_BUS  s_mem_l2_pri_bus[NB_L2_BANKS_PRI]();
 
     XBAR_TCDM_BUS s_lint_debug_bus();
     XBAR_TCDM_BUS s_lint_pulp_jtag_bus();
