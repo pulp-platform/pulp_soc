@@ -216,7 +216,7 @@ module pulp_soc import dm::*; #(
     // this is a constant expression
     function logic [NrHarts-1:0] SEL_HARTS_FX();
         SEL_HARTS_FX = (1 << FC_CORE_MHARTID);
-        for (int i = 0; i < NB_CORES; i++) begin
+        for (bit[31:0] i = 0; i < NB_CORES; i++) begin
             SEL_HARTS_FX |= (1 << {CL_CORE_CLUSTER_ID, 1'b0, i[3:0]});
         end
     endfunction
