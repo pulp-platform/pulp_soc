@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [3.0.1] - 2021-09-08
+### Fixed
+- `ips_list.yml` has missing domain tags causing trouble with the FPGA flow
+- Bumped fpnew for `common_cells` deps
 
 ## [3.0.0] - 2021-06-25
 ### Added
