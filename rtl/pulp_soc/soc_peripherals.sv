@@ -270,7 +270,7 @@ module soc_peripherals
 
 
     axi_lite_to_apb #(
-      .NoApbSlaves      ( NumAPBSlaves+1  ),
+      .NoApbSlaves      ( NumAPBSlaves    ),
       .NoRules          ( NumAPBSlaves    ),
       .AddrWidth        ( 32              ),
       .DataWidth        ( 32              ),
