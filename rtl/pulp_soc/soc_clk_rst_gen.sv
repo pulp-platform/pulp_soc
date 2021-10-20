@@ -423,7 +423,7 @@ module soc_clk_rst_gen (
     //board reference clock as input.
 
     fpga_slow_clk_gen i_slow_clk_gen (
-        .rst_ni(s_rstn_sync),
+        .rst_ni(rstn_glob_i),
         .ref_clk_i(ref_clk_i),
         .slow_clk_o(s_clk_slow)
     );
