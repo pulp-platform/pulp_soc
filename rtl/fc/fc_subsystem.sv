@@ -118,7 +118,7 @@ module fc_subsystem #(
 
     //Core Data Bus
     logic [31:0] core_data_addr, core_data_rdata, core_data_wdata;
-    logic        core_data_req, core_data_gnt, core_data_rvalid;
+    logic        core_data_req, core_data_gnt, core_data_rvalid, core_data_err;
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
@@ -176,6 +176,7 @@ module fc_subsystem #(
     assign core_rst = rst_ni  & ~wdt_reset_i;
 
     assign boot_addr = boot_addr_i;
+
 `ifndef PULP_FPGA_EMUL
   `ifdef SYNTHESIS
     cv32e40p_core #(
@@ -198,14 +199,14 @@ module fc_subsystem #(
         .rst_ni               (rst_ni),
 
         // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
-        .pulp_clock_en_i      (clock_en_i ),
-        .scan_cg_en_i         (test_mode_i),
+        .pulp_clock_en_i      ('0 ),
+        .scan_cg_en_i         (test_en_i),
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (),
         .mtvt_addr_i          (32'h0),
         .dm_halt_addr_i       (32'h1A110800),
         .hart_id_i            (hart_id),
-        .dm_exception_addr_i  (32'h1A11080c),
+        .dm_exception_addr_i  ('0 ),
 
         // Instruction memory interface
         .instr_req_o           (obi_instr_req),
@@ -231,6 +232,7 @@ module fc_subsystem #(
         // request channel
         .apu_operands_o        (apu_operands),
         .apu_op_o              (apu_op),
+        .apu_type_o            (),
         .apu_flags_o           (apu_flags),
         // response channel
         .apu_rvalid_i          (apu_rvalid),

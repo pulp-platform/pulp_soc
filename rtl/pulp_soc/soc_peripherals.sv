@@ -131,15 +131,6 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     //INTER-SOCKET MUX SIGNALS
     output logic                              sel_spi_dir_o,
 
-    //SDIO
-    output logic                              sdclk_o,
-    output logic                              sdcmd_o,
-    input logic                               sdcmd_i,
-    output logic                              sdcmd_oen_o,
-    output logic [3:0]                        sddata_o,
-    input logic [3:0]                         sddata_i,
-    output logic [3:0]                        sddata_oen_o,
-
 
     output logic [EVNT_WIDTH-1:0]             cl_event_data_o,
     output logic                              cl_event_valid_o,
@@ -428,14 +419,6 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .spi_oen          ( spi_oen_o            ),
         .spi_sdo          ( spi_sdo_o            ),
         .spi_sdi          ( spi_sdi_i            ),
-
-        .sdio_clk_o       ( sdclk_o              ),
-        .sdio_cmd_o       ( sdcmd_o              ),
-        .sdio_cmd_i       ( sdcmd_i              ),
-        .sdio_cmd_oen_o   ( sdcmd_oen_o          ),
-        .sdio_data_o      ( sddata_o             ),
-        .sdio_data_i      ( sddata_i             ),
-        .sdio_data_oen_o  ( sddata_oen_o         ),
 
         .uart_rx_i        ( uart_rx              ),
         .uart_tx_o        ( uart_tx              ),

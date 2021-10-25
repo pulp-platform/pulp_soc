@@ -197,14 +197,6 @@ module pulp_soc import dm::*; #(
     //inter-socket mux signal
     output logic                          sel_spi_dir_o,
 
-    output logic                          sdio_clk_o,
-    output logic                          sdio_cmd_o,
-    input  logic                          sdio_cmd_i,
-    output logic                          sdio_cmd_oen_o,
-    output logic                    [3:0] sdio_data_o,
-    input  logic                    [3:0] sdio_data_i,
-    output logic                    [3:0] sdio_data_oen_o,
-
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
     // From JTAG Tap Controller to axi_dcb module    //
@@ -699,15 +691,6 @@ module pulp_soc import dm::*; #(
 
         //INTER-SOCKET MUX SIGNALS
         .sel_spi_dir_o          ( sel_spi_dir_o          ),
-
-        //SDIO
-        .sdclk_o                ( sdio_clk_o             ),
-        .sdcmd_o                ( sdio_cmd_o             ),
-        .sdcmd_i                ( sdio_cmd_i             ),
-        .sdcmd_oen_o            ( sdio_cmd_oen_o         ),
-        .sddata_o               ( sdio_data_o            ),
-        .sddata_i               ( sdio_data_i            ),
-        .sddata_oen_o           ( sdio_data_oen_o        ),
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
