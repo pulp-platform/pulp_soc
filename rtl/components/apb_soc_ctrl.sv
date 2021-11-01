@@ -196,9 +196,7 @@ module apb_soc_ctrl #(
                   r_cluster_rstn         <= PWDATA[3];
                 end
                 `REG_CTRL_PER: begin
-`ifdef HYPER_RAM
-                    r_sel_hyper_axi <= PWDATA[0];
-`endif
+                  r_sel_hyper_axi <= PWDATA[0];
                 end
                 `REG_CLUSTER_IRQ:
                     r_cluster_irq <= PWDATA[0];
