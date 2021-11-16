@@ -196,6 +196,7 @@ module pulp_soc import dm::*; #(
 
     //inter-socket mux signal
     output logic                          sel_spi_dir_o,
+	output logic                          sel_i2c_mux_o,
 
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
@@ -691,6 +692,7 @@ module pulp_soc import dm::*; #(
 
         //INTER-SOCKET MUX SIGNALS
         .sel_spi_dir_o          ( sel_spi_dir_o          ),
+		.sel_i2c_mux_o          ( sel_i2c_mux_o          ),
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),

@@ -65,6 +65,7 @@ module apb_soc_ctrl #(
     output logic                      fc_fetchen_o,
     output logic                      sel_hyper_axi_o,
     output logic                      sel_spi_dir_o,
+	output logic                      sel_i2c_mux_o,
     output logic                      cluster_pow_o, // power cluster
     output logic                      cluster_byp_o, // bypass cluster
     output logic               [63:0] cluster_boot_addr_o,
@@ -98,6 +99,7 @@ module apb_soc_ctrl #(
 
    logic            r_sel_hyper_axi;
    logic            r_sel_spi_dir;
+   logic            r_sel_i2c_mux;
    logic      [1:0] r_bootsel;
 
    logic            s_apb_write;
@@ -112,6 +114,7 @@ module apb_soc_ctrl #(
 
    // Inter-socket select signal assign
    assign sel_spi_dir_o = r_sel_spi_dir;
+   assign sel_i2c_mux_o = r_sel_i2c_mux;
 
    assign s_apb_write = PSEL && PENABLE && PWRITE;
 
@@ -139,7 +142,8 @@ module apb_soc_ctrl #(
         r_cluster_pow          <= 1'b0;
         r_cluster_byp          <= 1'b1;
         r_sel_hyper_axi        <= 1'b0;
-        r_sel_spi_dir        <= 1'b1; // default value of select signal for inter-socket peripheral: slave
+        r_sel_spi_dir          <= 1'b1; // default value of select signal for inter-socket spi peripheral: slave
+		r_sel_i2c_mux          <= 1'b1; // default value of select signal for inter-socket i2c peripheral: master
         r_cluster_fetch_enable <= 1'b0;
         r_cluster_boot         <= '0;
         r_cluster_rstn         <= 1'b1;
@@ -178,6 +182,10 @@ module apb_soc_ctrl #(
                 `REG_SPI_DIRECTION:
                 begin
                    r_sel_spi_dir <= PWDATA[0];
+                end
+				`REG_I2C_DIRECTION:
+				begin
+                   r_sel_i2c_mux <= PWDATA[0];
                 end
 
                 `REG_JTAGREG:
@@ -248,6 +256,8 @@ module apb_soc_ctrl #(
             PRDATA = {16'h0,r_jtag_regi_sync[0],r_jtag_rego};
           `REG_SPI_DIRECTION:
             PRDATA = {31'b0, r_sel_spi_dir};
+		  `REG_I2C_DIRECTION:
+            PRDATA = {31'b0, r_sel_i2c_mux};		  
           `REG_CTRL_PER:
             PRDATA = {31'b0, r_sel_hyper_axi};
           `REG_CLUSTER_IRQ:

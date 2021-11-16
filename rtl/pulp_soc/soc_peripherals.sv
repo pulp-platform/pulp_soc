@@ -130,6 +130,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
 
     //INTER-SOCKET MUX SIGNALS
     output logic                              sel_spi_dir_o,
+	output logic                              sel_i2c_mux_o,
 
 
     output logic [EVNT_WIDTH-1:0]             cl_event_data_o,
@@ -266,6 +267,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     endgenerate
 
     assign sel_spi_dir_o = s_sel_spi_dir;
+	
 
     pulp_sync_wedge i_ref_clk_sync (
         .clk_i    ( clk_i            ),
@@ -473,6 +475,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .cluster_pow_o       ( cluster_pow_o          ),
         .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
         .sel_spi_dir_o       ( s_sel_spi_dir          ),
+		.sel_i2c_mux_o       ( sel_i2c_mux_o          ),
 
         .cluster_byp_o            ( cluster_byp_o          ),
         .cluster_boot_addr_o      ( cluster_boot_addr_o    ),
@@ -650,7 +653,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                        ), //TODO: Add AXI dwc converter
         .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                       ),
         .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        ),
-        .BASE_ADDRESS           ( 32'h1A14_0000                            )
+        .BASE_ADDRESS           ( 32'h1C01_0000                            )
     ) i_axi_apb_i2c_slave_bmc (
         .clk_i                  ( clk_i                                    ),
         .rstn_i                 ( rst_ni                                   ),
