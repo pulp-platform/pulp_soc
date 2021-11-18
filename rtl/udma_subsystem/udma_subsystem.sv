@@ -17,7 +17,9 @@ module udma_subsystem
     parameter TRANS_SIZE     = 20,  //max uDMA transaction size of 1MB
     parameter N_SPI          = 4,
     parameter N_UART         = 4,
-    parameter N_I2C          = 1
+    parameter N_I2C          = 1,
+
+    localparam N_PERIPH_MAX = 32
 )
 (
     output logic                       L2_ro_wen_o    ,
@@ -55,7 +57,7 @@ module udma_subsystem
     output logic                       udma_apb_pready,
     output logic                       udma_apb_pslverr,
 
-    output logic            [32*4-1:0] events_o,
+    output logic            [N_PERIPH_MAX*4-1:0] events_o,
 
     input  logic                      event_valid_i,
     input  logic                [7:0] event_data_i,
@@ -107,6 +109,11 @@ module udma_subsystem
     localparam STREAM_ID_WIDTH   = 1;//$clog2(N_STREAMS)
 
     localparam N_PERIPHS = N_SPI + N_UART + N_I2C + N_SDIO + N_FILTER + N_EXT_PER;
+
+    // Currently s_events is designed for N_PERIPH=32. If we change this then
+    // make sure all the events are correctly mapped and connected.
+    if (N_PERIPHS > N_PERIPH_MAX)
+        $fatal(1, "number of events is desigend for at most %d peripherals", N_PERIPH_MAX);
 
     // TX Channels
     localparam CH_ID_TX_UART    = 0;
@@ -201,7 +208,7 @@ module udma_subsystem
     logic [N_STREAMS-1:0]                             s_stream_eot;
     logic [N_STREAMS-1:0]                             s_stream_ready;
 
-    logic [16*8-1:0] s_events;
+    logic [N_PERIPH_MAX*4-1:0] s_events;
 
     logic         [1:0] s_rf_event;
 

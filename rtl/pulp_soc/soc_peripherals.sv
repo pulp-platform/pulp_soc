@@ -180,7 +180,7 @@ module soc_peripherals import rv_plic_reg_pkg::*; #(
     APB_BUS s_apb_i2c_slv_bmc_bus();
     APB_BUS s_apb_i2c_slv_1_bus();
 
-    localparam UDMA_EVENTS = 16*8;
+    localparam UDMA_EVENTS = 32*4;
 
     logic [NGPIO-1:0] s_gpio_sync;
 
