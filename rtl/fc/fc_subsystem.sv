@@ -189,7 +189,7 @@ module fc_subsystem #(
         .mtvec_addr_i         (),
         .dm_halt_addr_i       (32'h1A110800),
         .hart_id_i            (hart_id),
-        .dm_exception_addr_i  (),
+        .dm_exception_addr_i  (32'h1A11080c),
 
         // Instruction memory interface
         .instr_req_o           (obi_instr_req),
