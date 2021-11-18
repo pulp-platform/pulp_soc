@@ -223,7 +223,9 @@ module udma_subsystem
     logic [N_PERIPHS-1:0]        s_periph_ready;
 
     logic            [N_SPI-1:0] s_spi_eot;
-    logic            [N_I2C-1:0] s_i2c_evt;
+    logic            [N_I2C-1:0] s_i2c_err;
+    logic            [N_I2C-1:0] s_i2c_nack;
+    logic            [N_I2C-1:0] s_i2c_eot;
     logic           [N_UART-1:0] s_uart_evt;
 
     logic         [3:0] s_trigger_events;
@@ -542,8 +544,12 @@ module udma_subsystem
         begin: i_i2c_gen
             assign s_events[4*(PER_ID_I2C+g_i2c)+0] = s_rx_ch_events[CH_ID_RX_I2C+g_i2c];
             assign s_events[4*(PER_ID_I2C+g_i2c)+1] = s_tx_ch_events[CH_ID_TX_I2C+g_i2c];
-            assign s_events[4*(PER_ID_I2C+g_i2c)+2] = 1'b0;
-            assign s_events[4*(PER_ID_I2C+g_i2c)+3] = 1'b0;
+            assign s_events[4*(PER_ID_I2C+g_i2c)+2] = s_i2c_nack[g_i2c]; // slave nack event
+            assign s_events[4*(PER_ID_I2C+g_i2c)+3] = s_i2c_eot[g_i2c]; // end of transmission
+
+            // don't want to mess up too much the standard four events so we put
+            // them somewhere else
+            assign s_events[(4*N_PERIPH_MAX-N_I2C+g_i2c)+0] = s_i2c_err[g_i2c];  // errors
 
             assign s_rx_cfg_stream[CH_ID_RX_I2C+g_i2c] = 'h0;
             assign s_rx_cfg_stream_id[CH_ID_RX_I2C+g_i2c] = 'h0;
@@ -601,7 +607,9 @@ module udma_subsystem
                 .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_I2C+g_i2c]        ),
                 .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_I2C+g_i2c]        ),
 
-                .err_o               ( s_i2c_evt[g_i2c]                        ),
+                .err_o               ( s_i2c_err[g_i2c]                        ),
+                .eot_o               ( s_i2c_eot[g_i2c]                        ),
+                .nack_o              ( s_i2c_nack[g_i2c]                       ),
 
                 .scl_i               ( i2c_scl_i[g_i2c]                      ),
                 .scl_o               ( i2c_scl_o[g_i2c]                      ),
