@@ -653,7 +653,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                        ), //TODO: Add AXI dwc converter
         .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                       ),
         .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        ),
-        .BASE_ADDRESS           ( 32'h1C01_0000                            )
+        .BASE_ADDRESS           ( 32'h1C03_0000                            )
     ) i_axi_apb_i2c_slave_bmc (
         .clk_i                  ( clk_i                                    ),
         .rstn_i                 ( rst_ni                                   ),
