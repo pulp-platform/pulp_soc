@@ -59,6 +59,7 @@ fc:
     rtl/fc/fc_demux.sv,
     rtl/fc/fc_subsystem.sv,
     rtl/fc/cv32e40p_fp_wrapper.sv,
+    rtl/fc/event_to_level_int.sv,
   ]
 
 components:

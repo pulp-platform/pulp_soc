@@ -56,9 +56,6 @@ module fc_subsystem #(
     input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
     input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
 
-//    input  logic                      plic_irq_valid_i,
-//    output logic                      plic_irq_ready_o,
-
     output logic [1:0]                hwpe_events_o,
 
     output logic                      supervisor_mode_o,
@@ -97,6 +94,8 @@ module fc_subsystem #(
     logic [NUM_INTERRUPTS-1:0] core_irq_x     ;
 
     logic [3:0]  irq_ack_id;
+
+    logic        soc_event_int;
 
     // Signals for OBI-PULP conversion
     logic        obi_instr_req;
@@ -283,13 +282,24 @@ module fc_subsystem #(
          && apb_slave_eu.penable == 1'b1))
         else $info("[soc_clk_rst_gen]  %t - Detected legacy CLINT access", $time);
 `endif
-    // progress, but drop apb_interrupt_cntrl requests
-    assign apb_slave_eu.pready = apb_slave_eu.psel & apb_slave_eu.penable;
 
     // TODO: imported this hardcoded stuff from apb_interrupt_cntrl. Why was
     // this even the job of the interrupt controller?
     assign fetch_en_eu = 1'b1;
     assign core_clock_en = 1'b1;
+
+    // convert soc events to level sensitive interrupt
+    event_to_level_int #(
+        .EVENT_WIDTH (EVENT_ID_WIDTH)
+    ) i_event_to_level_int (
+        .clk_i,
+        .rst_ni,
+        .ctrl          (apb_slave_eu),
+        .event_data_i  (event_fifo_data_i),
+        .event_valid_i (event_fifo_valid_i),
+        .event_ready_o (event_fifo_fulln_o),
+        .int_lvl_o     (soc_event_int)
+    );
 
     localparam int unsigned REG_BUS_ADDR_WIDTH = 32;
     localparam int unsigned REG_BUS_DATA_WIDTH = 32;
@@ -344,7 +354,9 @@ module fc_subsystem #(
       scp_secure_irq_i,   // 1
       scp_irq_i,          // 1
       scg_irq_i,          // 1
-      events_i[31:0]      // 31 (regular clint interrupts)
+      events_i[31:27],    // 32 (regular clint interrupts)
+      soc_event_int,      // 26 (soc event int) TODO: ugly
+      events_i[25:0]      // 32 (regular clint interrupts)
     };
 
     clic #(
