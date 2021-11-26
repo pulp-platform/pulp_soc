@@ -191,7 +191,8 @@ module fc_subsystem #(
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
         .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS),
-        .NUM_INTERRUPTS   (NUM_INTERRUPTS)
+        .NUM_INTERRUPTS   (NUM_INTERRUPTS),
+        .CLIC             (1)
     ) FC_CORE_i (
 
         // Clock and Reset
