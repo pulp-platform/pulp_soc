@@ -8,6 +8,8 @@ pulp_soc:
   files: [
     soc_interconnect.sv,
     boot_rom.sv,
+    l2_ram_bank_private.sv,
+    l2_ram_bank_interleaved.sv,
     l2_ram_multi_bank.sv,
     lint_jtag_wrap.sv,
     periph_bus_wrap.sv,
