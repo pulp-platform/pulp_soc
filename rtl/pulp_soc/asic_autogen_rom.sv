@@ -31,7 +31,7 @@ module asic_autogen_rom #(
     localparam   NUM_WORDS = 2**ADDR_WIDTH;
     logic [ADDR_WIDTH-1:0] A_Q;
 
-    const logic [DATA_WIDTH-1:0] MEM [NUM_WORDS-1:0] = {
+    const logic [NUM_WORDS-1:0][DATA_WIDTH-1:0] MEM = {
         32'b00000000000000000000000000000000,
         32'b00000000000000000000000000000000,
         32'b00000000000000000000000000000000,
