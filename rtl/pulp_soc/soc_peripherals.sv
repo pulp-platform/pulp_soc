@@ -411,9 +411,10 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     udma_subsystem #(
         .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
         .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
-        .N_SPI (N_SPI),
-        .N_UART(N_UART),
-        .N_I2C (N_I2C)
+        .UDMA_EVENTS        ( UDMA_EVENTS          ),
+        .N_SPI              ( N_SPI                ),
+        .N_UART             ( N_UART               ),
+        .N_I2C              ( N_I2C                )
     ) i_udma (
         .L2_ro_req_o      ( l2_tx_master.req     ),
         .L2_ro_gnt_i      ( l2_tx_master.gnt     ),

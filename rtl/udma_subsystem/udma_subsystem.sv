@@ -18,8 +18,11 @@ module udma_subsystem
     parameter N_SPI          = 4,
     parameter N_UART         = 4,
     parameter N_I2C          = 1,
+    parameter UDMA_EVENTS    = 128, // power of two
 
-    localparam N_PERIPH_MAX = 32
+    localparam N_I2C_MAX    = 12,
+    localparam N_SPI_MAX    = 8,
+    localparam N_PERIPH_MAX = (UDMA_EVENTS - N_I2C_MAX - N_SPI_MAX)/4
 )
 (
     output logic                       L2_ro_wen_o    ,
@@ -57,7 +60,7 @@ module udma_subsystem
     output logic                       udma_apb_pready,
     output logic                       udma_apb_pslverr,
 
-    output logic            [N_PERIPH_MAX*4-1:0] events_o,
+    output logic            [UDMA_EVENTS-1:0] events_o,
 
     input  logic                      event_valid_i,
     input  logic                [7:0] event_data_i,
@@ -98,10 +101,17 @@ module udma_subsystem
 
     localparam N_PERIPHS = N_SPI + N_UART + N_I2C + N_FILTER + N_EXT_PER;
 
-    // Currently s_events is designed for N_PERIPH=32. If we change this then
+    // Currently s_events is designed for N_PERIPH=27. If we change this then
     // make sure all the events are correctly mapped and connected.
     if (N_PERIPHS > N_PERIPH_MAX)
         $fatal(1, "number of events is desigend for at most %d peripherals", N_PERIPH_MAX);
+
+    // Since UDMA_EVENTS = 128 and each SPI and I2C peripherals has an
+    // additional event, the number of max I2Cs and SPIs must be limited
+    if (N_I2C > N_I2C_MAX)
+        $fatal(1, "number of I2C peripherals is designed for at most %d", N_I2C_MAX);
+    if (N_SPI > N_SPI_MAX)
+        $fatal(1, "number of SPI peripherals is designed for at most %d", N_SPI_MAX);
 
     // TX Channels
     localparam CH_ID_TX_UART    = 0;
@@ -191,7 +201,7 @@ module udma_subsystem
     logic [N_STREAMS-1:0]                             s_stream_eot;
     logic [N_STREAMS-1:0]                             s_stream_ready;
 
-    logic [N_PERIPH_MAX*4-1:0] s_events;
+    logic [UDMA_EVENTS-1:0] s_events;
 
     logic         [1:0] s_rf_event;
 
@@ -206,6 +216,7 @@ module udma_subsystem
     logic [N_PERIPHS-1:0]        s_periph_ready;
 
     logic            [N_SPI-1:0] s_spi_eot;
+    logic            [N_SPI-1:0] s_spi_req;
     logic            [N_I2C-1:0] s_i2c_err;
     logic            [N_I2C-1:0] s_i2c_nack;
     logic            [N_I2C-1:0] s_i2c_eot;
@@ -430,6 +441,10 @@ module udma_subsystem
             assign s_events[4*(PER_ID_SPIM+g_spi)+2] = s_tx_ch_events[CH_ID_CMD_SPIM+g_spi];
             assign s_events[4*(PER_ID_SPIM+g_spi)+3] = s_spi_eot[g_spi];
 
+            // don't want to mess up too much the standard four events so we put
+            // them somewhere else
+            assign s_events[(4*N_PERIPH_MAX+g_spi)+0] = s_spi_req[g_spi]; // slave SPI req
+
             assign s_rx_cfg_stream[CH_ID_RX_SPIM+g_spi] = 'h0;
             assign s_rx_cfg_stream_id[CH_ID_RX_SPIM+g_spi] = 'h0;
             assign s_rx_ch_destination[CH_ID_RX_SPIM+g_spi] = 'h0;
@@ -446,6 +461,7 @@ module udma_subsystem
                 .dft_test_mode_i     ( dft_test_mode_i                          ),
                 .dft_cg_enable_i     ( dft_cg_enable_i                          ),
                 .spi_eot_o           ( s_spi_eot[g_spi]                         ),
+                .spi_req_o           ( s_spi_req[g_spi]                         ),
                 .spi_event_i         ( s_trigger_events                         ),
                 .spi_clk_o           ( spi_clk[g_spi]                           ),
                 .spi_csn0_o          ( spi_csn[g_spi][0]                        ),
@@ -534,7 +550,7 @@ module udma_subsystem
 
             // don't want to mess up too much the standard four events so we put
             // them somewhere else
-            assign s_events[(4*N_PERIPH_MAX-N_I2C+g_i2c)+0] = s_i2c_err[g_i2c];  // errors
+            assign s_events[(4*N_PERIPH_MAX+N_SPI+g_i2c)+0] = s_i2c_err[g_i2c];  // errors
 
             assign s_rx_cfg_stream[CH_ID_RX_I2C+g_i2c] = 'h0;
             assign s_rx_cfg_stream_id[CH_ID_RX_I2C+g_i2c] = 'h0;
