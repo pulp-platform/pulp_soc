@@ -56,7 +56,8 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_L2_BANKS_PRI = 0,
     parameter int unsigned L2_BANK_SIZE = 0,
     parameter int unsigned L2_BANK_SIZE_PRI = 0,
-    parameter int unsigned NUM_INTERRUPTS = 0
+    parameter int unsigned NUM_INTERRUPTS = 0,
+    parameter int unsigned MACRO_ROM = 0
 ) (
     input  logic                          sys_clk_i,
     input  logic                          ref_clk_i,
@@ -566,7 +567,8 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     boot_rom #(
-        .ROM_ADDR_WIDTH(ROM_ADDR_WIDTH)
+        .ROM_ADDR_WIDTH(ROM_ADDR_WIDTH),
+        .MACRO_ROM(MACRO_ROM)
     ) boot_rom_i (
         .clk_i       ( s_soc_clk       ),
         .rst_ni      ( s_soc_rstn      ),

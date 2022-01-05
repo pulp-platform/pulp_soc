@@ -53,7 +53,7 @@ module l2_ram_multi_bank #(
           .BehavMem(BEHAV_MEM),
           .NumWords(BANK_SIZE_INTL_SRAM), //28672 words
           .DataWidth(32)
-       ) i_l2_ram_interleaved (
+       ) i_l2_bank_interleaved (
           .clk_i,
           .rst_ni,
           .req_i (mem_slave[i].req),
@@ -87,7 +87,7 @@ module l2_ram_multi_bank #(
        .BehavMem(BEHAV_MEM),
        .NumWords(BANK_SIZE_PRI0), //8192 words
        .DataWidth(32)
-    ) i_l2_ram_pri0 (
+    ) i_l2_bank_pri0 (
       .clk_i,
       .rst_ni,
       .req_i   (  mem_pri_slave[0].req                  ),
@@ -119,7 +119,7 @@ module l2_ram_multi_bank #(
        .BehavMem(BEHAV_MEM),
        .NumWords(BANK_SIZE_PRI1), //8192 words
        .DataWidth(32)
-    ) i_l2_ram_pri1 (
+    ) i_l2_bank_pri1 (
       .clk_i,
       .rst_ni,
       .req_i   (  mem_pri_slave[1].req                  ),
