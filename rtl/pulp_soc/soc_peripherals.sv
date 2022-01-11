@@ -27,6 +27,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     parameter N_SPI               = 1,
     parameter N_I2C               = 2,
     parameter N_I2C_SLV           = 2,
+    parameter SIM_STDOUT          = 1,
     parameter AXI_ADDR_WIDTH      = 0,
     parameter AXI_DATA_OUT_WIDTH  = 0,
     parameter AXI_DATA_IN_WIDTH   = 0,
@@ -314,11 +315,45 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .i2c_slv_1_master    ( s_apb_i2c_slv_1_bus   )
     );
 
-    `ifdef SYNTHESIS
-        assign s_stdout_bus.pready  = 'h0;
-        assign s_stdout_bus.pslverr = 'h0;
-        assign s_stdout_bus.prdata  = 'h0;
-    `endif
+
+`ifdef SYNTHESIS
+    if (SIM_STDOUT)
+        $fatal(1, "SIM_STDOUT is not synthesizable. Set SIM_STDOUT=0");
+`endif
+
+ if (SIM_STDOUT) begin
+     logic pready_q;
+
+     assign s_stdout_bus.pready  = pready_q;
+     assign s_stdout_bus.pslverr = 1'b0;
+
+     tb_fs_handler #(
+          .ADDR_WIDTH ( 32       ),
+          .DATA_WIDTH ( 32       ),
+          .NB_CORES   ( NB_CORES )
+     ) i_fs_handler (
+          .clk   ( clk_i                                                  ),
+          .rst_n ( rst_ni                                                 ),
+          .CSN   ( ~(s_stdout_bus.psel & s_stdout_bus.penable & pready_q) ),
+          .WEN   ( ~s_stdout_bus.pwrite                                   ),
+          .ADDR  ( s_stdout_bus.paddr                                     ),
+          .WDATA ( s_stdout_bus.pwdata                                    ),
+          .BE    ( 4'hf                                                   ),
+          .RDATA ( s_stdout_bus.prdata                                    )
+     );
+
+     always_ff @(posedge clk_i or negedge rst_ni) begin
+        if(~rst_ni) begin
+           pready_q <= 0;
+        end else begin
+           pready_q <= (s_stdout_bus.psel & s_stdout_bus.penable);
+        end
+     end
+ end else begin
+     assign s_stdout_bus.pready  = 'h0;
+     assign s_stdout_bus.pslverr = 1'b0;
+     assign s_stdout_bus.prdata  = 'h0;
+ end
 
     ///////////////////////////////////////////////////////////////
     //  █████╗ ██████╗ ██████╗      ██████╗ ██████╗ ██╗ ██████╗  //

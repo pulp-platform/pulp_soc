@@ -20,6 +20,7 @@ module pulp_soc import dm::*; #(
     parameter USE_HWPE           = 1,
     parameter USE_CLUSTER_EVENT  = 1,
     parameter ZFINX              = 0,
+    parameter SIM_STDOUT         = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
     parameter AXI_DATA_OUT_WIDTH = 32,
@@ -595,6 +596,7 @@ module pulp_soc import dm::*; #(
         .N_SPI              ( N_SPI                                 ),
         .N_I2C              ( N_I2C                                 ),
         .N_I2C_SLV          ( N_I2C_SLV                             ),
+        .SIM_STDOUT         ( SIM_STDOUT                            ),
 
         // AXI widths for spi_slv, i2c_slvs AXI conversion within soc_peripherals
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
