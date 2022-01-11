@@ -85,11 +85,8 @@ module udma_subsystem
     localparam L2_AWIDTH_NOAL = L2_ADDR_WIDTH + 2;
 
     localparam N_FILTER  = 1;
-`ifdef PULP_TRAINING
-    localparam N_EXT_PER = 1;
-`else
+
     localparam N_EXT_PER = 0;
-`endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_UART + N_I2C + N_EXT_PER;
     localparam N_TX_CHANNELS = 2*N_SPI + N_UART + N_I2C + N_EXT_PER;
