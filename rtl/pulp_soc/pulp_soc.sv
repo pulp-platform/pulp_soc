@@ -198,19 +198,15 @@ module pulp_soc import dm::*; #(
 
     //inter-socket mux signal
     output logic                          sel_spi_dir_o,
-	output logic                          sel_i2c_mux_o,
+    output logic                          sel_i2c_mux_o,
 
-    ///////////////////////////////////////////////////
-    ///////////////////////////////////////////////////
-    // From JTAG Tap Controller to axi_dcb module    //
-    ///////////////////////////////////////////////////
-    input logic                                       jtag_tck_i,
-    input logic                                       jtag_trst_ni,
-    input logic                                       jtag_tms_i,
-    input logic                                       jtag_tdi_i,
-    output logic                                      jtag_tdo_o,
-    output logic [NB_CORES-1:0]                       cluster_dbg_irq_valid_o,
-    ///////////////////////////////////////////////////
+    // jtag debug
+    input logic                          jtag_tck_i,
+    input logic                          jtag_trst_ni,
+    input logic                          jtag_tms_i,
+    input logic                          jtag_tdi_i,
+    output logic                         jtag_tdo_o,
+    output logic [NB_CORES-1:0]          cluster_dbg_irq_valid_o,
 
     // external interrupts
     input logic                           scg_irq_i,
@@ -696,7 +692,7 @@ module pulp_soc import dm::*; #(
 
         //INTER-SOCKET MUX SIGNALS
         .sel_spi_dir_o          ( sel_spi_dir_o          ),
-		.sel_i2c_mux_o          ( sel_i2c_mux_o          ),
+        .sel_i2c_mux_o          ( sel_i2c_mux_o          ),
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
