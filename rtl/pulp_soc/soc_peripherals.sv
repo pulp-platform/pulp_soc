@@ -149,8 +149,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     output logic                              cluster_rstn_o,
     output logic                              cluster_irq_o,
 
-    //wdt reset output:
     output logic                              wdt_reset_o,
+
     AXI_BUS.Master                            axi_i2c_slv_bmc,
     AXI_BUS.Master                            axi_i2c_slv_1
 );
@@ -630,24 +630,22 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     wdt #(
         .APB_ADDR_WIDTH(APB_ADDR_WIDTH)
     ) i_wdt (
-        .clk1_i    ( clk_i                 ),
-        .clk2_i    ( clk_i                 ),
-        .rst_ni    ( rst_ni                ),
+        .clk_i,
+        .rst_ni,
 
-        .reset_wdt ( resetwdt_out          ),
+        .wdt_rst_o   ( resetwdt_out          ),
 
-        //apb
-        .HCLK      ( clk_i                 ),
-        .HRESETn   ( rst_ni                ),
-        .PADDR     ( s_apb_wdt_bus.paddr   ),
-        .PWDATA    ( s_apb_wdt_bus.pwdata  ),
-        .PWRITE    ( s_apb_wdt_bus.pwrite  ),
-        .PSEL      ( s_apb_wdt_bus.psel    ),
-        .PENABLE   ( s_apb_wdt_bus.penable ),
+        .hclk_i      ( clk_i                 ),
+        .hreset_ni   ( rst_ni                ),
+        .paddr_i     ( s_apb_wdt_bus.paddr   ),
+        .pwdata_i    ( s_apb_wdt_bus.pwdata  ),
+        .pwrite_i    ( s_apb_wdt_bus.pwrite  ),
+        .psel_i      ( s_apb_wdt_bus.psel    ),
+        .penable_i   ( s_apb_wdt_bus.penable ),
 
-        .PRDATA    ( s_apb_wdt_bus.prdata  ),
-        .PREADY    ( s_apb_wdt_bus.pready  ),
-        .PSLVERR   ( s_apb_wdt_bus.pslverr )
+        .prdata_o    ( s_apb_wdt_bus.prdata  ),
+        .pready_o    ( s_apb_wdt_bus.pready  ),
+        .pslverr_o   ( s_apb_wdt_bus.pslverr )
     );
 
     assign wdt_reset_o = resetwdt_out;

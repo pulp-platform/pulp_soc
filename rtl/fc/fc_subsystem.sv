@@ -38,7 +38,7 @@ module fc_subsystem #(
     input  logic                      rst_ni,
     input  logic                      test_en_i,
 
-    input logic           wdt_reset_i,
+    input logic                       wdt_reset_i,
 
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
