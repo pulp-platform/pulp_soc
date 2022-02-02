@@ -38,8 +38,6 @@ module fc_subsystem #(
     input  logic                      rst_ni,
     input  logic                      test_en_i,
 
-    input logic                       wdt_reset_i,
-
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
     XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS-1:0],
@@ -173,7 +171,6 @@ module fc_subsystem #(
     //********************************************************
     //************ RISCV CORE ********************************
     //********************************************************
-    assign core_rst = rst_ni  & ~wdt_reset_i;
 
     assign boot_addr = boot_addr_i;
 

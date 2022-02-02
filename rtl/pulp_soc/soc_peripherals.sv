@@ -149,7 +149,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     output logic                              cluster_rstn_o,
     output logic                              cluster_irq_o,
 
-    output logic                              wdt_reset_o,
+    output logic [1:0]                        wdt_alert_o,
+    input  logic                              wdt_alert_clear_i,
 
     AXI_BUS.Master                            axi_i2c_slv_bmc,
     AXI_BUS.Master                            axi_i2c_slv_1
@@ -206,6 +207,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     logic s_i2c_slv_bmc_event;
     logic s_i2c_slv_1_event;
 
+    logic wdt_rst;
+    logic wdt_alert;
+
     assign s_events[UDMA_EVENTS-1:0]  = s_udma_events;
     assign s_events[135]              = s_adv_timer_events[0];
     assign s_events[136]              = s_adv_timer_events[1];
@@ -243,7 +247,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
                                     // interrupt has to check the event unit's
                                     // registers to see what happened)
     assign fc_events_o[27]  = 1'b0;
-    assign fc_events_o[28]  = 1'b0;
+    assign fc_events_o[28]  = wdt_rst; // edge triggered wdt rst request
     assign fc_events_o[29]  = s_fc_err_events;
     assign fc_events_o[30]  = s_fc_hp_events[0];
     assign fc_events_o[31]  = s_fc_hp_events[1];
@@ -262,7 +266,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     assign fc_events_o[11]    = s_fc_err_events;
     assign fc_events_o[12]    = s_fc_hp_events[0];
     assign fc_events_o[13]    = s_fc_hp_events[1];
-    assign fc_events_o[14]    = 1'b0; // not used
+    assign fc_events_o[14]    = wdt_rst;
     assign fc_events_o[31:15] = 17'b0; // not supported by Ibex
     end
     endgenerate
@@ -625,7 +629,6 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     // ██║  ██║██║     ██████╔╝      ╚███╔███╔╝ ██████╔╝    ██║    //
     // ╚═╝  ╚═╝╚═╝     ╚═════╝        ╚══╝╚══╝  ╚═════╝     ╚═╝    //
     ////////////////////////////////////////////////////////////////
-    logic resetwdt_out;
 
     wdt #(
         .APB_ADDR_WIDTH(APB_ADDR_WIDTH)
@@ -633,23 +636,25 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .clk_i,
         .rst_ni,
 
-        .wdt_rst_o   ( resetwdt_out          ),
+        .wdt_rst_o     ( wdt_rst               ),
+        .alert_clear_i ( wdt_alert_clear_i     ),
+        .alert_o       ( wdt_alert             ),
 
-        .hclk_i      ( clk_i                 ),
-        .hreset_ni   ( rst_ni                ),
-        .paddr_i     ( s_apb_wdt_bus.paddr   ),
-        .pwdata_i    ( s_apb_wdt_bus.pwdata  ),
-        .pwrite_i    ( s_apb_wdt_bus.pwrite  ),
-        .psel_i      ( s_apb_wdt_bus.psel    ),
-        .penable_i   ( s_apb_wdt_bus.penable ),
+        .hclk_i        ( clk_i                 ),
+        .hreset_ni     ( rst_ni                ),
+        .paddr_i       ( s_apb_wdt_bus.paddr   ),
+        .pwdata_i      ( s_apb_wdt_bus.pwdata  ),
+        .pwrite_i      ( s_apb_wdt_bus.pwrite  ),
+        .psel_i        ( s_apb_wdt_bus.psel    ),
+        .penable_i     ( s_apb_wdt_bus.penable ),
 
-        .prdata_o    ( s_apb_wdt_bus.prdata  ),
-        .pready_o    ( s_apb_wdt_bus.pready  ),
-        .pslverr_o   ( s_apb_wdt_bus.pslverr )
+        .prdata_o      ( s_apb_wdt_bus.prdata  ),
+        .pready_o      ( s_apb_wdt_bus.pready  ),
+        .pslverr_o     ( s_apb_wdt_bus.pslverr )
     );
 
-    assign wdt_reset_o = resetwdt_out;
-
+    // we currently support only one type of alert
+    assign wdt_alert_o = {1'b0, wdt_alert};
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //    █████╗ ██╗  ██╗██╗     █████╗ ██████╗ ██████╗     ██╗██████╗  ██████╗    ███████╗██╗      █████╗ ██╗   ██╗███████╗    ██████╗ ███╗   ███╗ ██████╗   //

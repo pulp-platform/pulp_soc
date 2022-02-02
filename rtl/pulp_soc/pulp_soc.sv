@@ -208,6 +208,10 @@ module pulp_soc import dm::*; #(
     output logic                         jtag_tdo_o,
     output logic [NB_CORES-1:0]          cluster_dbg_irq_valid_o,
 
+    // watch dog timer alarm
+    output logic [1:0]                    wdt_alert_o,
+    input  logic                          wdt_alert_clear_i,
+
     // external interrupts
     input logic                           scg_irq_i,
     input logic                           scp_irq_i,
@@ -346,7 +350,6 @@ module pulp_soc import dm::*; #(
 
     logic                  spi_master0_csn3, spi_master0_csn2;
 
-    logic                  wdt_reset_o;
 
     // Propagate soc_clk to top-level (it feeds AXI ports)
     assign soc_clk_o = s_soc_clk;
@@ -714,7 +717,9 @@ module pulp_soc import dm::*; #(
         .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
         .cluster_irq_o          ( cluster_irq_o          ),
 
-        .wdt_reset_o            ( wdt_reset_o            ),
+        .wdt_alert_o,
+        .wdt_alert_clear_i,
+
         .axi_i2c_slv_bmc        ( axi_i2c_slv_bmc        ),
         .axi_i2c_slv_1          ( axi_i2c_slv_1          )
     );
@@ -775,9 +780,6 @@ module pulp_soc import dm::*; #(
         .rst_ni              ( s_soc_rstn          ),
 
         .test_en_i           ( dft_test_mode_i     ),
-
-        //wdt
-        .wdt_reset_i         ( wdt_reset_o         ),
 
         .boot_addr_i         ( s_fc_bootaddr       ),
 
