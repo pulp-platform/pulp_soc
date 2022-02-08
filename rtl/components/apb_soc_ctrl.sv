@@ -229,8 +229,6 @@ module apb_soc_ctrl #(
     begin
         PRDATA = '0;
         case (s_apb_addr)
-          `REG_BOOTSEL:
-            PRDATA = r_bootsel;
           `REG_FCBOOT:
             PRDATA = r_bootaddr;
           `REG_FCFETCH:
