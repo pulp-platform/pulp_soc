@@ -172,7 +172,7 @@ module apb_soc_ctrl #(
                 `REG_BOOTSEL:
                  begin
                    // allow bootsel to be controlled through JTAG
-                   r_bootsel <= PWDATA[0];
+                   r_bootsel <= PWDATA[1:0];
                  end
                 `REG_FCFETCH:
                  begin
