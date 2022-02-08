@@ -81,8 +81,8 @@ module pulp_soc import dm::*; #(
     AXI_BUS.Master                        axi_ext_mst,
 
     // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
-    XBAR_TCDM_BUS.Master                  s_mem_l2_bus[N_L2_BANKS-1:0],
-    XBAR_TCDM_BUS.Master                  s_mem_l2_pri_bus[N_L2_BANKS_PRI-1:0],
+    XBAR_TCDM_BUS.Master                  s_mem_l2_bus[N_L2_BANKS],
+    XBAR_TCDM_BUS.Master                  s_mem_l2_pri_bus[N_L2_BANKS_PRI],
 
     output logic                          cluster_rtc_o,
     output logic                          cluster_fetch_enable_o,
@@ -438,7 +438,7 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS s_lint_udma_rx_bus ();
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
     XBAR_TCDM_BUS s_lint_fc_instr_bus ();
-    XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS-1:0]();
+    XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS]();
 
     `ifdef REMAP_ADDRESS
         logic [3:0] base_addr_int;

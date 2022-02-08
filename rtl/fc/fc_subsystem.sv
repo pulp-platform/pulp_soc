@@ -40,7 +40,7 @@ module fc_subsystem #(
 
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
-    XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS-1:0],
+    XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS],
     APB_BUS.Slave                     apb_slave_eu,
     APB_BUS.Slave                     apb_slave_clic,
     APB_BUS.Slave                     apb_slave_hwpe,
