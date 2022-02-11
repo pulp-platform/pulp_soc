@@ -98,6 +98,7 @@ components_behav:
   ]
   targets: [
     rtl,
+    verilator,
   ]
   files: [
     rtl/components/freq_meter.sv,
