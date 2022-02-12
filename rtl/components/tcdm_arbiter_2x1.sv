@@ -123,6 +123,7 @@ module tcdm_arbiter_2x1
           offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_1;
         end
 
+        default:;
       endcase
     end
 
