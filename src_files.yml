@@ -9,7 +9,6 @@ pulp_soc:
     ../axi/axi/src/axi_pkg.sv,
     ../../rtl/includes/control_pulp_pkg.sv,
     ../cv32e40p/rtl/include/cv32e40p_apu_core_pkg.sv,
-    ../plic/rv_plic/rtl/rv_plic_reg_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
     rtl/pulp_soc/lint_2_axi_wrap.sv,
@@ -70,7 +69,6 @@ components:
   ]
   files: [
     rtl/components/apb_clkdiv.sv,
-    rtl/components/apb_timer_unit.sv,
     rtl/components/apb_soc_ctrl.sv,
     rtl/components/memory_models.sv,
     rtl/components/pulp_interfaces.sv,

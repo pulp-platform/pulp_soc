@@ -9,8 +9,6 @@ components:
     counter.sv,
     memory_models.sv,
     pulp_interfaces.sv,
-    axi_slice_dc_master_wrap.sv,
-    axi_slice_dc_slave_wrap.sv,
     glitch_free_clk_mux.sv,
     scm_2048x32.sv,
     scm_512x32.sv,
