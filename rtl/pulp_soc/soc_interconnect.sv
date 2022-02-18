@@ -277,6 +277,7 @@ module soc_interconnect
                                                     LatencyMode: axi_pkg::CUT_MST_PORTS,
                                                     AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH, // 1
                                                     AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
+                                                    UniqueIds: 1'b0,
                                                     AxiAddrWidth: BUS_ADDR_WIDTH,
                                                     AxiDataWidth: BUS_DATA_WIDTH,
                                                     NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS
