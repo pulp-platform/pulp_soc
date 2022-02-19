@@ -334,7 +334,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
      tb_fs_handler #(
           .ADDR_WIDTH ( 32       ),
           .DATA_WIDTH ( 32       ),
-          .NB_CORES   ( NB_CORES )
+          .NB_CORES   ( NB_CORES ),
+          .OPEN_FILES ( `ifdef LOG_SIM_STDOUT 1 `else 0 `endif )
      ) i_fs_handler (
           .clk   ( clk_i                                                  ),
           .rst_n ( rst_ni                                                 ),
