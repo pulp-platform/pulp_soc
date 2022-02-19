@@ -47,11 +47,13 @@ module soc_clk_rst_gen (
     logic s_rstn_cluster_sync;
 
 `ifndef SYNTHESIS
+`ifdef DEBUG_CLK_RST_GEN
     //synopsys translate_off
-    freq_meter #(.FLL_NAME("SOC_FLL"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_for_soc));
-    freq_meter #(.FLL_NAME("PER_FLL"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_for_per));
-    freq_meter #(.FLL_NAME("CLUSTER_FLL"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_for_cluster));
+    freq_meter #(.FLL_NAME("soc_freq"),     .MAX_SAMPLE(4096)) SOC_METER (.clk(s_clk_for_soc));
+    freq_meter #(.FLL_NAME("per_freq"),     .MAX_SAMPLE(4096)) PER_METER (.clk(s_clk_for_per));
+    freq_meter #(.FLL_NAME("cluster_freq"), .MAX_SAMPLE(4096)) CLUSTER_METER (.clk(s_clk_for_cluster));
     //synopsys translate_on
+`endif
 `endif
 
 
