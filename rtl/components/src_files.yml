@@ -4,7 +4,6 @@ components:
   ]
   files: [
     apb_clkdiv.sv,
-    apb_timer_unit.sv,
     apb_soc_ctrl.sv,
     counter.sv,
     memory_models.sv,
