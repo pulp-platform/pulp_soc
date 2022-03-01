@@ -455,7 +455,7 @@ module pulp_soc import dm::*; #(
      .axi_resp_t(c2s_resp_t   ),
      .LogDepth        ( 3                      )
     ) axi_slave_cdc_i (
-     .dst_rst_ni                       ( s_cluster_rstn             ),
+     .dst_rst_ni                       ( s_rstn_cluster_sync_soc    ),
      .dst_clk_i                        ( s_soc_clk                  ),
      .dst_req_o                        ( dst_req                    ),
      .dst_resp_i                       ( dst_resp                   ),
