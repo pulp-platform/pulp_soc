@@ -18,6 +18,7 @@ module pulp_soc import dm::*; #(
     parameter USE_FPU             = 1,
     parameter USE_HWPE            = 1,
     parameter USE_CLUSTER_EVENT   = 1,
+    parameter SIM_STDOUT          = 1,
     parameter AXI_ADDR_WIDTH      = 32,
     parameter AXI_DATA_IN_WIDTH   = 64,
     parameter AXI_DATA_OUT_WIDTH  = 32,
@@ -585,7 +586,8 @@ module pulp_soc import dm::*; #(
         .NBIT_PADMUX        ( NBIT_PADMUX                           ),
         .N_UART             ( N_UART                                ),
         .N_SPI              ( N_SPI                                 ),
-        .N_I2C              ( N_I2C                                 )
+        .N_I2C              ( N_I2C                                 ),
+        .SIM_STDOUT         ( SIM_STDOUT                            )
     ) soc_peripherals_i (
 
         .clk_i                  ( s_soc_clk              ),

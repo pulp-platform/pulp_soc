@@ -108,4 +108,5 @@ sources:
   # components_behav
   - files:
       - rtl/components/freq_meter.sv
+      - rtl/components/tb_fs_handler.sv
     target: all(rtl, not(synthesis))
