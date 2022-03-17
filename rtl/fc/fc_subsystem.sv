@@ -189,7 +189,8 @@ module fc_subsystem #(
         .PULP_ZFINX       (ZFINX),
         .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS),
         .NUM_INTERRUPTS   (NUM_INTERRUPTS),
-        .CLIC             (1)
+        .CLIC             (1),
+        .MCLICBASE_ADDR   (32'h1A200000)        // Base address for CLIC memory mapped registers
     ) FC_CORE_i (
 
         // Clock and Reset
