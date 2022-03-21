@@ -51,6 +51,29 @@ module fc_subsystem #(
     localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
     localparam IBEX_RV32E = CORE_TYPE == 2;
 
+
+`ifdef TARGET_IBEX_USE_FPGA_REGFILE
+    localparam IBEX_RegFile = ibex_pkg::RegFileFPGA;
+`else
+`ifdef TARGET_IBEX_USE_LATCH_REGFILE
+    localparam IBEX_RegFile = ibex_pkg::RegFileLatch;
+`else
+`ifdef TARGET_IBEX_USE_FF_REGFILE
+    localparam IBEX_RegFile = ibex_pkg::RegFileFF;
+`else
+`ifdef TARGET_FPGA
+    localparam IBEX_RegFile = ibex_pkg::RegFileFPGA;
+`else
+`ifdef TARGET_SYNTHESIS
+    localparam IBEX_RegFile = ibex_pkg::RegFileLatch;
+`else
+    localparam IBEX_RegFile = ibex_pkg::RegFileFF;
+`endif
+`endif
+`endif
+`endif
+`endif
+
     // Interrupt signals
     logic        core_irq_req   ;
     logic        core_irq_sec   ;
@@ -200,7 +223,7 @@ module fc_subsystem #(
         .RV32E            ( IBEX_RV32E          ),
         .RV32M            ( IBEX_RV32M          ),
         .RV32B            ( ibex_pkg::RV32BNone ),
-        .RegFile          ( ibex_pkg::RegFileFF ),
+        .RegFile          ( IBEX_RegFile        ),
         .BranchTargetALU  ( 1'b0                ),
         .WritebackStage   ( 1'b0                ),
         .ICache           ( 1'b0                ),

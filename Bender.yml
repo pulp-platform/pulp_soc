@@ -31,7 +31,7 @@ dependencies:
   fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.6 }
   jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", rev: "v0.1" }
   cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "pulpissimo-v3.4.0-rev3"}
-  ibex:                   { git: "https://github.com/lowRISC/ibex.git", rev: "pulpissimo-v6.1.1" }
+  ibex:                   { git: "https://github.com/pulp-platform/ibex.git", rev: "pulpissimo-v6.1.2" }
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
