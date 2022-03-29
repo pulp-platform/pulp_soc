@@ -57,7 +57,7 @@ module boot_rom #(
 
     // ROM is implemented with a ROM memory macro
     bootrom_macro_wrap #(
-        .NumWords (2 ** ROM_ADDR_WIDTH),
+        .NumWords (2 ** (ROM_ADDR_WIDTH-2)),
         .DataWidth(32)
     ) i_bootrom_macro (
         .clk_i,
