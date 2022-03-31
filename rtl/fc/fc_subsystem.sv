@@ -51,6 +51,17 @@ module fc_subsystem #(
     localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
     localparam IBEX_RV32E = CORE_TYPE == 2;
 
+    // Set register file for ibex based on bender targets.
+    //     Default to FF for simulation, use FGPA for FPGA, use Latch for synthesis.
+    //     Override by setting bender targets (`-t ibex_use_ff_regfile`) or defines below
+    localparam IBEX_RegFile =   `ifdef TARGET_IBEX_USE_FPGA_REGFILE  ibex_pkg::RegFileFPGA;  `else // Override FPGA
+                                `ifdef TARGET_IBEX_USE_LATCH_REGFILE ibex_pkg::RegFileLatch; `else // Override Latch
+                                `ifdef TARGET_IBEX_USE_FF_REGFILE    ibex_pkg::RegFileFF;    `else // Override FF
+                                `ifdef TARGET_FPGA                   ibex_pkg::RegFileFPGA;  `else // FPGA
+                                `ifdef TARGET_SYNTHESIS              ibex_pkg::RegFileLatch; `else // Synthesis
+                                                                     ibex_pkg::RegFileFF;          // Default
+                                `endif `endif `endif `endif `endif
+
     // Interrupt signals
     logic        core_irq_req   ;
     logic        core_irq_sec   ;
@@ -200,7 +211,7 @@ module fc_subsystem #(
         .RV32E            ( IBEX_RV32E          ),
         .RV32M            ( IBEX_RV32M          ),
         .RV32B            ( ibex_pkg::RV32BNone ),
-        .RegFile          ( ibex_pkg::RegFileFF ),
+        .RegFile          ( IBEX_RegFile        ),
         .BranchTargetALU  ( 1'b0                ),
         .WritebackStage   ( 1'b0                ),
         .ICache           ( 1'b0                ),
