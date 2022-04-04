@@ -322,6 +322,7 @@ module pulp_soc import dm::*; #(
     logic                  debug_req_ready;
     logic                  jtag_resp_ready;
     logic                  jtag_resp_valid;
+    logic                  dmi_rst_n;
     dm::dmi_req_t          jtag_dmi_req;
     dm::dmi_resp_t         debug_resp;
     logic                  slave_grant, slave_valid, dm_slave_req , dm_slave_we;
@@ -869,7 +870,7 @@ module pulp_soc import dm::*; #(
         .dmi_resp_i           ( debug_resp          ),
         .dmi_resp_ready_o     ( jtag_resp_ready     ),
         .dmi_resp_valid_i     ( jtag_resp_valid     ),
-        .dmi_rst_no           (                     ), // not connected
+        .dmi_rst_no           ( dmi_rst_n           ),
         .tck_i                ( jtag_tck_i          ),
         .tms_i                ( jtag_tms_i          ),
         .trst_ni              ( jtag_trst_ni        ),
@@ -897,38 +898,40 @@ module pulp_soc import dm::*; #(
        .ReadByteEnable    ( 0                         )
     ) i_dm_top (
 
-       .clk_i             ( s_soc_clk                 ),
-       .rst_ni            ( s_soc_rstn                ),
-       .testmode_i        ( 1'b0                      ),
-       .ndmreset_o        (                           ),
-       .dmactive_o        (                           ), // active debug session
-       .debug_req_o       ( dm_debug_req              ),
-       .unavailable_i     ( ~SELECTABLE_HARTS         ),
-       .hartinfo_i        ( hartinfo                  ),
+       .clk_i                ( s_soc_clk                     ),
+       .rst_ni               ( s_soc_rstn                    ),
+       .testmode_i           ( 1'b0                          ),
+       .ndmreset_o           (                               ),
+       .dmactive_o           (                               ), // active debug session
+       .debug_req_o          ( dm_debug_req                  ),
+       .unavailable_i        ( ~SELECTABLE_HARTS             ),
+       .hartinfo_i           ( hartinfo                      ),
 
-       .slave_req_i       ( dm_slave_req                 ),
-       .slave_we_i        ( dm_slave_we                  ),
-       .slave_addr_i      ( dm_slave_addr                ),
-       .slave_be_i        ( dm_slave_be                  ),
-       .slave_wdata_i     ( dm_slave_wdata               ),
-       .slave_rdata_o     ( dm_slave_rdata               ),
+       .slave_req_i          ( dm_slave_req                  ),
+       .slave_we_i           ( dm_slave_we                   ),
+       .slave_addr_i         ( dm_slave_addr                 ),
+       .slave_be_i           ( dm_slave_be                   ),
+       .slave_wdata_i        ( dm_slave_wdata                ),
+       .slave_rdata_o        ( dm_slave_rdata                ),
 
-       .master_req_o      ( s_lint_riscv_jtag_bus.req      ),
-       .master_add_o      ( s_lint_riscv_jtag_bus.add      ),
-       .master_we_o       ( lint_riscv_jtag_bus_master_we  ),
-       .master_wdata_o    ( s_lint_riscv_jtag_bus.wdata    ),
-       .master_be_o       ( s_lint_riscv_jtag_bus.be       ),
-       .master_gnt_i      ( s_lint_riscv_jtag_bus.gnt      ),
-       .master_r_valid_i  ( s_lint_riscv_jtag_bus.r_valid  ),
-       .master_r_rdata_i  ( s_lint_riscv_jtag_bus.r_rdata  ),
+       .master_req_o         ( s_lint_riscv_jtag_bus.req     ),
+       .master_add_o         ( s_lint_riscv_jtag_bus.add     ),
+       .master_we_o          ( lint_riscv_jtag_bus_master_we ),
+       .master_wdata_o       ( s_lint_riscv_jtag_bus.wdata   ),
+       .master_be_o          ( s_lint_riscv_jtag_bus.be      ),
+       .master_gnt_i         ( s_lint_riscv_jtag_bus.gnt     ),
+       .master_r_valid_i     ( s_lint_riscv_jtag_bus.r_valid ),
+       .master_r_err_i       ( s_lint_riscv_jtag_bus.r_opc   ),
+       .master_r_other_err_i ( 1'b0                          ),
+       .master_r_rdata_i     ( s_lint_riscv_jtag_bus.r_rdata ),
 
-       .dmi_rst_ni        ( s_soc_rstn                ),
-       .dmi_req_valid_i   ( jtag_req_valid            ),
-       .dmi_req_ready_o   ( debug_req_ready           ),
-       .dmi_req_i         ( jtag_dmi_req              ),
-       .dmi_resp_valid_o  ( jtag_resp_valid           ),
-       .dmi_resp_ready_i  ( jtag_resp_ready           ),
-       .dmi_resp_o        ( debug_resp                )
+       .dmi_rst_ni           ( dmi_rst_n                     ),
+       .dmi_req_valid_i      ( jtag_req_valid                ),
+       .dmi_req_ready_o      ( debug_req_ready               ),
+       .dmi_req_i            ( jtag_dmi_req                  ),
+       .dmi_resp_valid_o     ( jtag_resp_valid               ),
+       .dmi_resp_ready_i     ( jtag_resp_ready               ),
+       .dmi_resp_o           ( debug_resp                    )
     );
     assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
 
