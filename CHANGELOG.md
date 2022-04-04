@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [3.3.0] - 2022-04-04
+## Changed
+- Update riscv-dbg to v0.5.0 (synchronous jtag reset and bus error signaling)
+## [3.2.0] - 2022-04-01
 ## Changed
 - Update bender dependency link for udma components, ibex, cv32e40p
 - Update interface for udma_i2c with unconnected `nack`
