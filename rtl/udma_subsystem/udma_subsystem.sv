@@ -279,7 +279,9 @@ module udma_subsystem
     logic            [N_I2C-1:0] s_i2c_err;
     logic            [N_I2C-1:0] s_i2c_eot;
     logic            [N_I2C-1:0] s_i2c_nack;
-    logic           [N_UART-1:0] s_uart_evt;
+    logic           [N_UART-1:0] s_uart_char;
+    logic           [N_UART-1:0] s_uart_err;
+
 
     logic         [3:0] s_trigger_events;
 
@@ -300,7 +302,6 @@ module udma_subsystem
 
     assign s_cam_evt     = 1'b0;
     assign s_i2s_evt     = 1'b0;
-    assign s_uart_evt    = 1'b0;
 
     assign events_o      = s_events;
 
@@ -439,8 +440,8 @@ module udma_subsystem
         begin : i_uart_gen
             assign s_events[4*(PER_ID_UART+g_uart)+0] = s_rx_ch_events[CH_ID_RX_UART+g_uart];
             assign s_events[4*(PER_ID_UART+g_uart)+1] = s_tx_ch_events[CH_ID_TX_UART+g_uart];
-            assign s_events[4*(PER_ID_UART+g_uart)+2] = 1'b0;
-            assign s_events[4*(PER_ID_UART+g_uart)+3] = 1'b0;
+            assign s_events[4*(PER_ID_UART+g_uart)+2] = s_uart_char[g_uart];;
+            assign s_events[4*(PER_ID_UART+g_uart)+3] = s_uart_err[g_uart];
 
             assign s_rx_cfg_stream[CH_ID_RX_UART+g_uart] = 'h0;
             assign s_rx_cfg_stream_id[CH_ID_RX_UART+g_uart] = 'h0;
@@ -497,7 +498,10 @@ module udma_subsystem
                 .data_rx_datasize_o  ( s_rx_ch_datasize[CH_ID_RX_UART+g_uart]    ),
                 .data_rx_o           ( s_rx_ch_data[CH_ID_RX_UART+g_uart]        ),
                 .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_UART+g_uart]       ),
-                .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_UART+g_uart]       )
+                .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_UART+g_uart]       ),
+
+                .rx_char_event_o     ( s_uart_char[g_uart]                       ),
+                .err_event_o         ( s_uart_err[g_uart]                        )
             );
         end
     endgenerate
