@@ -8,10 +8,11 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-
-module fc_subsystem #(
+module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     parameter CORE_TYPE           = 0,
+    parameter USE_XPULP           = 1,
     parameter USE_FPU             = 1,
+    parameter USE_ZFINX           = 1,
     parameter USE_HWPE            = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
@@ -20,8 +21,7 @@ module fc_subsystem #(
     parameter PULP_SECURE         = 1,
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
-    parameter CLUSTER_ID          = 6'h1F,
-    parameter USE_ZFINX           = 1
+    parameter CLUSTER_ID          = 6'h1F
 )
 (
     input  logic                      clk_i,
@@ -64,16 +64,18 @@ module fc_subsystem #(
 
     // Interrupt signals
     logic        core_irq_req   ;
-    logic        core_irq_sec   ;
     logic [4:0]  core_irq_id    ;
     logic [4:0]  core_irq_ack_id;
     logic        core_irq_ack   ;
     logic [31:0] core_irq_x;
 
+    // Signals for OBI-PULP conversion
+    logic        obi_instr_req;
+    logic        pulp_instr_req;
+
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
     logic        fetch_en_int     ;
-    logic        core_busy_int    ;
     logic        perf_counters_int;
     logic [31:0] hart_id;
 
@@ -90,7 +92,6 @@ module fc_subsystem #(
     logic        core_data_req, core_data_gnt, core_data_rvalid, core_data_err;
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
-    logic is_scm_instr_req, is_scm_data_req;
 
     assign perf_counters_int = 1'b0;
     assign fetch_en_int      = fetch_en_eu & fetch_en_i;
@@ -99,6 +100,18 @@ module fc_subsystem #(
 
     XBAR_TCDM_BUS core_data_bus ();
     XBAR_TCDM_BUS core_instr_bus ();
+
+    // APU Core to FP Wrapper
+    logic                               apu_req;
+    logic [    APU_NARGS_CPU-1:0][31:0] apu_operands;
+    logic [      APU_WOP_CPU-1:0]       apu_op;
+    logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags;
+
+    // APU FP Wrapper to Core
+    logic                               apu_gnt;
+    logic                               apu_rvalid;
+    logic [                 31:0]       apu_rdata;
+    logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags;
 
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
@@ -127,73 +140,108 @@ module fc_subsystem #(
     //********************************************************
     //************ RISCV CORE ********************************
     //********************************************************
+
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
-    riscv_core #(
-        .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
-        .PULP_SECURE         ( 1                   ),
-        .PULP_CLUSTER        ( 0                   ),
-        .FPU                 ( USE_FPU             ),
-        .FP_DIVSQRT          ( USE_FPU             ),
-        .SHARED_FP           ( 0                   ),
-        .SHARED_FP_DIVSQRT   ( 2                   ),
-        .Zfinx               ( USE_ZFINX           )
-    ) lFC_CORE (
-        .clk_i                 ( clk_i             ),
-        .rst_ni                ( rst_ni            ),
-        .clock_en_i            ( core_clock_en     ),
-        .test_en_i             ( test_en_i         ),
-        .boot_addr_i           ( boot_addr         ),
-        .core_id_i             ( CORE_ID           ),
-        .cluster_id_i          ( CLUSTER_ID        ),
+`ifdef PULP_FPGA_EMUL
+    cv32e40p_core #(
+`elsif SYNTHESIS
+    cv32e40p_core #(
+`elsif VERILATOR
+    cv32e40p_core #(
+`else
+    cv32e40p_wrapper #(
+`endif
+        .PULP_XPULP       (USE_XPULP),
+        .PULP_CLUSTER     (0),
+        .FPU              (USE_FPU),
+        .PULP_ZFINX       (USE_ZFINX),
+        .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS)
+    ) FC_CORE_i (
 
-        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
-        .instr_gnt_i           ( core_instr_gnt    ),
-        .instr_rvalid_i        ( core_instr_rvalid ),
+        // Clock and Reset
+        .clk_i,
+        .rst_ni,
 
-        // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
-        .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
-        .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
-        .data_rvalid_i         ( core_data_rvalid  ),
+        // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
+        .pulp_clock_en_i      ('0 ),
+        .scan_cg_en_i         (test_en_i),
+        .boot_addr_i          (boot_addr),
+        .mtvec_addr_i         (32'h0),
+        .dm_halt_addr_i       (32'h1A110800),
+        .hart_id_i            (hart_id),
+        .dm_exception_addr_i  (32'h1A11080C),
+
+        // Instruction memory interface
+        .instr_req_o           (obi_instr_req),
+        .instr_gnt_i           (core_instr_gnt),
+        .instr_rvalid_i        (core_instr_rvalid),
+        .instr_addr_o          (core_instr_addr),
+        .instr_rdata_i         (core_instr_rdata),
+
+        // Data memory interface
+        .data_req_o            (core_data_req),
+        .data_gnt_i            (core_data_gnt),
+        .data_rvalid_i         (core_data_rvalid),
+        .data_we_o             (core_data_we),
+        .data_be_o             (core_data_be),
+        .data_addr_o           (core_data_addr),
+        .data_wdata_o          (core_data_wdata),
+        .data_rdata_i          (core_data_rdata),
 
         // apu-interconnect
         // handshake signals
-        .apu_master_req_o      (                   ),
-        .apu_master_ready_o    (                   ),
-        .apu_master_gnt_i      ( 1'b1              ),
+        .apu_req_o             (apu_req),
+        .apu_gnt_i             (apu_gnt),
+
         // request channel
-        .apu_master_operands_o (                   ),
-        .apu_master_op_o       (                   ),
-        .apu_master_type_o     (                   ),
-        .apu_master_flags_o    (                   ),
+        .apu_operands_o        (apu_operands),
+        .apu_op_o              (apu_op),
+        //.apu_type_o            (),
+        .apu_flags_o           (apu_flags),
+
         // response channel
-        .apu_master_valid_i    ( '0                ),
-        .apu_master_result_i   ( '0                ),
-        .apu_master_flags_i    ( '0                ),
+        .apu_rvalid_i          (apu_rvalid),
+        .apu_result_i          (apu_rdata),
+        .apu_flags_i           (apu_rflags),
 
-        .irq_i                 ( core_irq_req      ),
-        .irq_id_i              ( core_irq_id       ),
-        .irq_ack_o             ( core_irq_ack      ),
-        .irq_id_o              ( core_irq_ack_id   ),
-        .irq_sec_i             ( 1'b0              ),
-        .sec_lvl_o             (                   ),
+        // Interrupt inputs
+        .irq_i                 (core_irq_x),
+        .irq_ack_o             (core_irq_ack),
+        .irq_id_o              (core_irq_ack_id),
 
-        .debug_req_i           ( debug_req_i       ),
+        // Debug Interface
+        .debug_req_i           (debug_req_i),
+        .debug_havereset_o     (),
+        .debug_running_o       (),
+        .debug_halted_o        (),
 
-        .fetch_enable_i        ( fetch_en_int      ),
-        .core_busy_o           (                   ),
-        .ext_perf_counters_i   ( perf_counters_int ),
-        .fregfile_disable_i    ( 1'b0              ) // try me!
+        // CPU Control Signals
+        .fetch_enable_i        (fetch_en_int),
+        .core_sleep_o          ()
     );
+
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (obi_instr_req),
+        .mem_gnt_i    (core_instr_gnt),
+        .mem_rvalid_i (core_instr_rvalid),
+        .mem_req_o    (pulp_instr_req)
+      );
+    assign core_instr_req = pulp_instr_req;
+
+    assign supervisor_mode_o = 1'b1;
+
+    always_comb begin : gen_core_irq_x
+        core_irq_x = '0;
+        if (core_irq_req) begin
+            core_irq_x[core_irq_id] = 1'b1;
+        end
+    end
+
     end else begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
@@ -269,13 +317,8 @@ module fc_subsystem #(
         .alert_major_o         (                   ),
         .core_sleep_o          (                   )
     );
-    end
-    endgenerate
 
     assign supervisor_mode_o = 1'b1;
-
-    generate
-    if ( USE_IBEX == 1) begin : convert_irqs
     // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
     // Convert ID back to interrupt lines
     always_comb begin : gen_core_irq_x
@@ -308,7 +351,6 @@ module fc_subsystem #(
     );
 
 
-    generate
     if(USE_HWPE) begin : fc_hwpe_gen
         fc_hwpe #(
             .N_MASTER_PORT ( NB_HWPE_PORTS ),
@@ -336,6 +378,36 @@ module fc_subsystem #(
             assign l2_hwpe_master[ii].add   = '0;
         end
     end
-    endgenerate
+
+
+    //*************************************
+    //****** APU INTERFACE WITH FPU *******
+    //*************************************
+
+    if (USE_FPU && CORE_TYPE == 0) begin
+        cv32e40p_fp_wrapper #(
+            .FP_DIVSQRT (1)
+        ) fp_wrapper_i (
+            .clk_i         (clk_i),
+            .rst_ni        (rst_ni),
+            .apu_req_i     (apu_req),
+            .apu_gnt_o     (apu_gnt),
+            .apu_operands_i(apu_operands),
+            .apu_op_i      (apu_op),
+            .apu_flags_i   (apu_flags),
+            .apu_rvalid_o  (apu_rvalid),
+            .apu_rdata_o   (apu_rdata),
+            .apu_rflags_o  (apu_rflags)
+        );
+    end else begin
+        assign apu_req      = 1'b0;
+        assign apu_gnt      = 1'b0;
+        assign apu_operands = 1'b0;
+        assign apu_op       = 1'b0;
+        assign apu_flags    = 1'b0;
+        assign apu_rvalid   = 1'b0;
+        assign apu_rdata    = 1'b0;
+        assign apu_rflags   = 1'b0;
+    end
 
 endmodule
