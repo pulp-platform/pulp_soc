@@ -135,11 +135,7 @@ module udma_subsystem
     localparam N_FILTER   = 1;
     localparam N_CH_HYPER = 8;
     localparam N_FPGA     = 0;
-`ifdef PULP_TRAINING
-    localparam N_EXT_PER  = 1;
-`else
     localparam N_EXT_PER  = 0;
-`endif
 
     localparam N_RX_CHANNELS =   N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + N_I2C + N_I2S + N_CAM + 2*N_CSI2 + N_FPGA + N_EXT_PER + N_CH_HYPER;
     localparam N_TX_CHANNELS = 2*N_SPI + N_HYPER + N_MRAM + N_JTAG + N_SDIO + N_UART + 2*N_I2C + N_I2S + N_FPGA + N_EXT_PER + N_CH_HYPER;
@@ -1079,65 +1075,4 @@ module udma_subsystem
         //.debug_hyper_phy_state_o ( debug_hyper_phy_state_o                          )
     );
 
-
-`ifdef PULP_TRAINING
-    //PER_ID 9
-    assign s_events[4*PER_ID_EXT_PER]            = s_rx_ch_events[CH_ID_RX_EXT_PER];
-    assign s_events[4*PER_ID_EXT_PER+1]          = s_tx_ch_events[CH_ID_TX_EXT_PER];
-    assign s_events[4*PER_ID_EXT_PER+2]          = 1'b0;
-    assign s_events[4*PER_ID_EXT_PER+3]          = 1'b0;
-
-    assign s_rx_cfg_stream[CH_ID_RX_EXT_PER]     = 'h0;
-    assign s_rx_cfg_stream_id[CH_ID_RX_EXT_PER]  = 'h0;
-    assign s_rx_ch_destination[CH_ID_RX_EXT_PER] = 'h0;
-    assign s_tx_ch_destination[CH_ID_TX_EXT_PER] = 'h0;
-
-    udma_external_per_wrapper #(
-      .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
-      .TRANS_SIZE(TRANS_SIZE)
-    ) i_external_per (
-        .sys_clk_i           ( s_clk_periphs_core[PER_ID_EXT_PER]    ),
-        .periph_clk_i        ( s_clk_periphs_per[PER_ID_EXT_PER]     ),
-        .rstn_i              ( sys_resetn_i                          ),
-
-        .cfg_data_i          ( s_periph_data_to                      ),
-        .cfg_addr_i          ( s_periph_addr                         ),
-        .cfg_valid_i         ( s_periph_valid[PER_ID_EXT_PER]        ),
-        .cfg_rwn_i           ( s_periph_rwn                          ),
-        .cfg_ready_o         ( s_periph_ready[PER_ID_EXT_PER]        ),
-        .cfg_data_o          ( s_periph_data_from[PER_ID_EXT_PER]    ),
-
-        .cfg_rx_startaddr_o  ( s_rx_cfg_startaddr[CH_ID_RX_EXT_PER]  ),
-        .cfg_rx_size_o       ( s_rx_cfg_size[CH_ID_RX_EXT_PER]       ),
-        .cfg_rx_continuous_o ( s_rx_cfg_continuous[CH_ID_RX_EXT_PER] ),
-        .cfg_rx_en_o         ( s_rx_cfg_en[CH_ID_RX_EXT_PER]         ),
-        .cfg_rx_clr_o        ( s_rx_cfg_clr[CH_ID_RX_EXT_PER]        ),
-        .cfg_rx_en_i         ( s_rx_ch_en[CH_ID_RX_EXT_PER]          ),
-        .cfg_rx_pending_i    ( s_rx_ch_pending[CH_ID_RX_EXT_PER]     ),
-        .cfg_rx_curr_addr_i  ( s_rx_ch_curr_addr[CH_ID_RX_EXT_PER]   ),
-        .cfg_rx_bytes_left_i ( s_rx_ch_bytes_left[CH_ID_RX_EXT_PER]  ),
-
-        .cfg_tx_startaddr_o  ( s_tx_cfg_startaddr[CH_ID_TX_EXT_PER]  ),
-        .cfg_tx_size_o       ( s_tx_cfg_size[CH_ID_TX_EXT_PER]       ),
-        .cfg_tx_continuous_o ( s_tx_cfg_continuous[CH_ID_TX_EXT_PER] ),
-        .cfg_tx_en_o         ( s_tx_cfg_en[CH_ID_TX_EXT_PER]         ),
-        .cfg_tx_clr_o        ( s_tx_cfg_clr[CH_ID_TX_EXT_PER]        ),
-        .cfg_tx_en_i         ( s_tx_ch_en[CH_ID_TX_EXT_PER]          ),
-        .cfg_tx_pending_i    ( s_tx_ch_pending[CH_ID_TX_EXT_PER]     ),
-        .cfg_tx_curr_addr_i  ( s_tx_ch_curr_addr[CH_ID_TX_EXT_PER]   ),
-        .cfg_tx_bytes_left_i ( s_tx_ch_bytes_left[CH_ID_TX_EXT_PER]  ),
-
-        .data_tx_req_o       ( s_tx_ch_req[CH_ID_TX_EXT_PER]         ),
-        .data_tx_gnt_i       ( s_tx_ch_gnt[CH_ID_TX_EXT_PER]         ),
-        .data_tx_datasize_o  ( s_tx_ch_datasize[CH_ID_TX_EXT_PER]    ),
-        .data_tx_i           ( s_tx_ch_data[CH_ID_TX_EXT_PER]        ),
-        .data_tx_valid_i     ( s_tx_ch_valid[CH_ID_TX_EXT_PER]       ),
-        .data_tx_ready_o     ( s_tx_ch_ready[CH_ID_TX_EXT_PER]       ),
-
-        .data_rx_datasize_o  ( s_rx_ch_datasize[CH_ID_RX_EXT_PER]    ),
-        .data_rx_o           ( s_rx_ch_data[CH_ID_RX_EXT_PER]        ),
-        .data_rx_valid_o     ( s_rx_ch_valid[CH_ID_RX_EXT_PER]       ),
-        .data_rx_ready_i     ( s_rx_ch_ready[CH_ID_RX_EXT_PER]       )
-    );
-`endif
 endmodule
