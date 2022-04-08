@@ -880,7 +880,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
       .clk_i      ( clk_i            ),
       .rst_ni     ( rst_ni           ),
 
-      .test_mode  ( 1'h0             ),
+      .test_mode  ( dft_test_mode_i  ),
 
       .axi_master ( axi_mst_spi_slv  ),
 

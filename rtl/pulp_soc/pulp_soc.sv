@@ -613,8 +613,8 @@ module pulp_soc import dm::*; #(
         .sel_clk_i              ( s_sel_clk              ),
         .slow_clk_i             ( s_slow_clk             ),
 
-        .dft_test_mode_i        ( dft_test_mode_i        ),
-        .dft_cg_enable_i        ( 1'b0                   ),
+        .dft_test_mode_i,
+        .dft_cg_enable_i,
 
         .bootsel_valid_i        ( bootsel_valid_i        ),
         .bootsel_i              ( bootsel_i              ),
