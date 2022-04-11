@@ -227,6 +227,8 @@ module fc_subsystem #(
         .data_addr_o           (core_data_addr),
         .data_wdata_o          (core_data_wdata),
         .data_rdata_i          (core_data_rdata),
+        .data_atop_o           (               ), // currently, FC does not support
+                                                  // AMOs and LR/SC in ControlPULP
 
         // Shadow memory interface
         .shadow_req_o          (core_shadow_req),

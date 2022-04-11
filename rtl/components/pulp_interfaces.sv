@@ -183,6 +183,7 @@ interface XBAR_DEMUX_BUS;
    logic        req;
    logic [31:0] add;
    logic        we;
+   logic [5:0]  atop;
    logic [31:0] wdata;
    logic [3:0]  be;
    logic        gnt;
@@ -197,7 +198,7 @@ interface XBAR_DEMUX_BUS;
    modport Master
    (
       output barrier, input busy, output exec_cancel, output exec_stall,
-      output req, output add, output we, output wdata, output be, input gnt,
+      output req, output add, output we, output atop, output wdata, output be, input gnt,
       output r_gnt, input r_rdata, input r_valid
    );
 
@@ -206,7 +207,7 @@ interface XBAR_DEMUX_BUS;
    modport Slave
    (
       input barrier, output busy, input exec_cancel, input exec_stall,
-      input req, input add, input we, input wdata, input be, output gnt,
+      input req, input add, input we, input atop, input wdata, input be, output gnt,
       input r_gnt, output r_rdata, output r_valid
    );
 
