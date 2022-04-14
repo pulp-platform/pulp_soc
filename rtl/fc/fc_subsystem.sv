@@ -10,11 +10,6 @@
 
 `include "pulp_soc_defines.sv"
 
-`ifndef PULP_FPGA_EMUL
- `ifdef SYNTHESIS
-  `define ASIC_SYNTHESIS
- `endif
-`endif
 
 `include "register_interface/typedef.svh"
 `include "register_interface/assign.svh"
@@ -25,6 +20,7 @@ module fc_subsystem #(
     parameter USE_FPU             = 1,
     parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
+    parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
@@ -67,18 +63,6 @@ module fc_subsystem #(
 );
 
     import cv32e40p_apu_core_pkg::*;
-
-    // Number of performance counters. As previously in RI5CY (riscv_cs_registers.sv),
-    // we distinguish between:
-    // (a) ASIC implementation: 1 performance counter active
-    // (b) RTL simulation/FPGA emulation: 16 performance counters active, one for each event
-
-    `ifdef ASIC_SYNTHESIS
-      localparam int unsigned NUM_MHPMCOUNTERS = 1;
-    `else
-      localparam int unsigned NUM_MHPMCOUNTERS = 16;
-    `endif
-
 
     // Interrupt signals
     logic        core_irq_req   ;
@@ -187,7 +171,7 @@ module fc_subsystem #(
         .PULP_CLUSTER     (0),
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
-        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS),
+        .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS),
         .NUM_INTERRUPTS   (NUM_INTERRUPTS),
         .CLIC             (1),
         .MCLICBASE_ADDR   (32'h1A200000)        // Base address for CLIC memory mapped registers
