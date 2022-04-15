@@ -188,9 +188,9 @@ module fc_subsystem #(
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (32'h0),
         .mtvt_addr_i          (32'h0),
-        .dm_halt_addr_i       (32'h1A110800),
+        .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
         .hart_id_i            (hart_id),
-        .dm_exception_addr_i  (32'h1A11080C),
+        .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
 
         // Instruction memory interface
         .instr_req_o           (obi_instr_req),
