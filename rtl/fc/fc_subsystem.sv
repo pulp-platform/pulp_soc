@@ -8,6 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+`include "periph_bus_defines.sv"
+
 module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     parameter CORE_TYPE           = 0,
     parameter USE_XPULP           = 1,
@@ -169,9 +171,9 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .scan_cg_en_i         (test_en_i),
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (32'h0),
-        .dm_halt_addr_i       (32'h1A110800),
+        .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
         .hart_id_i            (hart_id),
-        .dm_exception_addr_i  (32'h1A11080C),
+        .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
 
         // Instruction memory interface
         .instr_req_o           (obi_instr_req),
