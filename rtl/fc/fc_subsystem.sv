@@ -9,6 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 `include "pulp_soc_defines.sv"
+`include "periph_bus_defines.sv"
 
 
 `include "register_interface/typedef.svh"
@@ -174,7 +175,7 @@ module fc_subsystem #(
         .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS),
         .NUM_INTERRUPTS   (NUM_INTERRUPTS),
         .CLIC             (1),
-        .MCLICBASE_ADDR   (32'h1A200000)        // Base address for CLIC memory mapped registers
+        .MCLICBASE_ADDR   (`CLIC_START_ADDR)        // Base address for CLIC memory mapped registers
     ) FC_CORE_i (
 
         // Clock and Reset
