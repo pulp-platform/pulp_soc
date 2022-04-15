@@ -55,11 +55,11 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o,
 
     // external interrupts
-    input logic                           scg_irq_i,
-    input logic                           scp_irq_i,
-    input logic                           scp_secure_irq_i,
-    input logic [71:0]                    mbox_irq_i,
-    input logic [71:0]                    mbox_secure_irq_i
+    input logic                       scg_irq_i,
+    input logic                       scp_irq_i,
+    input logic                       scp_secure_irq_i,
+    input logic [71:0]                mbox_irq_i,
+    input logic [71:0]                mbox_secure_irq_i
 );
 
     import cv32e40p_apu_core_pkg::*;
