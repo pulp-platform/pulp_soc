@@ -90,65 +90,38 @@ module soc_peripherals
     output logic [3:0]                 timer_ch2_o,
     output logic [3:0]                 timer_ch3_o,
 
-    //CAMERA
-    input  logic                       cam_clk_i,
-    input  logic [7:0]                 cam_data_i,
-    input  logic                       cam_hsync_i,
-    input  logic                       cam_vsync_i,
+    // uDMA Connections
+    // UART
+    output  uart_to_pad_t [  N_UART-1:0]  uart_to_pad_o,
+    input   pad_to_uart_t [  N_UART-1:0]  pad_to_uart_i,
+    // I2C
+    output  i2c_to_pad_t  [   N_I2C-1:0]  i2c_to_pad_o,
+    input   pad_to_i2c_t  [   N_I2C-1:0]  pad_to_i2c_i,
+    // SDIO
+    output  sdio_to_pad_t [  N_SDIO-1:0]  sdio_to_pad_o,
+    input   pad_to_sdio_t [  N_SDIO-1:0]  pad_to_sdio_i,
+    // I2S
+    output  i2s_to_pad_t  [ N_I2S-1:0]    i2s_to_pad_o,
+    input   pad_to_i2s_t  [ N_I2S-1:0]    pad_to_i2s_i,
+    // QSPI
+    output  qspi_to_pad_t [ N_QSPIM-1:0]  qspi_to_pad_o,
+    input   pad_to_qspi_t [ N_QSPIM-1:0]  pad_to_qspi_i,
+    // CPI
+    input   pad_to_cpi_t   [   N_CPI-1:0] pad_to_cpi_i,
+    // GPIO
+    input logic [NGPIO-1:0]               gpio_i,
+    output logic [NGPIO-1:0]              gpio_o,
+    output logic [NGPIO-1:0]              gpio_tx_en_o,
 
-    //UART
-    // output logic [N_UART-1:0]          uart_tx,
-    // input  logic [N_UART-1:0]          uart_rx,
-    output logic           uart_tx,
-    input  logic           uart_rx,
-
-
-    //I2C
-    input  logic [N_I2C-1:0]           i2c_scl_i,
-    output logic [N_I2C-1:0]           i2c_scl_o,
-    output logic [N_I2C-1:0]           i2c_scl_oe_o,
-    input  logic [N_I2C-1:0]           i2c_sda_i,
-    output logic [N_I2C-1:0]           i2c_sda_o,
-    output logic [N_I2C-1:0]           i2c_sda_oe_o,
-
-    //I2S
-    input  logic                       i2s_slave_sd0_i,
-    input  logic                       i2s_slave_sd1_i,
-    input  logic                       i2s_slave_ws_i,
-    output logic                       i2s_slave_ws_o,
-    output logic                       i2s_slave_ws_oe,
-    input  logic                       i2s_slave_sck_i,
-    output logic                       i2s_slave_sck_o,
-    output logic                       i2s_slave_sck_oe,
-
-    //SPI
-    output logic [N_SPI-1:0]           spi_clk_o,
-    output logic [N_SPI-1:0][3:0]      spi_csn_o,
-    output logic [N_SPI-1:0][3:0]      spi_oen_o,
-    output logic [N_SPI-1:0][3:0]      spi_sdo_o,
-    input  logic [N_SPI-1:0][3:0]      spi_sdi_i,
-
-    //SDIO
-    output logic                       sdclk_o,
-    output logic                       sdcmd_o,
-    input  logic                       sdcmd_i,
-    output logic                       sdcmd_oen_o,
-    output logic                 [3:0] sddata_o,
-    input  logic                 [3:0] sddata_i,
-    output logic                 [3:0] sddata_oen_o,
-
-    // HYPERBUS
-    output logic [1:0]                 hyper_cs_no,
-    output logic                       hyper_ck_o,
-    output logic                       hyper_ck_no,
-    output logic [1:0]                 hyper_rwds_o,
-    input  logic                       hyper_rwds_i,
-    output logic [1:0]                 hyper_rwds_oe_o,
-    input  logic [15:0]                hyper_dq_i,
-    output logic [15:0]                hyper_dq_o,
-    output logic [1:0]                 hyper_dq_oe_o,
-    output logic                       hyper_reset_no,
-
+    // HYPER (exposed udma plug)
+    output udma_pkg::cfg_req_t [udma_cfg_pkg::N_HYPER-1:0]           hyper_cfg_req_o,
+    input udma_pkg::cfg_rsp_t [udma_cfg_pkg::N_HYPER-1:0]            hyper_cfg_rsp_i,
+    output udma_pkg::udma_linch_tx_req_t [udma_cfg_pkg::N_HYPER-1:0] hyper_linch_tx_req_o,
+    input udma_pkg::udma_linch_tx_rsp_t [udma_cfg_pkg::N_HYPER-1:0]  hyper_linch_tx_rsp_i,
+    input udma_pkg::udma_linch_rx_req_t [udma_cfg_pkg::N_HYPER-1:0]  hyper_linch_rx_req_i,
+    output udma_pkg::udma_linch_rx_rsp_t [udma_cfg_pkg::N_HYPER-1:0] hyper_linch_rx_rsp_o,
+    input udma_pkg::udma_evt_t [udma_cfg_pkg::N_HYPER-1:0]           hyper_macro_evt_i,
+    output udma_pkg::udma_evt_t [udma_cfg_pkg::N_HYPER-1:0]          hyper_macro_evt_o,
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
