@@ -89,12 +89,11 @@ module soc_interconnect
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+    XBAR_TCDM_BUS l2_demux_slaves[NR_MASTER_PORTS*3-1:0]();
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
-        XBAR_TCDM_BUS demux_slaves[3]();
-
-        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], demux_slaves[0]);
-        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], demux_slaves[1]);
-        `TCDM_ASSIGN_INTF(l2_demux_2_interleaved_xbar[i], demux_slaves[2]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], l2_demux_slaves[3*i + 0]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], l2_demux_slaves[3*i + 1]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_interleaved_xbar[i], l2_demux_slaves[3*i + 2]);
 
 
         tcdm_demux #(
@@ -106,7 +105,7 @@ module soc_interconnect
                                   .test_en_i,
                                   .addr_map_rules(addr_space_l2_demux),
                                   .master_port(master_ports[i]),
-                                  .slave_ports(demux_slaves)
+                                  .slave_ports(l2_demux_slaves[3*(i+1)-1:3*i])
                                   );
     end
 
@@ -117,14 +116,13 @@ module soc_interconnect
     // interleaved memory region.                                                                               //
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     XBAR_TCDM_BUS master_ports_interleaved_only_checked[NR_MASTER_PORTS_INTERLEAVED_ONLY]();
+    XBAR_TCDM_BUS err_demux_slaves[NR_MASTER_PORTS_INTERLEAVED_ONLY*2-1:0]();
     for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin : gen_interleaved_only_err_checkers
-        XBAR_TCDM_BUS err_demux_slaves[2]();
-
-        `TCDM_ASSIGN_INTF(master_ports_interleaved_only_checked[i], err_demux_slaves[1]);
+        `TCDM_ASSIGN_INTF(master_ports_interleaved_only_checked[i], err_demux_slaves[2*i + 1]);
         // Workaround for genus (doesn't seem to like references interface
         // arrays in port connections so we assign it to a scalar interface instance)
         XBAR_TCDM_BUS err_slave();
-        `TCDM_ASSIGN_INTF(err_slave, err_demux_slaves[0]);
+        `TCDM_ASSIGN_INTF(err_slave, err_demux_slaves[2*i + 0]);
 
         //The tcdm demux will route all transaction that do not match any addr rule to port 0 (which we connect to an
         //error slave)
@@ -137,7 +135,7 @@ module soc_interconnect
           .test_en_i,
           .addr_map_rules ( addr_space_interleaved           ),
           .master_port    ( master_ports_interleaved_only[i] ),
-          .slave_ports    ( err_demux_slaves                 )
+          .slave_ports    ( err_demux_slaves[2*i+1:2*i]      )
         );
         tcdm_error_slave #(
           .ERROR_RESPONSE(32'hBADACCE5)
