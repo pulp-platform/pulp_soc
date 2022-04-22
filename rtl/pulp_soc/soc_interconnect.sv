@@ -89,7 +89,7 @@ module soc_interconnect
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    XBAR_TCDM_BUS l2_demux_slaves[NR_MASTER_PORTS*3-1:0]();
+    XBAR_TCDM_BUS l2_demux_slaves[NR_MASTER_PORTS*3]();
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
         `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], l2_demux_slaves[3*i + 0]);
         `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], l2_demux_slaves[3*i + 1]);
@@ -105,7 +105,7 @@ module soc_interconnect
                                   .test_en_i,
                                   .addr_map_rules(addr_space_l2_demux),
                                   .master_port(master_ports[i]),
-                                  .slave_ports(l2_demux_slaves[3*(i+1)-1:3*i])
+                                  .slave_ports(l2_demux_slaves[3*i+:3])
                                   );
     end
 
@@ -116,7 +116,7 @@ module soc_interconnect
     // interleaved memory region.                                                                               //
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     XBAR_TCDM_BUS master_ports_interleaved_only_checked[NR_MASTER_PORTS_INTERLEAVED_ONLY]();
-    XBAR_TCDM_BUS err_demux_slaves[NR_MASTER_PORTS_INTERLEAVED_ONLY*2-1:0]();
+    XBAR_TCDM_BUS err_demux_slaves[NR_MASTER_PORTS_INTERLEAVED_ONLY*2]();
     for (genvar i = 0; i < NR_MASTER_PORTS_INTERLEAVED_ONLY; i++) begin : gen_interleaved_only_err_checkers
         `TCDM_ASSIGN_INTF(master_ports_interleaved_only_checked[i], err_demux_slaves[2*i + 1]);
         // Workaround for genus (doesn't seem to like references interface
@@ -135,7 +135,7 @@ module soc_interconnect
           .test_en_i,
           .addr_map_rules ( addr_space_interleaved           ),
           .master_port    ( master_ports_interleaved_only[i] ),
-          .slave_ports    ( err_demux_slaves[2*i+1:2*i]      )
+          .slave_ports    ( err_demux_slaves[2*i+:2]         )
         );
         tcdm_error_slave #(
           .ERROR_RESPONSE(32'hBADACCE5)

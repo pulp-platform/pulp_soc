@@ -34,7 +34,7 @@ module tcdm_demux
      input logic                                  test_en_i,
      input addr_map_rule_t[NR_ADDR_MAP_RULES-1:0] addr_map_rules,
      XBAR_TCDM_BUS.Slave                          master_port,
-     XBAR_TCDM_BUS.Master                         slave_ports[NR_OUTPUTS-1:0]
+     XBAR_TCDM_BUS.Master                         slave_ports[NR_OUTPUTS]
      );
     // Do **not** change. The TCDM interface uses hardcoded bus widths so we cannot just change them here.
     localparam int unsigned BE_WIDTH = 2;
