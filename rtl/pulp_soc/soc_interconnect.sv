@@ -105,7 +105,7 @@ module soc_interconnect
                                   .test_en_i,
                                   .addr_map_rules(addr_space_l2_demux),
                                   .master_port(master_ports[i]),
-                                  .slave_ports(l2_demux_slaves[3*i+:3])
+                                  .slave_ports(l2_demux_slaves[3*i:3*(i+1)-1])
                                   );
     end
 
@@ -135,7 +135,7 @@ module soc_interconnect
           .test_en_i,
           .addr_map_rules ( addr_space_interleaved           ),
           .master_port    ( master_ports_interleaved_only[i] ),
-          .slave_ports    ( err_demux_slaves[2*i+:2]         )
+          .slave_ports    ( err_demux_slaves[2*i:2*(i+1)-1]  )
         );
         tcdm_error_slave #(
           .ERROR_RESPONSE(32'hBADACCE5)
