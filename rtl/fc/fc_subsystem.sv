@@ -72,7 +72,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     logic [31:0] core_irq_x;
 
     // Signals for OBI-PULP conversion
-    logic        pulp_instr_req;
+    logic        pulp_instr_req, pulp_data_req;
 
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
@@ -117,7 +117,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
     //********************************************************
-    assign l2_data_master.req    = core_data_req;
+    assign l2_data_master.req    = pulp_data_req;
     assign l2_data_master.add    = core_data_addr;
     assign l2_data_master.wen    = ~core_data_we;
     assign l2_data_master.wdata  = core_data_wdata;
@@ -127,6 +127,15 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     assign core_data_rdata       = l2_data_master.r_rdata;
     assign core_data_err         = l2_data_master.r_opc;
 
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter_data (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (core_data_req),
+        .mem_gnt_i    (core_data_gnt),
+        .mem_rvalid_i (core_data_rvalid),
+        .mem_req_o    (pulp_data_req)
+    );
 
     assign l2_instr_master.req   = pulp_instr_req;
     assign l2_instr_master.add   = core_instr_addr;
