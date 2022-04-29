@@ -72,7 +72,6 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     logic [31:0] core_irq_x;
 
     // Signals for OBI-PULP conversion
-    logic        obi_instr_req;
     logic        pulp_instr_req;
 
     // Boot address, core id, cluster id, fethc enable and core_status
@@ -129,7 +128,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     assign core_data_err         = l2_data_master.r_opc;
 
 
-    assign l2_instr_master.req   = core_instr_req;
+    assign l2_instr_master.req   = pulp_instr_req;
     assign l2_instr_master.add   = core_instr_addr;
     assign l2_instr_master.wen   = 1'b1;
     assign l2_instr_master.wdata = '0;
@@ -138,6 +137,16 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     assign core_instr_rvalid     = l2_instr_master.r_valid;
     assign core_instr_rdata      = l2_instr_master.r_rdata;
     assign core_instr_err        = l2_instr_master.r_opc;
+
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter_instr (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (core_instr_req),
+        .mem_gnt_i    (core_instr_gnt),
+        .mem_rvalid_i (core_instr_rvalid),
+        .mem_req_o    (pulp_instr_req)
+    );
 
     //********************************************************
     //************ RISCV CORE ********************************
@@ -176,7 +185,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
 
         // Instruction memory interface
-        .instr_req_o           (obi_instr_req),
+        .instr_req_o           (core_instr_req),
         .instr_gnt_i           (core_instr_gnt),
         .instr_rvalid_i        (core_instr_rvalid),
         .instr_addr_o          (core_instr_addr),
@@ -223,17 +232,6 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .fetch_enable_i        (fetch_en_int),
         .core_sleep_o          ()
     );
-
-    // OBI-PULP adapter
-    obi_pulp_adapter i_obi_pulp_adapter (
-        .rst_ni       (rst_ni),
-        .clk_i        (clk_i),
-        .core_req_i   (obi_instr_req),
-        .mem_gnt_i    (core_instr_gnt),
-        .mem_rvalid_i (core_instr_rvalid),
-        .mem_req_o    (pulp_instr_req)
-      );
-    assign core_instr_req = pulp_instr_req;
 
     assign supervisor_mode_o = 1'b1;
 
