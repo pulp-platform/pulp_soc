@@ -453,7 +453,7 @@ module pulp_soc import dm::*; #(
     assign cluster_rstn_o = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
     assign s_rstn_cluster_sync_soc = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
 
-    assign cluster_rtc_o     = ref_clk_i;
+    assign cluster_rtc_o     = s_slow_clk;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
     assign s_cluster_isolate_dc = 1'b0;
