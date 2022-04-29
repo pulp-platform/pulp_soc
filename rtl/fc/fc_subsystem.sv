@@ -9,12 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 `include "pulp_soc_defines.sv"
+`include "periph_bus_defines.sv"
 
-`ifndef PULP_FPGA_EMUL
- `ifdef SYNTHESIS
-  `define ASIC_SYNTHESIS
- `endif
-`endif
 
 `include "register_interface/typedef.svh"
 `include "register_interface/assign.svh"
@@ -25,6 +21,7 @@ module fc_subsystem #(
     parameter USE_FPU             = 1,
     parameter ZFINX               = 0,
     parameter USE_HWPE            = 1,
+    parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
     parameter NB_HWPE_PORTS       = 4,
@@ -59,26 +56,14 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o,
 
     // external interrupts
-    input logic                           scg_irq_i,
-    input logic                           scp_irq_i,
-    input logic                           scp_secure_irq_i,
-    input logic [71:0]                    mbox_irq_i,
-    input logic [71:0]                    mbox_secure_irq_i
+    input logic                       scg_irq_i,
+    input logic                       scp_irq_i,
+    input logic                       scp_secure_irq_i,
+    input logic [71:0]                mbox_irq_i,
+    input logic [71:0]                mbox_secure_irq_i
 );
 
     import cv32e40p_apu_core_pkg::*;
-
-    // Number of performance counters. As previously in RI5CY (riscv_cs_registers.sv),
-    // we distinguish between:
-    // (a) ASIC implementation: 1 performance counter active
-    // (b) RTL simulation/FPGA emulation: 16 performance counters active, one for each event
-
-    `ifdef ASIC_SYNTHESIS
-      localparam int unsigned NUM_MHPMCOUNTERS = 1;
-    `else
-      localparam int unsigned NUM_MHPMCOUNTERS = 16;
-    `endif
-
 
     // Interrupt signals
     logic        core_irq_req   ;
@@ -187,10 +172,10 @@ module fc_subsystem #(
         .PULP_CLUSTER     (0),
         .FPU              (USE_FPU),
         .PULP_ZFINX       (ZFINX),
-        .NUM_MHPMCOUNTERS (NUM_MHPMCOUNTERS),
+        .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS),
         .NUM_INTERRUPTS   (NUM_INTERRUPTS),
         .CLIC             (1),
-        .MCLICBASE_ADDR   (32'h1A200000)        // Base address for CLIC memory mapped registers
+        .MCLICBASE_ADDR   (`CLIC_START_ADDR)        // Base address for CLIC memory mapped registers
     ) FC_CORE_i (
 
         // Clock and Reset
@@ -203,9 +188,9 @@ module fc_subsystem #(
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (32'h0),
         .mtvt_addr_i          (32'h0),
-        .dm_halt_addr_i       (32'h1A110800),
+        .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
         .hart_id_i            (hart_id),
-        .dm_exception_addr_i  (32'h1A11080C),
+        .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
 
         // Instruction memory interface
         .instr_req_o           (obi_instr_req),
