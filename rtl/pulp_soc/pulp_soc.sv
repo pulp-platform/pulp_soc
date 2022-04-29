@@ -61,12 +61,12 @@ module pulp_soc import dm::*; #(
     parameter int unsigned NUM_INTERRUPTS = 0,
     parameter int unsigned MACRO_ROM = 0
 ) (
-    input  logic                          sys_clk_i,
+    input  logic                          soc_clk_i,
+    input  logic                          periph_clk_i,
     input  logic                          ref_clk_i,
-    output logic                          soc_clk_o,
     input  logic                          test_clk_i,
-    input  logic                          rstn_glob_i,
-    output logic                          rst_l2_no,
+    input  logic                          soc_rst_ni,
+    input  logic                          cluster_rst_ni,
 
     input  logic                          dft_test_mode_i,
     input  logic                          dft_cg_enable_i,
@@ -85,13 +85,16 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS.Master                  s_mem_l2_bus[N_L2_BANKS],
     XBAR_TCDM_BUS.Master                  s_mem_l2_pri_bus[N_L2_BANKS_PRI],
 
-    output logic                          cluster_rtc_o,
+    // APB interfaces to configure external IPs
+    APB_BUS.Master                        apb_clk_ctrl_bus,
+    output logic                          clk_mux_sel_o,
+
     output logic                          cluster_fetch_enable_o,
     output logic [63:0]                   cluster_boot_addr_o,
     output logic                          cluster_test_en_o,
     output logic                          cluster_pow_o,
     output logic                          cluster_byp_o,
-    output logic                          cluster_rstn_o,
+    output logic                          cluster_rst_reg_no,
     output logic                          cluster_irq_o,
 
     // AXI4 SLAVE
@@ -147,7 +150,6 @@ module pulp_soc import dm::*; #(
     output logic [BUFFER_WIDTH-1:0]                   cluster_events_wt_o,
     input logic [BUFFER_WIDTH-1:0]                    cluster_events_rp_i,
     output logic [EVNT_WIDTH-1:0]                     cluster_events_da_o,
-    output logic                                      cluster_clk_o,
     input logic                                       cluster_busy_i,
     output logic                                      dma_pe_evt_ack_o,
     input logic                                       dma_pe_evt_valid_i,
@@ -305,15 +307,10 @@ module pulp_soc import dm::*; #(
 
     logic [31:0]           s_fc_bootaddr;
 
-    logic                  s_slow_clk;
-
     logic                  s_periph_clk;
-    logic                  s_periph_rstn;
     logic                  s_soc_clk;
     logic                  s_soc_rstn;
-    logic                  s_cluster_clk;
     logic                  s_cluster_rstn;
-    logic                  s_cluster_rstn_soc_ctrl;
     logic                  s_sel_clk;
 
     logic                  s_dma_pe_evt;
@@ -352,9 +349,6 @@ module pulp_soc import dm::*; #(
     logic                  spi_master0_csn3, spi_master0_csn2;
 
 
-    // Propagate soc_clk to top-level (it feeds AXI ports)
-    assign soc_clk_o = s_soc_clk;
-
     // tap to lint wrap
     logic                  s_jtag_shift_dr;
     logic                  s_jtag_update_dr;
@@ -367,7 +361,6 @@ module pulp_soc import dm::*; #(
     APB_BUS                s_apb_clic_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
-    APB_BUS                s_apb_clk_ctrl_bus();
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
@@ -449,15 +442,17 @@ module pulp_soc import dm::*; #(
     logic s_cluster_isolate_dc;
     logic s_rstn_cluster_sync_soc;
 
-    assign cluster_clk_o  = s_cluster_clk;
-    assign cluster_rstn_o = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
-    assign s_rstn_cluster_sync_soc = s_cluster_rstn && s_cluster_rstn_soc_ctrl;
+    assign s_rstn_cluster_sync_soc = cluster_rst_ni;
 
-    assign cluster_rtc_o     = s_slow_clk;
     assign cluster_test_en_o = dft_test_mode_i;
     // isolate dc if the cluster is down
     assign s_cluster_isolate_dc = 1'b0;
-//cluster_byp_o;
+
+    // Feed FC domain with soc_clk
+    assign s_soc_clk = soc_clk_i;
+    assign clk_mux_sel_o = s_sel_clk;
+    // Feed FC domain with soc_rst_ni
+    assign s_soc_rstn = soc_rst_ni;
 
    // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
@@ -487,7 +482,7 @@ module pulp_soc import dm::*; #(
      .axi_resp_t(c2s_resp_t   ),
      .LogDepth        ( 3                      )
     ) axi_slave_cdc_i (
-     .dst_rst_ni                       ( s_cluster_rstn             ),
+     .dst_rst_ni                       ( cluster_rst_ni             ),
      .dst_clk_i                        ( s_soc_clk                  ),
      .dst_req_o                        ( dst_req                    ),
      .dst_resp_i                       ( dst_resp                   ),
@@ -609,10 +604,10 @@ module pulp_soc import dm::*; #(
     ) soc_peripherals_i (
 
         .clk_i                  ( s_soc_clk              ),
-        .periph_clk_i           ( s_periph_clk           ),
+        .periph_clk_i,
         .rst_ni                 ( s_soc_rstn             ),
         .sel_clk_i              ( s_sel_clk              ),
-        .slow_clk_i             ( s_slow_clk             ),
+        .slow_clk_i             ( ref_clk_i              ),
 
         .dft_test_mode_i,
         .dft_cg_enable_i,
@@ -632,7 +627,7 @@ module pulp_soc import dm::*; #(
         .apb_clic_master        ( s_apb_clic_bus         ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
-        .apb_clk_ctrl_master    ( s_apb_clk_ctrl_bus     ),
+        .apb_clk_ctrl_master    ( apb_clk_ctrl_bus       ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
@@ -715,7 +710,7 @@ module pulp_soc import dm::*; #(
         .cluster_byp_o          ( cluster_byp_o          ),
         .cluster_boot_addr_o    ( cluster_boot_addr_o    ),
         .cluster_fetch_enable_o ( cluster_fetch_enable_o ),
-        .cluster_rstn_o         ( s_cluster_rstn_soc_ctrl),
+        .cluster_rstn_o         ( cluster_rst_reg_no     ),
         .cluster_irq_o          ( cluster_irq_o          ),
 
         .wdt_alert_o,
@@ -810,29 +805,6 @@ module pulp_soc import dm::*; #(
         .scp_secure_irq_i,
         .mbox_irq_i,
         .mbox_secure_irq_i
-    );
-
-    assign rst_l2_no = s_soc_rstn;
-
-    soc_clk_rst_gen i_clk_rst_gen (
-        .sys_clk_i                  ( sys_clk_i                     ),
-        .ref_clk_i                  ( ref_clk_i                     ),
-        .test_clk_i                 ( test_clk_i                    ),
-        .sel_clk_i                  ( s_sel_clk                     ),
-
-        .rstn_glob_i                ( rstn_glob_i                   ),
-        .rstn_soc_sync_o            ( s_soc_rstn                    ),
-        .rstn_cluster_sync_o        ( s_cluster_rstn                ),
-
-        .clk_cluster_o              ( s_cluster_clk                 ),
-        .test_mode_i                ( dft_test_mode_i               ),
-        .shift_enable_i             ( 1'b0                          ),
-
-        .apb_slave                  ( s_apb_clk_ctrl_bus            ),
-
-        .clk_soc_o                  ( s_soc_clk                     ),
-        .clk_per_o                  ( s_periph_clk                  ),
-        .clk_slow_o                 ( s_slow_clk                    )
     );
 
     soc_interconnect_wrap #(
