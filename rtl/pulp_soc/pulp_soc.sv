@@ -89,6 +89,8 @@ module pulp_soc import dm::*; #(
     // APB interfaces to configure external IPs
     APB_BUS.Master                        apb_clk_ctrl_bus,
     output logic                          clk_mux_sel_o,
+    APB_BUS.Master                        apb_serial_link_bus,
+    APB_BUS.Master                        apb_pad_cfg_bus,
 
     output logic                          cluster_fetch_enable_o,
     output logic [63:0]                   cluster_boot_addr_o,
@@ -730,7 +732,9 @@ module pulp_soc import dm::*; #(
         .apb_clic_master        ( s_apb_clic_bus         ),
         .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
+        .apb_serial_link_master ( apb_serial_link_bus    ),
         .apb_clk_ctrl_master    ( apb_clk_ctrl_bus       ),
+        .apb_pad_cfg_master     ( apb_pad_cfg_bus        ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
