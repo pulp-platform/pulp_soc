@@ -32,7 +32,7 @@ module tcdm_error_slave #(
     logic         error_valid_d, error_valid_q;
     assign slave.gnt = slave.req;
     assign error_valid_d = slave.req;
-    assign slave.r_opc = slave.req;
+    assign slave.r_opc = error_valid_q;
     assign slave.r_rdata = ERROR_RESPONSE;
     assign slave.r_valid = error_valid_q;
 
