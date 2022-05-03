@@ -289,13 +289,6 @@ module soc_peripherals #(
         .stdout_master       ( s_stdout_bus       )
     );
 
-    `ifdef SYNTHESIS
-        assign s_stdout_bus.pready  = 'h0;
-        assign s_stdout_bus.pslverr = 'h0;
-        assign s_stdout_bus.prdata  = 'h0;
-    `endif
-
-
     /////////////////////////////////////////////////////////////////////////
     //  █████╗ ██████╗ ██████╗     ███████╗██╗     ██╗         ██╗███████╗ //
     // ██╔══██╗██╔══██╗██╔══██╗    ██╔════╝██║     ██║         ██║██╔════╝ //
