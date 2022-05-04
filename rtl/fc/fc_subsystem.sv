@@ -72,8 +72,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     logic [31:0] core_irq_x;
 
     // Signals for OBI-PULP conversion
-    logic        obi_instr_req;
-    logic        pulp_instr_req;
+    logic        pulp_instr_req, pulp_data_req;
 
     // Boot address, core id, cluster id, fethc enable and core_status
     logic [31:0] boot_addr        ;
@@ -118,7 +117,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
     //********************************************************
-    assign l2_data_master.req    = core_data_req;
+    assign l2_data_master.req    = pulp_data_req;
     assign l2_data_master.add    = core_data_addr;
     assign l2_data_master.wen    = ~core_data_we;
     assign l2_data_master.wdata  = core_data_wdata;
@@ -128,8 +127,17 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     assign core_data_rdata       = l2_data_master.r_rdata;
     assign core_data_err         = l2_data_master.r_opc;
 
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter_data (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (core_data_req),
+        .mem_gnt_i    (core_data_gnt),
+        .mem_rvalid_i (core_data_rvalid),
+        .mem_req_o    (pulp_data_req)
+    );
 
-    assign l2_instr_master.req   = core_instr_req;
+    assign l2_instr_master.req   = pulp_instr_req;
     assign l2_instr_master.add   = core_instr_addr;
     assign l2_instr_master.wen   = 1'b1;
     assign l2_instr_master.wdata = '0;
@@ -138,6 +146,16 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     assign core_instr_rvalid     = l2_instr_master.r_valid;
     assign core_instr_rdata      = l2_instr_master.r_rdata;
     assign core_instr_err        = l2_instr_master.r_opc;
+
+    // OBI-PULP adapter
+    obi_pulp_adapter i_obi_pulp_adapter_instr (
+        .rst_ni       (rst_ni),
+        .clk_i        (clk_i),
+        .core_req_i   (core_instr_req),
+        .mem_gnt_i    (core_instr_gnt),
+        .mem_rvalid_i (core_instr_rvalid),
+        .mem_req_o    (pulp_instr_req)
+    );
 
     //********************************************************
     //************ RISCV CORE ********************************
@@ -176,7 +194,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
 
         // Instruction memory interface
-        .instr_req_o           (obi_instr_req),
+        .instr_req_o           (core_instr_req),
         .instr_gnt_i           (core_instr_gnt),
         .instr_rvalid_i        (core_instr_rvalid),
         .instr_addr_o          (core_instr_addr),
@@ -224,25 +242,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .core_sleep_o          ()
     );
 
-    // OBI-PULP adapter
-    obi_pulp_adapter i_obi_pulp_adapter (
-        .rst_ni       (rst_ni),
-        .clk_i        (clk_i),
-        .core_req_i   (obi_instr_req),
-        .mem_gnt_i    (core_instr_gnt),
-        .mem_rvalid_i (core_instr_rvalid),
-        .mem_req_o    (pulp_instr_req)
-      );
-    assign core_instr_req = pulp_instr_req;
-
     assign supervisor_mode_o = 1'b1;
-
-    always_comb begin : gen_core_irq_x
-        core_irq_x = '0;
-        if (core_irq_req) begin
-            core_irq_x[core_irq_id] = 1'b1;
-        end
-    end
 
     end else begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
@@ -306,6 +306,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .irq_fast_i            ( 15'b0             ),
         .irq_nm_i              ( 1'b0              ),
 
+        // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
         .irq_x_i               ( core_irq_x        ),
         .irq_x_ack_o           ( core_irq_ack      ),
         .irq_x_ack_id_o        ( core_irq_ack_id   ),
@@ -321,15 +322,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     );
 
     assign supervisor_mode_o = 1'b1;
-    // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
-    // Convert ID back to interrupt lines
-    always_comb begin : gen_core_irq_x
-        core_irq_x = '0;
-        if (core_irq_req) begin
-            core_irq_x[core_irq_id] = 1'b1;
-        end
-    end
-
+ 
     end
     endgenerate
 
@@ -351,6 +344,14 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .fetch_en_o         ( fetch_en_eu        ),
         .apb_slave          ( apb_slave_eu       )
     );
+
+    // Convert ID back to interrupt lines
+    always_comb begin : gen_core_irq_x
+        core_irq_x = '0;
+        if (core_irq_req) begin
+            core_irq_x[core_irq_id] = 1'b1;
+        end
+    end
 
 
     if(USE_HWPE) begin : fc_hwpe_gen
