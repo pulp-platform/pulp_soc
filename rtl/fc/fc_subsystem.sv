@@ -365,7 +365,6 @@ module fc_subsystem #(
     );
 
 
-    generate
     if(USE_HWPE) begin : fc_hwpe_gen
         fc_hwpe #(
             .N_MASTER_PORT ( NB_HWPE_PORTS ),
@@ -393,37 +392,36 @@ module fc_subsystem #(
             assign l2_hwpe_master[ii].add   = '0;
         end
     end
-    endgenerate
 
 
     //*************************************
     //****** APU INTERFACE WITH FPU *******
     //*************************************
 
-`ifdef FPU_SOC
-    cv32e40p_fp_wrapper #(
-        .FP_DIVSQRT (1)
-    ) fp_wrapper_i (
-        .clk_i         (clk_i),
-        .rst_ni        (rst_ni),
-        .apu_req_i     (apu_req),
-        .apu_gnt_o     (apu_gnt),
-        .apu_operands_i(apu_operands),
-        .apu_op_i      (apu_op),
-        .apu_flags_i   (apu_flags),
-        .apu_rvalid_o  (apu_rvalid),
-        .apu_rdata_o   (apu_rdata),
-        .apu_rflags_o  (apu_rflags)
-    );
-`else
-    assign apu_req      = 1'b0;
-    assign apu_gnt      = 1'b0;
-    assign apu_operands = 1'b0;
-    assign apu_op       = 1'b0;
-    assign apu_flags    = 1'b0;
-    assign apu_rvalid   = 1'b0;
-    assign apu_rdata    = 1'b0;
-    assign apu_rflags   = 1'b0;
-`endif // !`ifdef FPU_SOC
+    if (USE_FPU) begin : gen_fp_wrapper
+        cv32e40p_fp_wrapper #(
+            .FP_DIVSQRT (1)
+        ) fp_wrapper_i (
+            .clk_i         (clk_i),
+            .rst_ni        (rst_ni),
+            .apu_req_i     (apu_req),
+            .apu_gnt_o     (apu_gnt),
+            .apu_operands_i(apu_operands),
+            .apu_op_i      (apu_op),
+            .apu_flags_i   (apu_flags),
+            .apu_rvalid_o  (apu_rvalid),
+            .apu_rdata_o   (apu_rdata),
+            .apu_rflags_o  (apu_rflags)
+        );
+    end else begin : gen_no_fp_wrapper
+        assign apu_req      = 1'b0;
+        assign apu_gnt      = 1'b0;
+        assign apu_operands = 1'b0;
+        assign apu_op       = 1'b0;
+        assign apu_flags    = 1'b0;
+        assign apu_rvalid   = 1'b0;
+        assign apu_rdata    = 1'b0;
+        assign apu_rflags   = 1'b0;
+    end
 
 endmodule
