@@ -716,6 +716,9 @@ module pulp_soc import dm::*; #(
         .wdt_alert_o,
         .wdt_alert_clear_i,
 
+        .bus_instr_err_i        ( s_lint_fc_instr_bus.r_opc & s_lint_fc_instr_bus.r_valid ),
+        .bus_data_err_i         ( s_lint_fc_data_bus.r_opc  & s_lint_fc_data_bus.r_valid  ),
+
         .axi_i2c_slv_bmc        ( axi_i2c_slv_bmc        ),
         .axi_i2c_slv_1          ( axi_i2c_slv_1          )
     );

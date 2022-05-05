@@ -77,13 +77,6 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     input logic [1:0]                         fc_hwpe_events_i,
     output logic [31:0]                       fc_events_o,
 
-//    // external interrupts
-//    input logic                               scg_irq_i,
-//    input logic                               scp_irq_i,
-//    input logic                               scp_secure_irq_i,
-//    input logic [71:0]                        mbox_irq_i,
-//    input logic [71:0]                        mbox_secure_irq_i,
-
     input logic [NGPIO-1:0]                   gpio_in,
     output logic [NGPIO-1:0]                  gpio_out,
     output logic [NGPIO-1:0]                  gpio_dir,
@@ -131,7 +124,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
 
     //INTER-SOCKET MUX SIGNALS
     output logic                              sel_spi_dir_o,
-	output logic                              sel_i2c_mux_o,
+    output logic                              sel_i2c_mux_o,
 
 
     output logic [EVNT_WIDTH-1:0]             cl_event_data_o,
@@ -151,6 +144,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
 
     output logic [1:0]                        wdt_alert_o,
     input  logic                              wdt_alert_clear_i,
+
+    input logic                               bus_instr_err_i,
+    input logic                               bus_data_err_i,
 
     AXI_BUS.Master                            axi_i2c_slv_bmc,
     AXI_BUS.Master                            axi_i2c_slv_1
@@ -236,8 +232,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     assign fc_events_o[18]  = s_adv_timer_events[1];
     assign fc_events_o[19]  = s_adv_timer_events[2];
     assign fc_events_o[20]  = s_adv_timer_events[3];
-    assign fc_events_o[21]  = 1'b0;
-    assign fc_events_o[22]  = 1'b0;
+    assign fc_events_o[21]  = bus_instr_err_i;
+    assign fc_events_o[22]  = bus_data_err_i;
     assign fc_events_o[23]  = 1'b0;
     assign fc_events_o[24]  = 1'b0;
     assign fc_events_o[25]  = 1'b0; // RESERVED for plic interrupts
