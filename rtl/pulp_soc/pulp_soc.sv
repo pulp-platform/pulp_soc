@@ -59,7 +59,8 @@ module pulp_soc import dm::*; #(
     parameter int unsigned L2_BANK_SIZE = 0,
     parameter int unsigned L2_BANK_SIZE_PRI = 0,
     parameter int unsigned NUM_INTERRUPTS = 0,
-    parameter int unsigned MACRO_ROM = 0
+    parameter int unsigned MACRO_ROM = 0,
+    parameter int unsigned USE_CLUSTER = 1
 ) (
     input  logic                          soc_clk_i,
     input  logic                          periph_clk_i,
@@ -439,20 +440,11 @@ module pulp_soc import dm::*; #(
         assign base_addr_int = 4'b0001; //FIXME attach this signal somewhere in the soc peripherals --> IGOR
     `endif
 
-    logic s_cluster_isolate_dc;
-    logic s_rstn_cluster_sync_soc;
-
-    assign s_rstn_cluster_sync_soc = cluster_rst_ni;
-
-    assign cluster_test_en_o = dft_test_mode_i;
-    // isolate dc if the cluster is down
-    assign s_cluster_isolate_dc = 1'b0;
-
-    // Feed FC domain with soc_clk
-    assign s_soc_clk = soc_clk_i;
-    assign clk_mux_sel_o = s_sel_clk;
-    // Feed FC domain with soc_rst_ni
-    assign s_soc_rstn = soc_rst_ni;
+   // Feed FC domain with soc_clk
+   assign s_soc_clk = soc_clk_i;
+   assign clk_mux_sel_o = s_sel_clk;
+   // Feed FC domain with soc_rst_ni
+   assign s_soc_rstn = soc_rst_ni;
 
    // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
 
@@ -467,42 +459,6 @@ module pulp_soc import dm::*; #(
 
    c2s_req_t   dst_req ;
    c2s_resp_t  dst_resp;
-
-   `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
-   `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
-
-   // CLUSTER TO SOC AXI
-   axi_cdc_dst #(
-     .aw_chan_t (c2s_aw_chan_t),
-     .w_chan_t  (c2s_w_chan_t ),
-     .b_chan_t  (c2s_b_chan_t ),
-     .r_chan_t  (c2s_r_chan_t ),
-     .ar_chan_t (c2s_ar_chan_t),
-     .axi_req_t (c2s_req_t    ),
-     .axi_resp_t(c2s_resp_t   ),
-     .LogDepth        ( 3                      )
-    ) axi_slave_cdc_i (
-     .dst_rst_ni                       ( cluster_rst_ni             ),
-     .dst_clk_i                        ( s_soc_clk                  ),
-     .dst_req_o                        ( dst_req                    ),
-     .dst_resp_i                       ( dst_resp                   ),
-     .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),
-     .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
-     .async_data_slave_aw_data_i       ( async_data_slave_aw_data_i ),
-     .async_data_slave_w_wptr_i        ( async_data_slave_w_wptr_i  ),
-     .async_data_slave_w_rptr_o        ( async_data_slave_w_rptr_o  ),
-     .async_data_slave_w_data_i        ( async_data_slave_w_data_i  ),
-     .async_data_slave_ar_wptr_i       ( async_data_slave_ar_wptr_i ),
-     .async_data_slave_ar_rptr_o       ( async_data_slave_ar_rptr_o ),
-     .async_data_slave_ar_data_i       ( async_data_slave_ar_data_i ),
-     .async_data_slave_b_wptr_o        ( async_data_slave_b_wptr_o  ),
-     .async_data_slave_b_rptr_i        ( async_data_slave_b_rptr_i  ),
-     .async_data_slave_b_data_o        ( async_data_slave_b_data_o  ),
-     .async_data_slave_r_wptr_o        ( async_data_slave_r_wptr_o  ),
-     .async_data_slave_r_rptr_i        ( async_data_slave_r_rptr_i  ),
-     .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )
-    );
-
 
    `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
    `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_DATA_OUT_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
@@ -519,38 +475,185 @@ module pulp_soc import dm::*; #(
    `AXI_ASSIGN_TO_REQ(src_req,s_data_out_bus)
    `AXI_ASSIGN_FROM_RESP(s_data_out_bus,src_resp)
 
+   // Kill or leave cdc to/from cluster
+   if (USE_CLUSTER) begin
 
-   // SOC TO CLUSTER
-   axi_cdc_src #(
-     .aw_chan_t (s2c_aw_chan_t),
-     .w_chan_t  (s2c_w_chan_t),
-     .b_chan_t  (s2c_b_chan_t),
-     .r_chan_t  (s2c_r_chan_t),
-     .ar_chan_t (s2c_ar_chan_t),
-     .axi_req_t (s2c_req_t              ),
-     .axi_resp_t(s2c_resp_t             ),
-    .LogDepth        ( LOG_DEPTH               )
-    ) axi_master_cdc_i (
-     .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
-     .src_clk_i                        ( s_soc_clk                   ),
-     .src_req_i                        ( src_req                     ),
-     .src_resp_o                       ( src_resp                    ),
-     .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),
-     .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
-     .async_data_master_aw_data_o      ( async_data_master_aw_data_o ),
-     .async_data_master_w_wptr_o       ( async_data_master_w_wptr_o  ),
-     .async_data_master_w_rptr_i       ( async_data_master_w_rptr_i  ),
-     .async_data_master_w_data_o       ( async_data_master_w_data_o  ),
-     .async_data_master_ar_wptr_o      ( async_data_master_ar_wptr_o ),
-     .async_data_master_ar_rptr_i      ( async_data_master_ar_rptr_i ),
-     .async_data_master_ar_data_o      ( async_data_master_ar_data_o ),
-     .async_data_master_b_wptr_i       ( async_data_master_b_wptr_i  ),
-     .async_data_master_b_rptr_o       ( async_data_master_b_rptr_o  ),
-     .async_data_master_b_data_i       ( async_data_master_b_data_i  ),
-     .async_data_master_r_wptr_i       ( async_data_master_r_wptr_i  ),
-     .async_data_master_r_rptr_o       ( async_data_master_r_rptr_o  ),
-     .async_data_master_r_data_i       ( async_data_master_r_data_i  )
+     logic s_cluster_isolate_dc;
+     logic s_rstn_cluster_sync_soc;
+
+     assign s_rstn_cluster_sync_soc = cluster_rst_ni;
+
+     assign cluster_test_en_o = dft_test_mode_i;
+     // isolate dc if the cluster is down
+     assign s_cluster_isolate_dc = 1'b0;
+
+     `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
+     `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
+
+     // CLUSTER TO SOC AXI
+     axi_cdc_dst #(
+       .aw_chan_t (c2s_aw_chan_t),
+       .w_chan_t  (c2s_w_chan_t ),
+       .b_chan_t  (c2s_b_chan_t ),
+       .r_chan_t  (c2s_r_chan_t ),
+       .ar_chan_t (c2s_ar_chan_t),
+       .axi_req_t (c2s_req_t    ),
+       .axi_resp_t(c2s_resp_t   ),
+       .LogDepth        ( 3                      )
+      ) axi_slave_cdc_i (
+       .dst_rst_ni                       ( cluster_rst_ni             ),
+       .dst_clk_i                        ( s_soc_clk                  ),
+       .dst_req_o                        ( dst_req                    ),
+       .dst_resp_i                       ( dst_resp                   ),
+       .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),
+       .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
+       .async_data_slave_aw_data_i       ( async_data_slave_aw_data_i ),
+       .async_data_slave_w_wptr_i        ( async_data_slave_w_wptr_i  ),
+       .async_data_slave_w_rptr_o        ( async_data_slave_w_rptr_o  ),
+       .async_data_slave_w_data_i        ( async_data_slave_w_data_i  ),
+       .async_data_slave_ar_wptr_i       ( async_data_slave_ar_wptr_i ),
+       .async_data_slave_ar_rptr_o       ( async_data_slave_ar_rptr_o ),
+       .async_data_slave_ar_data_i       ( async_data_slave_ar_data_i ),
+       .async_data_slave_b_wptr_o        ( async_data_slave_b_wptr_o  ),
+       .async_data_slave_b_rptr_i        ( async_data_slave_b_rptr_i  ),
+       .async_data_slave_b_data_o        ( async_data_slave_b_data_o  ),
+       .async_data_slave_r_wptr_o        ( async_data_slave_r_wptr_o  ),
+       .async_data_slave_r_rptr_i        ( async_data_slave_r_rptr_i  ),
+       .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )
+      );
+
+
+    // SOC TO CLUSTER
+     axi_cdc_src #(
+       .aw_chan_t (s2c_aw_chan_t),
+       .w_chan_t  (s2c_w_chan_t),
+       .b_chan_t  (s2c_b_chan_t),
+       .r_chan_t  (s2c_r_chan_t),
+       .ar_chan_t (s2c_ar_chan_t),
+       .axi_req_t (s2c_req_t              ),
+       .axi_resp_t(s2c_resp_t             ),
+      .LogDepth        ( LOG_DEPTH               )
+      ) axi_master_cdc_i (
+       .src_rst_ni                       ( s_rstn_cluster_sync_soc     ),
+       .src_clk_i                        ( s_soc_clk                   ),
+       .src_req_i                        ( src_req                     ),
+       .src_resp_o                       ( src_resp                    ),
+       .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),
+       .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
+       .async_data_master_aw_data_o      ( async_data_master_aw_data_o ),
+       .async_data_master_w_wptr_o       ( async_data_master_w_wptr_o  ),
+       .async_data_master_w_rptr_i       ( async_data_master_w_rptr_i  ),
+       .async_data_master_w_data_o       ( async_data_master_w_data_o  ),
+       .async_data_master_ar_wptr_o      ( async_data_master_ar_wptr_o ),
+       .async_data_master_ar_rptr_i      ( async_data_master_ar_rptr_i ),
+       .async_data_master_ar_data_o      ( async_data_master_ar_data_o ),
+       .async_data_master_b_wptr_i       ( async_data_master_b_wptr_i  ),
+       .async_data_master_b_rptr_o       ( async_data_master_b_rptr_o  ),
+       .async_data_master_b_data_i       ( async_data_master_b_data_i  ),
+       .async_data_master_r_wptr_i       ( async_data_master_r_wptr_i  ),
+       .async_data_master_r_rptr_o       ( async_data_master_r_rptr_o  ),
+       .async_data_master_r_data_i       ( async_data_master_r_data_i  )
+      );
+
+    dc_token_ring_fifo_din #(
+        .DATA_WIDTH   ( EVNT_WIDTH   ),
+        .BUFFER_DEPTH ( BUFFER_WIDTH )
+    ) u_event_dc (
+        .clk          ( s_soc_clk               ),
+        .rstn         ( s_rstn_cluster_sync_soc ),
+        .data         ( s_cl_event_data         ),
+        .valid        ( s_cl_event_valid        ),
+        .ready        ( s_cl_event_ready        ),
+        .write_token  ( cluster_events_wt_o     ),
+        .read_pointer ( cluster_events_rp_i     ),
+        .data_async   ( cluster_events_da_o     )
     );
+
+
+    edge_propagator_rx ep_dma_pe_evt_i (
+        .clk_i   ( s_soc_clk               ),
+        .rstn_i  ( s_rstn_cluster_sync_soc ),
+        .valid_o ( s_dma_pe_evt            ),
+        .ack_o   ( dma_pe_evt_ack_o        ),
+        .valid_i ( dma_pe_evt_valid_i      )
+    );
+
+    edge_propagator_rx ep_dma_pe_irq_i (
+        .clk_i   ( s_soc_clk               ),
+        .rstn_i  ( s_rstn_cluster_sync_soc ),
+        .valid_o ( s_dma_pe_irq            ),
+        .ack_o   ( dma_pe_irq_ack_o        ),
+        .valid_i ( dma_pe_irq_valid_i      )
+    );
+`ifndef PULP_FPGA_EMUL
+    edge_propagator_rx ep_pf_evt_i (
+        .clk_i   ( s_soc_clk               ),
+        .rstn_i  ( s_rstn_cluster_sync_soc ),
+        .valid_o ( s_pf_evt                ),
+        .ack_o   ( pf_evt_ack_o            ),
+        .valid_i ( pf_evt_valid_i          )
+    );
+`endif
+
+   end else begin // if (USE_CLUSTER)
+
+     // The AXI slave in the cluster->soc direction is **not** unplugged from the interconnect,
+     // because it would require changing the ID width of the exposed AXI port of ControlPULP.
+     // Instead, when the cluster is off we tie off this input bus as well.
+     assign s_data_in_bus.aw_id = '0;
+     assign s_data_in_bus.aw_addr = '0;
+     assign s_data_in_bus.aw_len = '0;
+     assign s_data_in_bus.aw_size = '0;
+     assign s_data_in_bus.aw_burst = '0;
+     assign s_data_in_bus.aw_lock = '0;
+     assign s_data_in_bus.aw_cache = '0;
+     assign s_data_in_bus.aw_prot = '0;
+     assign s_data_in_bus.aw_qos = '0;
+     assign s_data_in_bus.aw_region = '0;
+     assign s_data_in_bus.aw_atop = '0;
+     assign s_data_in_bus.aw_user = '0;
+     assign s_data_in_bus.aw_valid = '0;
+     assign s_data_in_bus.w_data = '0;
+     assign s_data_in_bus.w_strb = '0;
+     assign s_data_in_bus.w_last = '0;
+     assign s_data_in_bus.w_user = '0;
+     assign s_data_in_bus.w_valid = '0;
+     assign s_data_in_bus.b_ready = '0;
+     assign s_data_in_bus.ar_id = '0;
+     assign s_data_in_bus.ar_addr = '0;
+     assign s_data_in_bus.ar_len = '0;
+     assign s_data_in_bus.ar_size = '0;
+     assign s_data_in_bus.ar_burst = '0;
+     assign s_data_in_bus.ar_lock = '0;
+     assign s_data_in_bus.ar_cache = '0;
+     assign s_data_in_bus.ar_prot = '0;
+     assign s_data_in_bus.ar_qos = '0;
+     assign s_data_in_bus.ar_region = '0;
+     assign s_data_in_bus.ar_user = '0;
+     assign s_data_in_bus.ar_valid = '0;
+     assign s_data_in_bus.r_ready = '0;
+
+     // The AXI master in the soc->cluster direction is terminated with AXI error
+     axi_err_slv #(
+       .AxiIdWidth  ( AXI_ID_OUT_WIDTH       ),
+       .axi_req_t   ( s2c_req_t              ),
+       .axi_resp_t  ( s2c_resp_t             ),
+       .Resp        ( axi_pkg::RESP_DECERR   ),
+       .ATOPs       ( 1'b0                   ),
+       .MaxTrans    ( 4                      )   // Transactions terminate at this slave, so minimize
+                                                 // resource consumption by accepting only a few
+                                                 // transactions at a time.
+     ) i_axi_err_slv (
+       .clk_i (s_soc_clk),
+       .rst_ni (s_soc_rstn),
+       .test_i (1'b0),
+       // slave port
+       .slv_req_i  ( src_req  ),
+       .slv_resp_o ( src_resp )
+     );
+
+   end // else: !if(USE_CLUSTER)
+
 
     //********************************************************
     //********************* SOC L2 RAM ***********************
@@ -644,12 +747,6 @@ module pulp_soc import dm::*; #(
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
         .pf_evt_i               ( s_pf_evt               ),
 
-//        .scg_irq_i,
-//        .scp_irq_i,
-//        .scp_secure_irq_i,
-//        .mbox_irq_i,
-//        .mbox_secure_irq_i,
-
         .gpio_in                ( gpio_in_i              ),
         .gpio_out               ( gpio_out_o             ),
         .gpio_dir               ( gpio_dir_o             ),
@@ -723,47 +820,6 @@ module pulp_soc import dm::*; #(
         .axi_i2c_slv_1          ( axi_i2c_slv_1          )
     );
 
-
-
-    dc_token_ring_fifo_din #(
-        .DATA_WIDTH   ( EVNT_WIDTH   ),
-        .BUFFER_DEPTH ( BUFFER_WIDTH )
-    ) u_event_dc (
-        .clk          ( s_soc_clk               ),
-        .rstn         ( s_rstn_cluster_sync_soc ),
-        .data         ( s_cl_event_data         ),
-        .valid        ( s_cl_event_valid        ),
-        .ready        ( s_cl_event_ready        ),
-        .write_token  ( cluster_events_wt_o     ),
-        .read_pointer ( cluster_events_rp_i     ),
-        .data_async   ( cluster_events_da_o     )
-    );
-
-
-    edge_propagator_rx ep_dma_pe_evt_i (
-        .clk_i   ( s_soc_clk               ),
-        .rstn_i  ( s_rstn_cluster_sync_soc ),
-        .valid_o ( s_dma_pe_evt            ),
-        .ack_o   ( dma_pe_evt_ack_o        ),
-        .valid_i ( dma_pe_evt_valid_i      )
-    );
-
-    edge_propagator_rx ep_dma_pe_irq_i (
-        .clk_i   ( s_soc_clk               ),
-        .rstn_i  ( s_rstn_cluster_sync_soc ),
-        .valid_o ( s_dma_pe_irq            ),
-        .ack_o   ( dma_pe_irq_ack_o        ),
-        .valid_i ( dma_pe_irq_valid_i      )
-    );
-`ifndef PULP_FPGA_EMUL
-    edge_propagator_rx ep_pf_evt_i (
-        .clk_i   ( s_soc_clk               ),
-        .rstn_i  ( s_rstn_cluster_sync_soc ),
-        .valid_o ( s_pf_evt                ),
-        .ack_o   ( pf_evt_ack_o            ),
-        .valid_i ( pf_evt_valid_i          )
-    );
-`endif
 
     fc_subsystem #(
         .CORE_TYPE  ( CORE_TYPE          ),
