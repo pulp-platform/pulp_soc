@@ -868,7 +868,7 @@ module pulp_soc import dm::*; #(
 
     soc_interconnect_wrap #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
-        .NR_L2_PORTS         ( control_pulp_pkg::N_L2_BANKS       ),
+        .NR_L2_PORTS         ( N_L2_BANKS       ),
         .AXI_USER_WIDTH      ( AXI_USER_WIDTH   ),
         .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  ),
         .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC )

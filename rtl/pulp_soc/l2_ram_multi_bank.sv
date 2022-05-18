@@ -14,6 +14,7 @@ module l2_ram_multi_bank #(
    parameter int unsigned NB_BANKS                   = 4,
    // Don't forget to adjust the SRAM macros and the FPGA settings if you change the banksizes
    parameter int unsigned BANK_SIZE_INTL_SRAM = 32768, //Number of 32-bit words
+   parameter int unsigned L2_BANK_SIZE_PRI = 8192, // Number of 32-bit words in private banks
    parameter int unsigned BEHAV_MEM = 1
 ) (
    input logic             clk_i,
@@ -24,8 +25,11 @@ module l2_ram_multi_bank #(
    XBAR_TCDM_BUS.Slave     mem_pri_slave[2]
 );
     // Don't forget to adjust the SRAM macros and the FPGA settings if you change the banksizes
-    localparam int unsigned BANK_SIZE_PRI0       = 8192; //Number of 32-bit words
-    localparam int unsigned BANK_SIZE_PRI1       = 8192; //Number of 32-bit words
+    localparam int unsigned BANK_SIZE_PRI0       = L2_BANK_SIZE_PRI; //Number of 32-bit words
+    localparam int unsigned BANK_SIZE_PRI1       = L2_BANK_SIZE_PRI; //Number of 32-bit words
+
+    if (L2_BANK_SIZE_PRI != 8192)
+      $fatal(1, "L2_BANK_SIZE_PRI needs to be 8192");
 
     //Derived parameters
     localparam int unsigned INTL_MEM_ADDR_WIDTH = $clog2(BANK_SIZE_INTL_SRAM);

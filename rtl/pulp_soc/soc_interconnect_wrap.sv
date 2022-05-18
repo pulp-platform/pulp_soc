@@ -28,7 +28,6 @@
 
 module soc_interconnect_wrap
     import pkg_soc_interconnect::addr_map_rule_t;
-    import control_pulp_pkg::*;
     import axi_pkg::xbar_cfg_t;
     #(
       parameter int  NR_HWPE_PORTS = 0,
