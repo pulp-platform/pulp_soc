@@ -633,6 +633,31 @@ module pulp_soc import dm::*; #(
      assign s_data_in_bus.ar_valid = '0;
      assign s_data_in_bus.r_ready = '0;
 
+     assign cluster_events_wt_o = '0;
+     assign cluster_events_da_o = '0;
+
+     assign async_data_slave_aw_rptr_o = '0;
+     assign async_data_slave_w_rptr_o = '0;
+     assign async_data_slave_ar_rptr_o = '0;
+     assign async_data_slave_b_wptr_o = '0;
+     assign async_data_slave_b_data_o = '0;
+     assign async_data_slave_r_wptr_o = '0;
+     assign async_data_slave_r_data_o = '0;
+
+     assign async_data_master_aw_wptr_o = '0;
+     assign async_data_master_aw_data_o = '0;
+     assign async_data_master_ar_wptr_o = '0;
+     assign async_data_master_ar_data_o = '0;
+     assign async_data_master_w_wptr_o = '0;
+     assign async_data_master_w_data_o = '0;
+     assign async_data_master_r_rptr_o = '0;
+     assign async_data_master_b_rptr_o = '0;
+
+     assign pf_evt_ack_o = '0;
+     assign dma_pe_evt_ack_o = '0;
+
+     assign cluster_test_en_o = dft_test_mode_i;
+
      // The AXI master in the soc->cluster direction is terminated with AXI error
      axi_err_slv #(
        .AxiIdWidth  ( AXI_ID_OUT_WIDTH       ),
