@@ -12,6 +12,7 @@
 `define REG_INFO        7'b0000000 //BASEADDR+0x00 CONTAINS NUMBER OF CORES [31:16] AND CLUSTERS [15:0]
 `define REG_FCBOOT      7'b0000001 //BASEADDR+0x04 not used at the moment
 `define REG_FCFETCH     7'b0000010 //BASEADDR+0x08 not used at the moment
+`define REG_CORE_RELEASE 7'b0000110 //BASEADDR+0X18 core release in preloaded bootmode
 
 // Regster to configure the direction of SPI and I2C peripherals: the first bit as select signal for output multiplexers ('0' for master, '1' for slave)
 `define REG_SPI_DIRECTION  7'b0011000 //BASEADDR+0x60 mux selection bit for inter-socket SPI
@@ -23,6 +24,9 @@
 `define REG_CS_RO       7'b0110000 //BASEADDR+0xC0 32bit GP register to be used during testing to return EOC(bit[31]) and status(bit[30:0]) Read Only mirror
 `define REG_BOOTSEL     7'b0110001 //BASEADDR+0xC4 bootsel
 `define REG_CLKSEL      7'b0110010 //BASEADDR+0xC8 clocksel
+//`define REG_CORE_RELEASE 7'b0110011 //BASEADDR+0xCC core release in preloaded bootmode
+ //BASEADDR+0xCC clocksel
+
 
 `define REG_CLUSTER_CTRL 7'b0011100 //BASEADDR+0x70 CLUSTER Ctrl
 `define REG_CTRL_PER     7'b0011110
@@ -94,6 +98,7 @@ module apb_soc_ctrl #(
    logic            r_cluster_pow;
    logic     [31:0] r_bootaddr;
    logic            r_fetchen;
+   logic            r_core_release;
 
    logic            r_cluster_irq;
 
@@ -179,6 +184,10 @@ module apb_soc_ctrl #(
                    // allow fc fetch enable to be controlled through JTAG
                    r_fetchen <= PWDATA[0];
                  end
+                `REG_CORE_RELEASE:
+                 begin
+                   r_core_release <= PWDATA[0];
+                 end
                 `REG_SPI_DIRECTION:
                 begin
                    r_sel_spi_dir <= PWDATA[0];
@@ -233,6 +242,8 @@ module apb_soc_ctrl #(
             PRDATA = r_bootaddr;
           `REG_FCFETCH:
             PRDATA = r_fetchen;
+          `REG_CORE_RELEASE:
+            PRDATA = r_core_release;
           `REG_INFO:
             PRDATA = {n_cores,n_clusters};
           `REG_CORESTATUS:
@@ -255,7 +266,7 @@ module apb_soc_ctrl #(
           `REG_SPI_DIRECTION:
             PRDATA = {31'b0, r_sel_spi_dir};
 		  `REG_I2C_DIRECTION:
-            PRDATA = {31'b0, r_sel_i2c_mux};		  
+            PRDATA = {31'b0, r_sel_i2c_mux};
           `REG_CTRL_PER:
             PRDATA = {31'b0, r_sel_hyper_axi};
           `REG_CLUSTER_IRQ:
