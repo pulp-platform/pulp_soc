@@ -197,24 +197,24 @@ module soc_event_generator #(
     always @ (posedge HCLK or negedge HRESETn)
     begin
         if(~HRESETn) begin
-            r_apb_events      =  'h0;
+            r_apb_events     <=  'h0;
             r_fc_mask        <=  {256{1'b1}};
             r_cl_mask        <=  {256{1'b1}};
             r_pr_mask        <=  {256{1'b1}};
             r_timer_sel_lo   <=  'h0;
             r_timer_sel_hi   <=  'h0;
-            r_err             =  'h0;
+            r_err            <=  'h0;
         end
         else begin
             for (int i=0;i<EVNT_NUM;i++)
                 if(s_err[i])
-                    r_err[i] = 1'b1;
-            r_apb_events     =  'h0;
+                    r_err[i] <= 1'b1;
+            r_apb_events     <= 'h0;
             if (PSEL && PENABLE && PWRITE) begin
                 case (s_apb_addr)
                     `REG_EVENT:
                     begin
-                        r_apb_events   = PWDATA[APB_EVNT_NUM-1:0];
+                        r_apb_events  <= PWDATA[APB_EVNT_NUM-1:0];
                     end
                     `REG_FC_MASK_0:
                     begin
@@ -324,21 +324,21 @@ module soc_event_generator #(
             end else if (PSEL && PENABLE && ~PWRITE) begin
                 case (s_apb_addr)
                     `REG_ERR_0:
-                            r_err[31:0]  = 'h0;
+                            r_err[31:0]  <= 'h0;
                     `REG_ERR_1:
-                            r_err[63:32] = 'h0;
+                            r_err[63:32] <= 'h0;
                     `REG_ERR_2:
-                            r_err[95:64] = 'h0;
+                            r_err[95:64] <= 'h0;
                     `REG_ERR_3:
-                            r_err[127:96] = 'h0;
+                            r_err[127:96] <= 'h0;
                     `REG_ERR_4:
-                            r_err[159:128] = 'h0;
+                            r_err[159:128] <= 'h0;
                     `REG_ERR_5:
-                            r_err[191:160] = 'h0;
+                            r_err[191:160] <= 'h0;
                     `REG_ERR_6:
-                            r_err[223:192] = 'h0;
+                            r_err[223:192] <= 'h0;
                     `REG_ERR_7:
-                            r_err[255:224] = 'h0;
+                            r_err[255:224] <= 'h0;
                 endcase // s_apb_addr
             end
         end
