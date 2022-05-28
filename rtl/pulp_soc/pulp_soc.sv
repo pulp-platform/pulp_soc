@@ -657,6 +657,10 @@ module pulp_soc import dm::*; #(
 
      assign pf_evt_ack_o = '0;
      assign dma_pe_evt_ack_o = '0;
+     assign s_dma_pe_evt = '0;
+     assign s_dma_pe_irq = '0;
+     assign s_pf_evt = '0;
+     assign s_cl_event_ready = '0;
 
      assign cluster_test_en_o = dft_test_mode_i;
 
