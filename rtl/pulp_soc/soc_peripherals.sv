@@ -438,7 +438,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .L2_wo_rvalid_i   ( l2_rx_master.r_valid ),
 
         .dft_test_mode_i  ( dft_test_mode_i      ),
-        .dft_cg_enable_i  ( 1'b0                 ),
+        .dft_cg_enable_i  ( dft_cg_enable_i      ),
 
         .sys_clk_i        ( clk_i                ),
         .periph_clk_i     ( periph_clk_i         ),

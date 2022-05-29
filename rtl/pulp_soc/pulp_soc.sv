@@ -935,7 +935,7 @@ module pulp_soc import dm::*; #(
     ) i_dmi_jtag (
         .clk_i                ( s_soc_clk           ),
         .rst_ni               ( s_soc_rstn          ),
-        .testmode_i           ( 1'b0                ),
+        .testmode_i           ( dft_test_mode_i     ),
         .dmi_req_o            ( jtag_dmi_req        ),
         .dmi_req_valid_o      ( jtag_req_valid      ),
         .dmi_req_ready_i      ( debug_req_ready     ),
