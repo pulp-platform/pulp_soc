@@ -383,6 +383,8 @@ module udma_subsystem
                 .periph_clk_i        ( s_clk_periphs_per[PER_ID_UART+g_uart]   ),
                 .rstn_i              ( sys_resetn_i                            ),
 
+                .dft_test_mode_i     ( dft_test_mode_i                         ),
+
                 .uart_tx_o           ( uart_tx_o[g_uart]                       ),
                 .uart_rx_i           ( uart_rx_i[g_uart]                       ),
 
