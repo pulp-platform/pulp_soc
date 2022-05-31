@@ -24,7 +24,6 @@
 `define REG_CS_RO       7'b0110000 //BASEADDR+0xC0 32bit GP register to be used during testing to return EOC(bit[31]) and status(bit[30:0]) Read Only mirror
 `define REG_BOOTSEL     7'b0110001 //BASEADDR+0xC4 bootsel
 `define REG_CLKSEL      7'b0110010 //BASEADDR+0xC8 clocksel
-//`define REG_CORE_RELEASE 7'b0110011 //BASEADDR+0xCC core release in preloaded bootmode
  //BASEADDR+0xCC clocksel
 
 
@@ -148,11 +147,12 @@ module apb_soc_ctrl #(
         r_cluster_byp          <= 1'b1;
         r_sel_hyper_axi        <= 1'b0;
         r_sel_spi_dir          <= 1'b1; // default value of select signal for inter-socket spi peripheral: slave
-		r_sel_i2c_mux          <= 1'b1; // default value of select signal for inter-socket i2c peripheral: master
+	r_sel_i2c_mux          <= 1'b1; // default value of select signal for inter-socket i2c peripheral: master
         r_cluster_fetch_enable <= 1'b0;
         r_cluster_boot         <= '0;
         r_cluster_rstn         <= 1'b1;
         r_cluster_irq          <= 1'b0;
+        r_core_release         <= 1'b0;
       end
       else
       begin
