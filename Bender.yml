@@ -29,7 +29,7 @@ dependencies:
   common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
   cluster_interconnect:   { git: "https://github.com/pulp-platform/cluster_interconnect.git", version: 1.1.1 }
   fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.6 }
-  jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", rev: "v0.1" }
+  jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", rev: v0.2.0 }
   cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "pulpissimo-v4.0.0"}
   ibex:                   { git: "https://github.com/pulp-platform/ibex.git", rev: "pulpissimo-v6.1.2" }
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
