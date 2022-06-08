@@ -270,8 +270,8 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .DbgTriggerEn     ( 1'b1                ),
         .DbgHwBreakNum    ( 1                   ),
         .SecureIbex       ( 1'b0                ),
-        .DmHaltAddr       ( 32'h1A110800        ),
-        .DmExceptionAddr  ( 32'h1A110808        )
+        .DmHaltAddr       ( `DEBUG_START_ADDR + dm::HaltAddress[31:0]      ),
+        .DmExceptionAddr  ( `DEBUG_START_ADDR + dm::ExceptionAddress[31:0] )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
         .rst_ni                ( rst_ni            ),
