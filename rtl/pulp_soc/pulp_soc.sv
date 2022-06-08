@@ -1005,8 +1005,9 @@ module pulp_soc import dm::*; #(
     );
     assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
 
-    jtag_tap_top jtag_tap_top_i
-    (
+    jtag_tap_top  #(
+        .IDCODE_VALUE             ( `PULP_JTAG_IDCODE   )
+    ) jtag_tap_top_i (
         .tck_i                    ( jtag_tck_i         ),
         .trst_ni                  ( jtag_trst_ni       ),
         .tms_i                    ( jtag_tms_i         ),
