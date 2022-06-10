@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [4.4.0] - 2022-06-10
+- Bump cv32e40p to pulpissimo-v4.1.0 (Unlock all interrupts and increases fpu latency)
+
+## [4.3.0] - 2022-06-09
+### Fixed
+- Update jtag_pulp to v0.2.0
+
+## [4.2.0] - 2022-06-09
+### Changed
+- Use PULP Platform IDCODE
+
 ## [4.1.0] - 2022-05-05
 ### Fixed
 - tcdm_err_slave: stall r_opc for 1 cycle
