@@ -29,7 +29,6 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     parameter N_I2C_SLV           = 2,
     parameter SIM_STDOUT          = 1,
     parameter AXI_ADDR_WIDTH      = 0,
-    parameter AXI_DATA_OUT_WIDTH  = 0,
     parameter AXI_DATA_IN_WIDTH   = 0,
     parameter AXI_64_ID_IN_WIDTH  = 0,
     parameter AXI_32_ID_OUT_WIDTH = 0,
@@ -69,6 +68,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     APB_BUS.Master                            apb_serial_link_master,
     // MASTER PORT TO PADFRAME
     APB_BUS.Master                            apb_pad_cfg_master,
+    // MASTER PORT TO SENSOR DMA
+    APB_BUS.Master                            apb_sdma_cfg_master,
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master                      l2_rx_master,
     XBAR_TCDM_BUS.Master                      l2_tx_master,
@@ -305,6 +306,7 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .clk_ctrl_master     ( apb_clk_ctrl_master   ),
         .serial_link_master  ( apb_serial_link_master),
         .pad_cfg_master      ( apb_pad_cfg_master    ),
+        .sdma_master         ( apb_sdma_cfg_master   ),
         .gpio_master         ( s_gpio_bus            ),
         .udma_master         ( s_udma_bus            ),
         .soc_ctrl_master     ( s_soc_ctrl_bus        ),

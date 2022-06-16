@@ -53,6 +53,7 @@ module soc_interconnect_wrap
        XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
        XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
+       XBAR_TCDM_BUS.Slave      sdma[4], //Sensor DMA ports
        AXI_BUS.Slave            axi_master_plug[N_EXT_MASTERS_TO_SOC-1:0], // Normaly used for EXT -> SoC communication
        AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
        AXI_BUS.Master           axi_ext_mst, // Used for SoC -> nci_cp_top
@@ -195,11 +196,19 @@ module soc_interconnect_wrap
     //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
     // Using a macro instead of a package parameter is an ugly but necessary workaround.
     // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
-    `define NR_SOC_TCDM_MASTER_PORTS 5
-    for (genvar i = 0; i < 4; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
+    `define NR_SOC_TCDM_MASTER_PORTS 5 // FC instructions, FC data, uDMA RX, uDMA TX, debug acces
+    `define NR_SDMA_TCDM_MASTER_PORTS 4 // sdma (x4)
+
+    // wrap sdma tcdm ports
+    for (genvar i = 0; i < pkg_soc_interconnect::NR_SDMA_TCDM_MASTER_PORTS; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], sdma[i])
     end
 
+    // wrap ext->soc tcdm ports
+    for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_SDMA_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
+    end
+  
     XBAR_TCDM_BUS contiguous_slaves[3]();
     `TCDM_ASSIGN_INTF(l2_private_slaves[0], contiguous_slaves[0])
     `TCDM_ASSIGN_INTF(l2_private_slaves[1], contiguous_slaves[1])

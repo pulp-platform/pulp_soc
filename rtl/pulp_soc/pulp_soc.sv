@@ -24,12 +24,15 @@ module pulp_soc import dm::*; #(
     parameter SIM_STDOUT         = 1,
     parameter AXI_ADDR_WIDTH     = 32,
     parameter AXI_DATA_IN_WIDTH  = 64,
-    parameter AXI_DATA_OUT_WIDTH = 32,
+    parameter AXI_DATA_OUT_S2C_WIDTH = 32,
+    parameter AXI_DATA_OUT_S2E_WIDTH = 64,
     parameter AXI_ID_IN_WIDTH    = 7,
-    parameter AXI_ID_OUT_WIDTH   = 5,
+    parameter AXI_ID_OUT_S2C_WIDTH = 5,
+    parameter AXI_ID_OUT_S2E_WIDTH = 6,
     parameter AXI_USER_WIDTH     = 6,
     parameter AXI_STRB_WIDTH_IN  = AXI_DATA_IN_WIDTH/8,
-    parameter AXI_STRB_WIDTH_OUT = AXI_DATA_OUT_WIDTH/8,
+    parameter AXI_STRB_WIDTH_S2C_OUT = AXI_DATA_OUT_S2C_WIDTH/8,
+    parameter AXI_STRB_WIDTH_S2E_OUT = AXI_DATA_OUT_S2E_WIDTH/8,
     parameter BUFFER_WIDTH       = 8,
     parameter C2S_AW_WIDTH       = 80,
     parameter C2S_W_WIDTH        = 79,
@@ -58,6 +61,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned N_L2_BANKS_PRI = 0,
     parameter int unsigned L2_BANK_SIZE = 0,
     parameter int unsigned L2_BANK_SIZE_PRI = 0,
+    parameter int unsigned L2_SIZE = 0,
     parameter int unsigned NUM_INTERRUPTS = 0,
     parameter int unsigned MACRO_ROM = 0,
     parameter int unsigned USE_CLUSTER = 1
@@ -364,6 +368,7 @@ module pulp_soc import dm::*; #(
     APB_BUS                s_apb_clic_bus ();
     APB_BUS                s_apb_hwpe_bus ();
     APB_BUS                s_apb_debug_bus();
+    APB_BUS                s_apb_sdma_bus();
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
@@ -374,11 +379,42 @@ module pulp_soc import dm::*; #(
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_OUT_WIDTH),
-        .AXI_ID_WIDTH   ( AXI_ID_OUT_WIDTH  ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2C_WIDTH), //32
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_S2C_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_out_bus (); // to cluster
 
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2C_WIDTH), //32
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_S2C_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) s_axi_ext_core_mst (); // to nci_cp_top from FC core
+ 
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH), //64
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_S2E_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) s_axi_ext_core_dw_mst (); // to nci_cp_top from FC core
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH), //64
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_S2E_WIDTH  ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) s_axi_ext_sdma_mst (); // to nci_cp_top from sensor DMA
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH ), //64
+        .AXI_ID_WIDTH   ( AXI_ID_OUT_S2E_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_mux_ext_slv[2]();
+    // Wrap FC core and sdma interfaces to an array of interfaces
+    `AXI_ASSIGN(axi_mux_ext_slv[0], s_axi_ext_core_dw_mst) // FC core
+    `AXI_ASSIGN(axi_mux_ext_slv[1], s_axi_ext_sdma_mst) // sdma
+    
     ////////////////////
     // AXI Mux inputs //
     ////////////////////
@@ -436,6 +472,7 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
     XBAR_TCDM_BUS s_lint_fc_instr_bus ();
     XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS]();
+    XBAR_TCDM_BUS s_sdma_bus[4]();
 
     `ifdef REMAP_ADDRESS
         logic [3:0] base_addr_int;
@@ -462,11 +499,11 @@ module pulp_soc import dm::*; #(
    c2s_req_t   dst_req ;
    c2s_resp_t  dst_resp;
 
-   `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_DATA_OUT_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_S2C_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_S2C_WIDTH-1:0],logic[AXI_DATA_OUT_S2C_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_S2C_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_S2C_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+   `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_S2C_WIDTH-1:0],logic[AXI_ID_OUT_S2C_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
 
    `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
    `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
@@ -666,7 +703,7 @@ module pulp_soc import dm::*; #(
 
      // The AXI master in the soc->cluster direction is terminated with AXI error
      axi_err_slv #(
-       .AxiIdWidth  ( AXI_ID_OUT_WIDTH       ),
+       .AxiIdWidth  ( AXI_ID_OUT_S2C_WIDTH   ),
        .axi_req_t   ( s2c_req_t              ),
        .axi_resp_t  ( s2c_resp_t             ),
        .Resp        ( axi_pkg::RESP_DECERR   ),
@@ -729,10 +766,9 @@ module pulp_soc import dm::*; #(
 
         // AXI widths for spi_slv, i2c_slvs AXI conversion within soc_peripherals
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
-        .AXI_DATA_OUT_WIDTH ( AXI_DATA_OUT_WIDTH                    ),
         .AXI_DATA_IN_WIDTH  ( AXI_DATA_IN_WIDTH                     ),
         .AXI_64_ID_IN_WIDTH ( AXI_ID_IN_WIDTH                       ),
-        .AXI_32_ID_OUT_WIDTH( AXI_ID_OUT_WIDTH                      ),
+        .AXI_32_ID_OUT_WIDTH( AXI_ID_OUT_S2C_WIDTH                  ),
         .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH                        )
 
     ) soc_peripherals_i (
@@ -764,6 +800,7 @@ module pulp_soc import dm::*; #(
         .apb_serial_link_master ( apb_serial_link_bus    ),
         .apb_clk_ctrl_master    ( apb_clk_ctrl_bus       ),
         .apb_pad_cfg_master     ( apb_pad_cfg_bus        ),
+        .apb_sdma_cfg_master    ( s_apb_sdma_bus         ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
@@ -899,6 +936,73 @@ module pulp_soc import dm::*; #(
         .mbox_secure_irq_i
     );
 
+    // Sensor DMA
+
+    // Configuration parameters
+    localparam int unsigned SDMA_NB_OUTSND_BURSTS = 8;
+    localparam int unsigned SDMA_REG_DATA_WIDTH = 32;
+    localparam int unsigned SDMA_REG_ADDR_WIDTH = 32;
+
+    dmac_wrap_fc_idma #(
+      .AXI_ADDR_WIDTH   ( AXI_ADDR_WIDTH      ),
+      .AXI_DATA_WIDTH   ( AXI_DATA_OUT_S2E_WIDTH ),
+      .AXI_USER_WIDTH   ( AXI_USER_WIDTH      ),
+      .AXI_ID_WIDTH     ( AXI_ID_OUT_S2C_WIDTH),
+      .DATA_WIDTH       ( SDMA_REG_DATA_WIDTH ),
+      .ADDR_WIDTH       ( SDMA_REG_ADDR_WIDTH ),
+      .NUM_STREAMS      ( 1                   ),
+      .L2_SIZE          ( L2_SIZE             ), // size of src/dst memory
+      .NB_OUTSND_BURSTS ( SDMA_NB_OUTSND_BURSTS )
+    ) i_sensor_dma (
+      .clk_i           (s_soc_clk                       ),
+      .rst_ni          (s_soc_rstn                      ),
+      .test_mode_i     (dft_test_mode_i                 ),
+      .apb_sdma_cfg_bus(s_apb_sdma_bus),
+      .tcdm_master     (s_sdma_bus),
+      .ext_master      (s_axi_ext_sdma_mst),
+      .term_event_o    (/*s_sdma_term_event*/),
+      .term_irq_o      (), // unused for now
+      .busy_o          ()  // unused for now
+    );
+
+    // Upsize AXI data width SOC->EXT (32b->64b) direction in the core path
+    // This is needed for compliance with the 64b DMA coupled with the core, that
+    // can handle 64b transfers without the mem->axi bottleneck (DW = 32b) of the core
+    // The two 64b ports (1 from the core, 1 from the sdma) are muxed to the unique 64b output port
+
+    axi_dw_converter_intf #(
+      .AXI_ID_WIDTH            ( AXI_ID_OUT_S2C_WIDTH),
+      .AXI_ADDR_WIDTH          ( AXI_ADDR_WIDTH     ),
+      .AXI_SLV_PORT_DATA_WIDTH ( AXI_DATA_OUT_S2C_WIDTH ), //32b
+      .AXI_MST_PORT_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH ), //64b
+      .AXI_USER_WIDTH          ( AXI_USER_WIDTH     ),
+      .AXI_MAX_READS           ( 1                  )
+    ) axi_dw_upsize_32_64_i (
+      .clk_i  ( s_soc_clk       ),
+      .rst_ni ( s_soc_rstn      ),
+      .slv    ( s_axi_ext_core_mst ),
+      .mst    ( s_axi_ext_core_dw_mst )
+    );
+    
+    // Arbitrate between core and sdma to communicate with the single external port
+    axi_mux_intf #(
+      .SLV_AXI_ID_WIDTH( AXI_ID_OUT_S2C_WIDTH ),
+      .MST_AXI_ID_WIDTH( AXI_ID_OUT_S2E_WIDTH ),
+      .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH     ),
+      .AXI_DATA_WIDTH( AXI_DATA_OUT_S2E_WIDTH ),
+      .AXI_USER_WIDTH( AXI_USER_WIDTH     ),
+      .NO_SLV_PORTS( 2 ),
+      .MAX_W_TRANS( 1 ),
+      .FALL_THROUGH( 1'b1 )
+    ) i_axi64_ext_mux (
+      .clk_i(s_soc_clk),
+      .rst_ni(s_soc_rstn),
+      .test_i(dft_test_mode_i),
+      .slv(axi_mux_ext_slv),
+      .mst(axi_ext_mst)
+    );
+
+    // FC interconnect
     soc_interconnect_wrap #(
         .NR_HWPE_PORTS       ( NB_HWPE_PORTS    ),
         .NR_L2_PORTS         ( N_L2_BANKS       ),
@@ -915,13 +1019,14 @@ module pulp_soc import dm::*; #(
         .tcdm_udma_tx     ( s_lint_udma_tx_bus  ),
         .tcdm_debug       ( s_lint_debug_bus    ),
         .tcdm_hwpe        ( s_lint_hwpe_bus     ),
+        .sdma             ( s_sdma_bus          ),
 
         // ext-to-pms direction (wrapped interface)
         .axi_master_plug  ( ext_masters_to_soc  ), // from external modules (cluster, spi, i2c_1, i2c_2, nci_cp_top)
 
         // pms-to-ext direction (discrete interfaces)
         .axi_slave_plug   ( s_data_out_bus      ), // to_cluster
-        .axi_ext_mst      ( axi_ext_mst         ), // to nci_cp_top
+        .axi_ext_mst      ( s_axi_ext_core_mst  ), // to nci_cp_top
         .apb_peripheral_bus    ( s_apb_periph_bus        ), // to apb_periph
 
         .l2_interleaved_slaves ( s_mem_l2_bus            ), // to interleaved L2
