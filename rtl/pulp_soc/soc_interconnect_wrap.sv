@@ -42,7 +42,8 @@ module soc_interconnect_wrap
       localparam int AXI_OUT_ADDR_WIDTH = 32, // All addresses in the SoC must be 32-bit
       localparam int AXI_OUT_DATA_WIDTH = 32,  // The internal TCDM->AXI protocol converter does not support any other
                                               // datawidths than 32-bit
-      parameter int N_EXT_MASTERS_TO_SOC = 5 // Number of external masters in the EXT->SoC direction. Parameter for this module, localparam in pulp_soc.sv
+      parameter int N_EXT_MASTERS_TO_SOC = 2, // Number of in-band external masters in the EXT->SoC direction. Parameter for this module, localparam in pulp_soc.sv
+      parameter int N_EXT_MASTERS_TO_SOC_PERIPH = 3 // Number of out-of-band external masters in the EXT->SoC direction. Parameter for this module, localparam in pulp_soc.sv
     ) (
        input logic clk_i,
        input logic rst_ni,
@@ -54,7 +55,8 @@ module soc_interconnect_wrap
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
        XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
        XBAR_TCDM_BUS.Slave      sdma[4], //Sensor DMA ports
-       AXI_BUS.Slave            axi_master_plug[N_EXT_MASTERS_TO_SOC-1:0], // Normaly used for EXT -> SoC communication
+       AXI_BUS.Slave            axi_master_plug[N_EXT_MASTERS_TO_SOC-1:0], // Normaly used for EXT -> SoC communication (in-band)
+       AXI_BUS.Slave            axi_master_plug_periph[N_EXT_MASTERS_TO_SOC_PERIPH-1:0], // Normaly used for EXT -> SoC communication (out-of-band)
        AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
        AXI_BUS.Master           axi_ext_mst, // Used for SoC -> nci_cp_top
        APB_BUS.Master           apb_peripheral_bus, // Connects to all the SoC Peripherals (SoC -> periph)
@@ -71,14 +73,15 @@ module soc_interconnect_wrap
     // 64-bit AXI Mux (External to SoC communication) //
     ////////////////////////////////////////////////////
 
-    localparam int unsigned AXI_IN_ID_WIDTH_MUX = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC); // = 6 + clog2(5) = 9
+    localparam int unsigned AXI_IN_ID_WIDTH_MUX = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC); // = 6 + clog2(2) = 7
+    localparam int unsigned AXI_IN_ID_WIDTH_MUX_PERIPH = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC_PERIPH); // = 6 + clog2(3) = 8
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_IN_ADDR_WIDTH   ),
         .AXI_DATA_WIDTH ( AXI_IN_DATA_WIDTH   ),
         .AXI_ID_WIDTH   ( AXI_IN_ID_WIDTH_MUX ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
-    ) axi_mux_out (); // AXI Mux output
+    ) axi_mux_inband_out (); // AXI Mux in-band output
 
     axi_mux_intf #(
       .SLV_AXI_ID_WIDTH( AXI_IN_ID_WIDTH ),
@@ -89,18 +92,41 @@ module soc_interconnect_wrap
       .NO_SLV_PORTS( N_EXT_MASTERS_TO_SOC ),
       .MAX_W_TRANS( 1 ),
       .FALL_THROUGH( 1'b1 )
-    ) i_axi64_mux (
+    ) i_axi64_inband_mux (
       .clk_i,
       .rst_ni,
       .test_i(test_en_i),
       .slv(axi_master_plug),
-      .mst(axi_mux_out)
+      .mst(axi_mux_inband_out)
     );
 
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_IN_ADDR_WIDTH   ),
+        .AXI_DATA_WIDTH ( 32 ),
+        .AXI_ID_WIDTH   ( AXI_IN_ID_WIDTH_MUX_PERIPH ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) axi_mux_ooband_out (); // AXI Mux out-of-band output
 
-    //////////////////////////////////////////////////////////////
-    // 64-bit AXI to TCDM Bridge (Cluster to SoC communication) //
-    //////////////////////////////////////////////////////////////
+    axi_mux_intf #(
+      .SLV_AXI_ID_WIDTH( AXI_IN_ID_WIDTH ),
+      .MST_AXI_ID_WIDTH( AXI_IN_ID_WIDTH_MUX_PERIPH ),
+      .AXI_ADDR_WIDTH( AXI_IN_ADDR_WIDTH ),
+      .AXI_DATA_WIDTH( 32 ),
+      .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+      .NO_SLV_PORTS( N_EXT_MASTERS_TO_SOC_PERIPH ),
+      .MAX_W_TRANS( 1 ),
+      .FALL_THROUGH( 1'b1 )
+    ) i_axi32_ooband_mux (
+      .clk_i,
+      .rst_ni,
+      .test_i(test_en_i),
+      .slv(axi_master_plug_periph),
+      .mst(axi_mux_ooband_out)
+    );
+
+    //////////////////////////////////////////////////////////////////
+    // 64-bit AXI to TCDM Bridge (In-band Ext to SoC communication) //
+    //////////////////////////////////////////////////////////////////
     XBAR_TCDM_BUS axi_bridge_2_interconnect[pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS](); //We need 4
                                                                                                          //32-bit TCDM
                                                                                                          //ports to
@@ -113,15 +139,67 @@ module soc_interconnect_wrap
     axi64_2_lint32_wrap #(
                      .AXI_USER_WIDTH(AXI_USER_WIDTH),
                      .AXI_ID_WIDTH(AXI_IN_ID_WIDTH_MUX) // Increased due to AXI Mux
-                     ) i_axi64_to_lint32(
+                     ) i_axi64_to_lint32_inband (
                                          .clk_i,
                                          .rst_ni,
                                          .test_en_i,
-                                         .axi_master(axi_mux_out),
+                                         .axi_master(axi_mux_inband_out),
                                          .tcdm_slaves(axi_bridge_2_interconnect)
                                          );
 
+    //////////////////////////////////////////////////////////////////////
+    // 32-bit AXI to TCDM Bridge (Out-of-band Ext to SoC communication) //
+    //////////////////////////////////////////////////////////////////////
+    XBAR_TCDM_BUS axi_bridge_2_interconnect_periph[pkg_soc_interconnect::NR_PERIPH_2_SOC_TCDM_MASTER_PORTS]();
 
+    localparam int unsigned NumBanks = 1;
+    logic [NumBanks-1:0] [31:0] mem_addr  ;
+    logic [NumBanks-1:0] [31:0] mem_wdata ;
+    logic [NumBanks-1:0] [31:0] mem_rdata ;
+    logic [NumBanks-1:0] [3:0]  mem_strb  ;
+    logic [NumBanks-1:0]        mem_req   ;
+    logic [NumBanks-1:0]        mem_gnt   ;
+    logic [NumBanks-1:0]        mem_we    ;
+    logic [NumBanks-1:0]        mem_rvalid;
+
+  // axi_a32_d32 to tcdm conversion
+    axi_to_mem_interleaved_intf #(
+      .AXI_ID_WIDTH(AXI_IN_ID_WIDTH_MUX_PERIPH),
+      .AXI_ADDR_WIDTH(AXI_IN_ADDR_WIDTH),
+      .AXI_DATA_WIDTH(32),
+      .AXI_USER_WIDTH(AXI_USER_WIDTH),
+      .MEM_NUM_BANKS(NumBanks),
+      .BUF_DEPTH(3)
+    ) i_axi32_to_lint32_ooband (
+      .clk_i,
+      .rst_ni,
+      // AXI slave port
+      .slv (axi_mux_ooband_out),
+      // TCDM master ports
+      .mem_req_o(mem_req),
+      .mem_gnt_i(mem_gnt),
+      .mem_addr_o(mem_addr),
+      .mem_wdata_o(mem_wdata),
+      .mem_strb_o(mem_strb),
+      .mem_atop_o(),
+      .mem_we_o(mem_we),
+      .mem_rvalid_i(mem_rvalid),
+      .mem_rdata_i(mem_rdata),
+      .busy_o()
+    );
+
+    // Wrap TCDM ports with interfaces
+    for (genvar i = 0; i < NumBanks; i++) begin: gen_ext_to_mem_periph
+       assign axi_bridge_2_interconnect_periph[i].req = mem_req[i];
+       assign axi_bridge_2_interconnect_periph[i].add = mem_addr[i];
+       assign axi_bridge_2_interconnect_periph[i].wen  = ~mem_we[i];
+       assign axi_bridge_2_interconnect_periph[i].wdata = mem_wdata[i];
+       assign axi_bridge_2_interconnect_periph[i].be    = mem_strb[i];
+       assign mem_gnt[i] = axi_bridge_2_interconnect_periph[i].gnt;
+       assign mem_rdata[i] = axi_bridge_2_interconnect_periph[i].r_rdata;
+       assign mem_rvalid[i] = axi_bridge_2_interconnect_periph[i].r_valid;
+//       assign axi_bridge_2_interconnect_periph[i].r_opc = '0;
+    end
 
     ////////////////////////////////////////
     // Address Rules for the interconnect //
@@ -198,6 +276,7 @@ module soc_interconnect_wrap
     // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
     `define NR_SOC_TCDM_MASTER_PORTS 5 // FC instructions, FC data, uDMA RX, uDMA TX, debug acces
     `define NR_SDMA_TCDM_MASTER_PORTS 4 // sdma (x4)
+    `define NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS 4 // ext periph (x1)
 
     // wrap sdma tcdm ports
     for (genvar i = 0; i < pkg_soc_interconnect::NR_SDMA_TCDM_MASTER_PORTS; i++) begin
@@ -207,6 +286,11 @@ module soc_interconnect_wrap
     // wrap ext->soc tcdm ports
     for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
         `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_SDMA_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
+    end
+
+    // wrap ext periph->soc tcdm ports
+    for (genvar i = 0; i < pkg_soc_interconnect::NR_PERIPH_2_SOC_TCDM_MASTER_PORTS; i++) begin
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_SDMA_TCDM_MASTER_PORTS + `NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect_periph[i])
     end
   
     XBAR_TCDM_BUS contiguous_slaves[3]();

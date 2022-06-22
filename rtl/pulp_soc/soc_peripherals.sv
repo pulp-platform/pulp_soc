@@ -13,7 +13,7 @@
 `include "register_interface/assign.svh"
 
 
-module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
+module soc_peripherals #(
     parameter CORE_TYPE           = 0,
     parameter MEM_ADDR_WIDTH      = 13,
     parameter APB_ADDR_WIDTH      = 32,
@@ -30,9 +30,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     parameter SIM_STDOUT          = 1,
     parameter AXI_ADDR_WIDTH      = 0,
     parameter AXI_DATA_IN_WIDTH   = 0,
-    parameter AXI_64_ID_IN_WIDTH  = 0,
-    parameter AXI_32_ID_OUT_WIDTH = 0,
-    parameter AXI_32_USER_WIDTH   = 0
+    parameter AXI_ID_IN_WIDTH     = 0,
+    parameter AXI_USER_WIDTH      = 0
 ) (
     input logic                               clk_i,
     input logic                               periph_clk_i,
@@ -674,9 +673,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     axi_apb_i2c_slave #(
         .APB_ADDR_WIDTH         ( APB_ADDR_WIDTH                           ),
         .AXI_ADDR_WIDTH         ( AXI_ADDR_WIDTH                           ),
-        .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                        ), //TODO: Add AXI dwc converter
-        .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                       ),
-        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                        ),
+        .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                        ),
+        .AXI_ID_WIDTH           ( AXI_ID_IN_WIDTH                          ),
+        .AXI_USER_WIDTH         ( AXI_USER_WIDTH                           ),
         .BASE_ADDRESS           ( 32'h1C03_0000                            )
     ) i_axi_apb_i2c_slave_bmc (
         .clk_i                  ( clk_i                                    ),
@@ -717,8 +716,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_aw_lock_o   ( axi_i2c_slv_bmc.aw_lock                        ),
         .axi_master_aw_cache_o  ( axi_i2c_slv_bmc.aw_cache                       ),
         .axi_master_aw_qos_o    ( axi_i2c_slv_bmc.aw_qos                         ),
-        .axi_master_aw_id_o     ( axi_i2c_slv_bmc.aw_id[AXI_64_ID_IN_WIDTH-1:0]     ),
-        .axi_master_aw_user_o   ( axi_i2c_slv_bmc.aw_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_aw_id_o     ( axi_i2c_slv_bmc.aw_id[AXI_ID_IN_WIDTH-1:0]     ),
+        .axi_master_aw_user_o   ( axi_i2c_slv_bmc.aw_user[AXI_USER_WIDTH-1:0] ),
         .axi_master_aw_valid_o  ( axi_i2c_slv_bmc.aw_valid                       ),
         .axi_master_aw_ready_i  ( axi_i2c_slv_bmc.aw_ready                       ),
 
@@ -732,13 +731,13 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_ar_lock_o   ( axi_i2c_slv_bmc.ar_lock                        ),
         .axi_master_ar_cache_o  ( axi_i2c_slv_bmc.ar_cache                       ),
         .axi_master_ar_qos_o    ( axi_i2c_slv_bmc.ar_qos                         ),
-        .axi_master_ar_id_o     ( axi_i2c_slv_bmc.ar_id[AXI_64_ID_IN_WIDTH-1:0]     ),
-        .axi_master_ar_user_o   ( axi_i2c_slv_bmc.ar_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_ar_id_o     ( axi_i2c_slv_bmc.ar_id[AXI_ID_IN_WIDTH-1:0]     ),
+        .axi_master_ar_user_o   ( axi_i2c_slv_bmc.ar_user[AXI_USER_WIDTH-1:0] ),
         .axi_master_ar_valid_o  ( axi_i2c_slv_bmc.ar_valid                       ),
         .axi_master_ar_ready_i  ( axi_i2c_slv_bmc.ar_ready                       ),
 
         // WRITE CHANNEL
-        .axi_master_w_user_o    ( axi_i2c_slv_bmc.w_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_w_user_o    ( axi_i2c_slv_bmc.w_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_w_data_o    ( axi_i2c_slv_bmc.w_data                         ),
         .axi_master_w_strb_o    ( axi_i2c_slv_bmc.w_strb                         ),
         .axi_master_w_last_o    ( axi_i2c_slv_bmc.w_last                         ),
@@ -746,8 +745,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_w_ready_i   ( axi_i2c_slv_bmc.w_ready                        ),
 
         // READ CHANNEL
-        .axi_master_r_id_i      ( axi_i2c_slv_bmc.r_id[AXI_64_ID_IN_WIDTH-1:0]      ),
-        .axi_master_r_user_i    ( axi_i2c_slv_bmc.r_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_r_id_i      ( axi_i2c_slv_bmc.r_id[AXI_ID_IN_WIDTH-1:0]      ),
+        .axi_master_r_user_i    ( axi_i2c_slv_bmc.r_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_r_data_i    ( axi_i2c_slv_bmc.r_data                         ),
         .axi_master_r_resp_i    ( axi_i2c_slv_bmc.r_resp                         ),
         .axi_master_r_last_i    ( axi_i2c_slv_bmc.r_last                         ),
@@ -755,9 +754,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_r_ready_o   ( axi_i2c_slv_bmc.r_ready                        ),
 
         // WRITE RESPONSE CHANNEL
-        .axi_master_b_id_i      ( axi_i2c_slv_bmc.b_id[AXI_64_ID_IN_WIDTH-1:0]      ),
+        .axi_master_b_id_i      ( axi_i2c_slv_bmc.b_id[AXI_ID_IN_WIDTH-1:0]      ),
         .axi_master_b_resp_i    ( axi_i2c_slv_bmc.b_resp                         ),
-        .axi_master_b_user_i    ( axi_i2c_slv_bmc.b_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_b_user_i    ( axi_i2c_slv_bmc.b_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_b_valid_i   ( axi_i2c_slv_bmc.b_valid                        ),
         .axi_master_b_ready_o   ( axi_i2c_slv_bmc.b_ready                        )
 
@@ -776,9 +775,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     axi_apb_i2c_slave #(
         .APB_ADDR_WIDTH         ( APB_ADDR_WIDTH                               ),
         .AXI_ADDR_WIDTH         ( AXI_ADDR_WIDTH                               ),
-        .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                            ), //TODO: Add AXI dwc converter
-        .AXI_ID_WIDTH           ( AXI_64_ID_IN_WIDTH                           ),
-        .AXI_USER_WIDTH         ( AXI_32_USER_WIDTH                            ),
+        .AXI_DATA_WIDTH         ( AXI_DATA_IN_WIDTH                            ),
+        .AXI_ID_WIDTH           ( AXI_ID_IN_WIDTH                              ),
+        .AXI_USER_WIDTH         ( AXI_USER_WIDTH                               ),
         .BASE_ADDRESS           ( 32'h1A15_0000                                )
     ) i_axi_apb_i2c_slave_1 (
         .clk_i                  ( clk_i                                        ),
@@ -819,8 +818,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_aw_lock_o   ( axi_i2c_slv_1.aw_lock                        ),
         .axi_master_aw_cache_o  ( axi_i2c_slv_1.aw_cache                       ),
         .axi_master_aw_qos_o    ( axi_i2c_slv_1.aw_qos                         ),
-        .axi_master_aw_id_o     ( axi_i2c_slv_1.aw_id[AXI_64_ID_IN_WIDTH-1:0]     ),
-        .axi_master_aw_user_o   ( axi_i2c_slv_1.aw_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_aw_id_o     ( axi_i2c_slv_1.aw_id[AXI_ID_IN_WIDTH-1:0]     ),
+        .axi_master_aw_user_o   ( axi_i2c_slv_1.aw_user[AXI_USER_WIDTH-1:0] ),
         .axi_master_aw_valid_o  ( axi_i2c_slv_1.aw_valid                       ),
         .axi_master_aw_ready_i  ( axi_i2c_slv_1.aw_ready                       ),
 
@@ -834,13 +833,13 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_ar_lock_o   ( axi_i2c_slv_1.ar_lock                        ),
         .axi_master_ar_cache_o  ( axi_i2c_slv_1.ar_cache                       ),
         .axi_master_ar_qos_o    ( axi_i2c_slv_1.ar_qos                         ),
-        .axi_master_ar_id_o     ( axi_i2c_slv_1.ar_id[AXI_64_ID_IN_WIDTH-1:0]  ),
-        .axi_master_ar_user_o   ( axi_i2c_slv_1.ar_user[AXI_32_USER_WIDTH-1:0] ),
+        .axi_master_ar_id_o     ( axi_i2c_slv_1.ar_id[AXI_ID_IN_WIDTH-1:0]  ),
+        .axi_master_ar_user_o   ( axi_i2c_slv_1.ar_user[AXI_USER_WIDTH-1:0] ),
         .axi_master_ar_valid_o  ( axi_i2c_slv_1.ar_valid                       ),
         .axi_master_ar_ready_i  ( axi_i2c_slv_1.ar_ready                       ),
 
         // WRITE CHANNEL
-        .axi_master_w_user_o    ( axi_i2c_slv_1.w_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_w_user_o    ( axi_i2c_slv_1.w_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_w_data_o    ( axi_i2c_slv_1.w_data                         ),
         .axi_master_w_strb_o    ( axi_i2c_slv_1.w_strb                         ),
         .axi_master_w_last_o    ( axi_i2c_slv_1.w_last                         ),
@@ -848,8 +847,8 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_w_ready_i   ( axi_i2c_slv_1.w_ready                        ),
 
         // READ CHANNEL
-        .axi_master_r_id_i      ( axi_i2c_slv_1.r_id[AXI_64_ID_IN_WIDTH-1:0]   ),
-        .axi_master_r_user_i    ( axi_i2c_slv_1.r_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_r_id_i      ( axi_i2c_slv_1.r_id[AXI_ID_IN_WIDTH-1:0]   ),
+        .axi_master_r_user_i    ( axi_i2c_slv_1.r_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_r_data_i    ( axi_i2c_slv_1.r_data                         ),
         .axi_master_r_resp_i    ( axi_i2c_slv_1.r_resp                         ),
         .axi_master_r_last_i    ( axi_i2c_slv_1.r_last                         ),
@@ -857,9 +856,9 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
         .axi_master_r_ready_o   ( axi_i2c_slv_1.r_ready                        ),
 
         // WRITE RESPONSE CHANNEL
-        .axi_master_b_id_i      ( axi_i2c_slv_1.b_id[AXI_64_ID_IN_WIDTH-1:0]   ),
+        .axi_master_b_id_i      ( axi_i2c_slv_1.b_id[AXI_ID_IN_WIDTH-1:0]   ),
         .axi_master_b_resp_i    ( axi_i2c_slv_1.b_resp                         ),
-        .axi_master_b_user_i    ( axi_i2c_slv_1.b_user[AXI_32_USER_WIDTH-1:0]  ),
+        .axi_master_b_user_i    ( axi_i2c_slv_1.b_user[AXI_USER_WIDTH-1:0]  ),
         .axi_master_b_valid_i   ( axi_i2c_slv_1.b_valid                        ),
         .axi_master_b_ready_o   ( axi_i2c_slv_1.b_ready                        )
 
@@ -876,10 +875,10 @@ module soc_peripherals /*import rv_plic_reg_pkg::*;*/ #(
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     axi_spi_slave_wrap #(
-      .AXI_ADDRESS_WIDTH  ( AXI_ADDR_WIDTH       ),
-      .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH    ), //TODO: Add AXI dwc converter
-      .AXI_USER_WIDTH     ( AXI_32_USER_WIDTH    ),
-      .AXI_ID_WIDTH       ( AXI_64_ID_IN_WIDTH   )
+      .AXI_ADDRESS_WIDTH  ( AXI_ADDR_WIDTH    ),
+      .AXI_DATA_WIDTH     ( AXI_DATA_IN_WIDTH ),
+      .AXI_USER_WIDTH     ( AXI_USER_WIDTH    ),
+      .AXI_ID_WIDTH       ( AXI_ID_IN_WIDTH   )
     ) axi_spi_slave_i (
       .clk_i      ( clk_i            ),
       .rst_ni     ( rst_ni           ),

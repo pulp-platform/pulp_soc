@@ -419,27 +419,29 @@ module pulp_soc import dm::*; #(
     // AXI Mux inputs //
     ////////////////////
 
-    // 5 inputs to AXI Mux from external: cl_slv, spi_slv, i2c_slv_1, i2c_slv_2, ext_slv (i.e. nci_cp_top)
+    // Route cluster/ext to 1 Mux
+    localparam int unsigned N_EXT_MASTERS_TO_SOC = 2; //cl, ext
 
-    localparam int unsigned N_EXT_MASTERS_TO_SOC = 5; // 3 + 2 i2c
+    // Route i2c slvs and spi slv to 1 Mux
+    localparam int unsigned N_EXT_MASTERS_TO_SOC_PERIPH = 3; // spi_slv, i2c_slv_1, i2c_slv_2
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
+        .AXI_DATA_WIDTH ( 32 ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) s_axi_spi (); // from spi_slv
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
+        .AXI_DATA_WIDTH ( 32 ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) axi_i2c_slv_bmc (); // from i2c_slv_1
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH  ),
+        .AXI_DATA_WIDTH ( 32 ),
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) axi_i2c_slv_1 (); // from i2c_slv_2
@@ -452,11 +454,21 @@ module pulp_soc import dm::*; #(
         .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) ext_masters_to_soc [N_EXT_MASTERS_TO_SOC-1:0] ();
 
+     AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
+        .AXI_DATA_WIDTH ( 32 ),
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH    ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+    ) ext_masters_to_soc_periph [N_EXT_MASTERS_TO_SOC_PERIPH-1:0] ();
+
+    // axi_a32_d64
     `AXI_ASSIGN(ext_masters_to_soc[0], s_data_in_bus);    // from cluster
-    `AXI_ASSIGN(ext_masters_to_soc[1], s_axi_spi);        // from spi_slv
-    `AXI_ASSIGN(ext_masters_to_soc[2], axi_ext_slv);      // from ext (nci_cp_top)
-    `AXI_ASSIGN(ext_masters_to_soc[3], axi_i2c_slv_1);    // from i2c_slv_1
-    `AXI_ASSIGN(ext_masters_to_soc[4], axi_i2c_slv_bmc);  // from i2c_slv_2
+    `AXI_ASSIGN(ext_masters_to_soc[1], axi_ext_slv);      // from ext (nci_cp_top)
+
+    // axi_a32_d32
+    `AXI_ASSIGN(ext_masters_to_soc_periph[0], s_axi_spi);        // from spi_slv
+    `AXI_ASSIGN(ext_masters_to_soc_periph[1], axi_i2c_slv_1);    // from i2c_slv_1
+    `AXI_ASSIGN(ext_masters_to_soc_periph[2], axi_i2c_slv_bmc);  // from i2c_slv_2
 
     //assign s_data_out_bus.aw_atop = 6'b0;
 
@@ -766,10 +778,9 @@ module pulp_soc import dm::*; #(
 
         // AXI widths for spi_slv, i2c_slvs AXI conversion within soc_peripherals
         .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH                        ),
-        .AXI_DATA_IN_WIDTH  ( AXI_DATA_IN_WIDTH                     ),
-        .AXI_64_ID_IN_WIDTH ( AXI_ID_IN_WIDTH                       ),
-        .AXI_32_ID_OUT_WIDTH( AXI_ID_OUT_S2C_WIDTH                  ),
-        .AXI_32_USER_WIDTH  ( AXI_USER_WIDTH                        )
+        .AXI_DATA_IN_WIDTH  ( 32                                    ),
+        .AXI_ID_IN_WIDTH    ( AXI_ID_IN_WIDTH                       ),
+        .AXI_USER_WIDTH     ( AXI_USER_WIDTH                        )
 
     ) soc_peripherals_i (
 
@@ -1008,7 +1019,8 @@ module pulp_soc import dm::*; #(
         .NR_L2_PORTS         ( N_L2_BANKS       ),
         .AXI_USER_WIDTH      ( AXI_USER_WIDTH   ),
         .AXI_IN_ID_WIDTH     ( AXI_ID_IN_WIDTH  ),
-        .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC )
+        .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC ),
+        .N_EXT_MASTERS_TO_SOC_PERIPH( N_EXT_MASTERS_TO_SOC_PERIPH)
     ) i_soc_interconnect_wrap (
         .clk_i            ( s_soc_clk           ),
         .rst_ni           ( s_soc_rstn          ),
@@ -1022,11 +1034,12 @@ module pulp_soc import dm::*; #(
         .sdma             ( s_sdma_bus          ),
 
         // ext-to-pms direction (wrapped interface)
-        .axi_master_plug  ( ext_masters_to_soc  ), // from external modules (cluster, spi, i2c_1, i2c_2, nci_cp_top)
+        .axi_master_plug  ( ext_masters_to_soc  ), // from external in-band modules (cluster, ext)
+        .axi_master_plug_periph  ( ext_masters_to_soc_periph  ), // from external out-of-band periph (spi, i2c_1, i2c_2)
 
         // pms-to-ext direction (discrete interfaces)
         .axi_slave_plug   ( s_data_out_bus      ), // to_cluster
-        .axi_ext_mst      ( s_axi_ext_core_mst  ), // to nci_cp_top
+        .axi_ext_mst      ( s_axi_ext_core_mst  ), // to ext
         .apb_peripheral_bus    ( s_apb_periph_bus        ), // to apb_periph
 
         .l2_interleaved_slaves ( s_mem_l2_bus            ), // to interleaved L2
