@@ -83,7 +83,7 @@ module pulp_soc import dm::*; #(
     input  logic                          fc_fetch_en_i,
 
     // AXI interfaces to outside of control pulp
-    AXI_BUS.Slave                         axi_ext_slv,  // from nci_cp_top
+    AXI_BUS.Slave                         axi_ext_slv,  // from ext
     AXI_BUS.Master                        axi_ext_mst,
 
     // TCDM interfaces to memory cuts (all are placed outside of control-pulp)
@@ -372,10 +372,17 @@ module pulp_soc import dm::*; #(
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
-        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ), //64
         .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_data_in_bus (); // from cluster
+
+     AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
+        .AXI_DATA_WIDTH ( AXI_DATA_IN_WIDTH ), //64
+        .AXI_ID_WIDTH   ( AXI_ID_IN_WIDTH   ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
+    ) s_axi_tcdm_sdma_mst (); // to/from tcdm through sensor dma
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
@@ -389,21 +396,21 @@ module pulp_soc import dm::*; #(
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2C_WIDTH), //32
         .AXI_ID_WIDTH   ( AXI_ID_OUT_S2C_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_axi_ext_core_mst (); // to nci_cp_top from FC core
+    ) s_axi_ext_core_mst (); // to ext from FC core
  
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH), //64
         .AXI_ID_WIDTH   ( AXI_ID_OUT_S2E_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_axi_ext_core_dw_mst (); // to nci_cp_top from FC core
+    ) s_axi_ext_core_dw_mst (); // to ext from FC core
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH), //64
         .AXI_ID_WIDTH   ( AXI_ID_OUT_S2E_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
-    ) s_axi_ext_sdma_mst (); // to nci_cp_top from sensor DMA
+    ) s_axi_ext_sdma_mst (); // to/from ext from sensor DMA
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH     ),
@@ -420,7 +427,7 @@ module pulp_soc import dm::*; #(
     ////////////////////
 
     // Route cluster/ext to 1 Mux
-    localparam int unsigned N_EXT_MASTERS_TO_SOC = 2; //cl, ext
+    localparam int unsigned N_EXT_MASTERS_TO_SOC = 3; //cl, ext, sdma
 
     // Route i2c slvs and spi slv to 1 Mux
     localparam int unsigned N_EXT_MASTERS_TO_SOC_PERIPH = 3; // spi_slv, i2c_slv_1, i2c_slv_2
@@ -463,7 +470,8 @@ module pulp_soc import dm::*; #(
 
     // axi_a32_d64
     `AXI_ASSIGN(ext_masters_to_soc[0], s_data_in_bus);    // from cluster
-    `AXI_ASSIGN(ext_masters_to_soc[1], axi_ext_slv);      // from ext (nci_cp_top)
+    `AXI_ASSIGN(ext_masters_to_soc[1], axi_ext_slv);      // from ext
+    `AXI_ASSIGN(ext_masters_to_soc[2], s_axi_tcdm_sdma_mst); // from sdma
 
     // axi_a32_d32
     `AXI_ASSIGN(ext_masters_to_soc_periph[0], s_axi_spi);        // from spi_slv
@@ -484,7 +492,6 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
     XBAR_TCDM_BUS s_lint_fc_instr_bus ();
     XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS]();
-    XBAR_TCDM_BUS s_sdma_bus[4]();
 
     `ifdef REMAP_ADDRESS
         logic [3:0] base_addr_int;
@@ -958,7 +965,8 @@ module pulp_soc import dm::*; #(
       .AXI_ADDR_WIDTH   ( AXI_ADDR_WIDTH      ),
       .AXI_DATA_WIDTH   ( AXI_DATA_OUT_S2E_WIDTH ),
       .AXI_USER_WIDTH   ( AXI_USER_WIDTH      ),
-      .AXI_ID_WIDTH     ( AXI_ID_OUT_S2C_WIDTH),
+      .AXI_ID_WIDTH_MST_1 ( AXI_ID_OUT_S2C_WIDTH), // to ext ID
+      .AXI_ID_WIDTH_MST_2 ( AXI_ID_IN_WIDTH   ), // to tcdm ID
       .DATA_WIDTH       ( SDMA_REG_DATA_WIDTH ),
       .ADDR_WIDTH       ( SDMA_REG_ADDR_WIDTH ),
       .NUM_STREAMS      ( 1                   ),
@@ -969,8 +977,8 @@ module pulp_soc import dm::*; #(
       .rst_ni          (s_soc_rstn                      ),
       .test_mode_i     (dft_test_mode_i                 ),
       .apb_sdma_cfg_bus(s_apb_sdma_bus),
-      .tcdm_master     (s_sdma_bus),
-      .ext_master      (s_axi_ext_sdma_mst),
+      .axi_tcdm_master (s_axi_tcdm_sdma_mst),
+      .axi_ext_master  (s_axi_ext_sdma_mst),
       .term_event_o    (/*s_sdma_term_event*/),
       .term_irq_o      (), // unused for now
       .busy_o          ()  // unused for now
@@ -1031,7 +1039,6 @@ module pulp_soc import dm::*; #(
         .tcdm_udma_tx     ( s_lint_udma_tx_bus  ),
         .tcdm_debug       ( s_lint_debug_bus    ),
         .tcdm_hwpe        ( s_lint_hwpe_bus     ),
-        .sdma             ( s_sdma_bus          ),
 
         // ext-to-pms direction (wrapped interface)
         .axi_master_plug  ( ext_masters_to_soc  ), // from external in-band modules (cluster, ext)

@@ -54,7 +54,6 @@ module soc_interconnect_wrap
        XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
        XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
-       XBAR_TCDM_BUS.Slave      sdma[4], //Sensor DMA ports
        AXI_BUS.Slave            axi_master_plug[N_EXT_MASTERS_TO_SOC-1:0], // Normaly used for EXT -> SoC communication (in-band)
        AXI_BUS.Slave            axi_master_plug_periph[N_EXT_MASTERS_TO_SOC_PERIPH-1:0], // Normaly used for EXT -> SoC communication (out-of-band)
        AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC -> cluster communication
@@ -73,7 +72,7 @@ module soc_interconnect_wrap
     // 64-bit AXI Mux (External to SoC communication) //
     ////////////////////////////////////////////////////
 
-    localparam int unsigned AXI_IN_ID_WIDTH_MUX = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC); // = 6 + clog2(2) = 7
+    localparam int unsigned AXI_IN_ID_WIDTH_MUX = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC); // = 6 + clog2(3) = 8
     localparam int unsigned AXI_IN_ID_WIDTH_MUX_PERIPH = AXI_IN_ID_WIDTH + $clog2(N_EXT_MASTERS_TO_SOC_PERIPH); // = 6 + clog2(3) = 8
 
     AXI_BUS #(
@@ -275,22 +274,16 @@ module soc_interconnect_wrap
     // Using a macro instead of a package parameter is an ugly but necessary workaround.
     // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
     `define NR_SOC_TCDM_MASTER_PORTS 5 // FC instructions, FC data, uDMA RX, uDMA TX, debug acces
-    `define NR_SDMA_TCDM_MASTER_PORTS 4 // sdma (x4)
     `define NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS 4 // ext periph (x1)
-
-    // wrap sdma tcdm ports
-    for (genvar i = 0; i < pkg_soc_interconnect::NR_SDMA_TCDM_MASTER_PORTS; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], sdma[i])
-    end
 
     // wrap ext->soc tcdm ports
     for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_SDMA_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect[i])
     end
 
     // wrap ext periph->soc tcdm ports
     for (genvar i = 0; i < pkg_soc_interconnect::NR_PERIPH_2_SOC_TCDM_MASTER_PORTS; i++) begin
-        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_SDMA_TCDM_MASTER_PORTS + `NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect_periph[i])
+        `TCDM_ASSIGN_INTF(master_ports[`NR_SOC_TCDM_MASTER_PORTS + `NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS + i], axi_bridge_2_interconnect_periph[i])
     end
   
     XBAR_TCDM_BUS contiguous_slaves[3]();
