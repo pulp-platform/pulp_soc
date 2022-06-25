@@ -355,6 +355,9 @@ module pulp_soc import dm::*; #(
 
     logic                  spi_master0_csn3, spi_master0_csn2;
 
+    // sdma
+    logic s_sdma_term_event, s_sdma_busy;
+
 
     // tap to lint wrap
     logic                  s_jtag_shift_dr;
@@ -944,6 +947,10 @@ module pulp_soc import dm::*; #(
 
         .hwpe_events_o       ( s_fc_hwpe_events    ),
 
+        // SDMA events
+        .sdma_term_event_i   ( s_sdma_term_event   ),
+        .sdma_busy_i         ( s_sdma_busy         ),
+
         .supervisor_mode_o   ( s_supervisor_mode   ),
 
         // External interrupts
@@ -979,9 +986,9 @@ module pulp_soc import dm::*; #(
       .apb_sdma_cfg_bus(s_apb_sdma_bus),
       .axi_tcdm_master (s_axi_tcdm_sdma_mst),
       .axi_ext_master  (s_axi_ext_sdma_mst),
-      .term_event_o    (/*s_sdma_term_event*/),
+      .term_event_o    (s_sdma_term_event), // to clic
       .term_irq_o      (), // unused for now
-      .busy_o          ()  // unused for now
+      .busy_o          (s_sdma_busy)  // to clic
     );
 
     // Upsize AXI data width SOC->EXT (32b->64b) direction in the core path

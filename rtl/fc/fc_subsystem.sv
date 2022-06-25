@@ -53,6 +53,9 @@ module fc_subsystem #(
 
     output logic [1:0]                hwpe_events_o,
 
+    input logic                       sdma_term_event_i,
+    input logic                       sdma_busy_i,
+
     output logic                      supervisor_mode_o,
 
     // external interrupts
@@ -334,7 +337,9 @@ module fc_subsystem #(
 
     logic [255:0] clic_irqs;
     assign clic_irqs = {
-      {77{1'b0}},         // 77 (systemverilog has default:0 but that doesn't work reliably)
+      {75{1'b0}},         // 75 (systemverilog has default:0 but that doesn't work reliably)
+      sdma_busy_i,        // 1
+      sdma_term_event_i,  // 1
       mbox_secure_irq_i,  // 72
       mbox_irq_i,         // 72
       scp_secure_irq_i,   // 1
