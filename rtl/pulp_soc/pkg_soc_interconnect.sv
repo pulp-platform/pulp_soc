@@ -9,7 +9,7 @@ package pkg_soc_interconnect;
     //Warning, if you change the NR_SOC_TCDM_MASTER_PORTS parameter you must also change the identically named preprocessor
     //macro in soc_interconnect_wrap.sv. The macro is a workaround for a synopsys bug that prevent the usage of parameters
     //in index expression on the left-hand side of an assignment.
-    localparam int unsigned NR_SOC_TCDM_MASTER_PORTS = 5; // FC instructions, FC data, uDMA RX, uDMA TX, debug access
+    localparam int unsigned NR_SOC_TCDM_MASTER_PORTS = 6; // FC instructions, FC data, FC shadow, uDMA RX, uDMA TX, debug access
     localparam int unsigned NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS = 4; //  4 ports for 64-bit axi plug
     localparam int unsigned NR_PERIPH_2_SOC_TCDM_MASTER_PORTS = 1; //  1 port for 32-bit axi plug
     localparam int unsigned NR_TCDM_MASTER_PORTS = NR_SOC_TCDM_MASTER_PORTS + NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS + NR_PERIPH_2_SOC_TCDM_MASTER_PORTS;

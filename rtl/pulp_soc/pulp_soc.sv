@@ -494,6 +494,7 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS s_lint_udma_rx_bus ();
     XBAR_TCDM_BUS s_lint_fc_data_bus ();
     XBAR_TCDM_BUS s_lint_fc_instr_bus ();
+    XBAR_TCDM_BUS s_lint_fc_shadow_bus ();
     XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS]();
 
     `ifdef REMAP_ADDRESS
@@ -923,35 +924,36 @@ module pulp_soc import dm::*; #(
         .USE_HWPE   ( USE_HWPE           ),
         .NUM_INTERRUPTS ( NUM_INTERRUPTS )
     ) fc_subsystem_i (
-        .clk_i               ( s_soc_clk           ),
-        .rst_ni              ( s_soc_rstn          ),
+        .clk_i               ( s_soc_clk                     ),
+        .rst_ni              ( s_soc_rstn                    ),
 
-        .test_en_i           ( dft_test_mode_i     ),
+        .test_en_i           ( dft_test_mode_i               ),
 
-        .boot_addr_i         ( s_fc_bootaddr       ),
+        .boot_addr_i         ( s_fc_bootaddr                 ),
 
-        .fetch_en_i          ( s_fc_fetchen        ),
+        .fetch_en_i          ( s_fc_fetchen                  ),
 
-        .l2_data_master      ( s_lint_fc_data_bus  ),
-        .l2_instr_master     ( s_lint_fc_instr_bus ),
-        .l2_hwpe_master      ( s_lint_hwpe_bus     ),
-        .apb_slave_eu        ( s_apb_eu_bus        ),
-        .apb_slave_clic      ( s_apb_clic_bus      ),
-        .apb_slave_hwpe      ( s_apb_hwpe_bus      ),
+        .l2_data_master      ( s_lint_fc_data_bus            ),
+        .l2_instr_master     ( s_lint_fc_instr_bus           ),
+        .l2_shadow_master    ( s_lint_fc_shadow_bus          ),
+        .l2_hwpe_master      ( s_lint_hwpe_bus               ),
+        .apb_slave_eu        ( s_apb_eu_bus                  ),
+        .apb_slave_clic      ( s_apb_clic_bus                ),
+        .apb_slave_hwpe      ( s_apb_hwpe_bus                ),
         .debug_req_i         ( dm_debug_req[FC_CORE_MHARTID] ),
 
-        .event_fifo_valid_i  ( s_fc_event_valid    ),
-        .event_fifo_fulln_o  ( s_fc_event_ready    ),
-        .event_fifo_data_i   ( s_fc_event_data     ),
-        .events_i            ( s_fc_events         ),
+        .event_fifo_valid_i  ( s_fc_event_valid              ),
+        .event_fifo_fulln_o  ( s_fc_event_ready              ),
+        .event_fifo_data_i   ( s_fc_event_data               ),
+        .events_i            ( s_fc_events                   ),
 
-        .hwpe_events_o       ( s_fc_hwpe_events    ),
+        .hwpe_events_o       ( s_fc_hwpe_events              ),
 
         // SDMA events
-        .sdma_term_event_i   ( s_sdma_term_event   ),
-        .sdma_busy_i         ( s_sdma_busy         ),
+        .sdma_term_event_i   ( s_sdma_term_event             ),
+        .sdma_busy_i         ( s_sdma_busy                   ),
 
-        .supervisor_mode_o   ( s_supervisor_mode   ),
+        .supervisor_mode_o   ( s_supervisor_mode             ),
 
         // External interrupts
         .scg_irq_i,
@@ -1037,15 +1039,16 @@ module pulp_soc import dm::*; #(
         .N_EXT_MASTERS_TO_SOC( N_EXT_MASTERS_TO_SOC ),
         .N_EXT_MASTERS_TO_SOC_PERIPH( N_EXT_MASTERS_TO_SOC_PERIPH)
     ) i_soc_interconnect_wrap (
-        .clk_i            ( s_soc_clk           ),
-        .rst_ni           ( s_soc_rstn          ),
-        .test_en_i        ( dft_test_mode_i     ),
-        .tcdm_fc_data     ( s_lint_fc_data_bus  ),
-        .tcdm_fc_instr    ( s_lint_fc_instr_bus ),
-        .tcdm_udma_rx     ( s_lint_udma_rx_bus  ),
-        .tcdm_udma_tx     ( s_lint_udma_tx_bus  ),
-        .tcdm_debug       ( s_lint_debug_bus    ),
-        .tcdm_hwpe        ( s_lint_hwpe_bus     ),
+        .clk_i            ( s_soc_clk            ),
+        .rst_ni           ( s_soc_rstn           ),
+        .test_en_i        ( dft_test_mode_i      ),
+        .tcdm_fc_data     ( s_lint_fc_data_bus   ),
+        .tcdm_fc_instr    ( s_lint_fc_instr_bus  ),
+        .tcdm_fc_shadow   ( s_lint_fc_shadow_bus ),
+        .tcdm_udma_rx     ( s_lint_udma_rx_bus   ),
+        .tcdm_udma_tx     ( s_lint_udma_tx_bus   ),
+        .tcdm_debug       ( s_lint_debug_bus     ),
+        .tcdm_hwpe        ( s_lint_hwpe_bus      ),
 
         // ext-to-pms direction (wrapped interface)
         .axi_master_plug  ( ext_masters_to_soc  ), // from external in-band modules (cluster, ext)

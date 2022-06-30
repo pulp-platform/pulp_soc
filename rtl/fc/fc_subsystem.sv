@@ -37,6 +37,7 @@ module fc_subsystem #(
 
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
+    XBAR_TCDM_BUS.Master              l2_shadow_master,
     XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS],
     APB_BUS.Slave                     apb_slave_eu,
     APB_BUS.Slave                     apb_slave_clic,
@@ -105,11 +106,15 @@ module fc_subsystem #(
     //Core Data Bus
     logic [31:0] core_data_addr, core_data_rdata, core_data_wdata;
     logic        core_data_req, core_data_gnt, core_data_rvalid, core_data_err;
-    logic        core_data_we  ;
-    logic [ 3:0]  core_data_be ;
-    logic is_scm_instr_req, is_scm_data_req;
+    logic        core_data_we;
+    logic [3:0]  core_data_be;
 
-    logic core_rst;
+    //Core Shadow Data Bus
+    logic [31:0] core_shadow_addr, core_shadow_rdata, core_shadow_wdata;
+    logic        core_shadow_req, core_shadow_gnt, core_shadow_rvalid, core_shadow_err;
+    logic        core_shadow_we;
+    logic [3:0]  core_shadow_be;
+
 
     assign perf_counters_int = 1'b0;
     assign fetch_en_int      = fetch_en_eu & fetch_en_i;
@@ -156,6 +161,16 @@ module fc_subsystem #(
     assign core_instr_rdata      = l2_instr_master.r_rdata;
     assign core_instr_err        = l2_instr_master.r_opc;
 
+    assign l2_shadow_master.req   = core_shadow_req;
+    assign l2_shadow_master.add   = core_shadow_addr;
+    assign l2_shadow_master.wen   = ~core_shadow_we;
+    assign l2_shadow_master.wdata = core_shadow_wdata;
+    assign l2_shadow_master.be    = core_shadow_be;
+    assign core_shadow_gnt        = l2_shadow_master.gnt;
+    assign core_shadow_rvalid     = l2_shadow_master.r_valid;
+    assign core_shadow_rdata      = l2_shadow_master.r_rdata;
+    assign core_shadow_err        = l2_shadow_master.r_opc;
+
     //********************************************************
     //************ RISCV CORE ********************************
     //********************************************************
@@ -178,7 +193,8 @@ module fc_subsystem #(
         .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS),
         .NUM_INTERRUPTS   (NUM_INTERRUPTS),
         .CLIC             (1),
-        .MCLICBASE_ADDR   (`CLIC_START_ADDR)        // Base address for CLIC memory mapped registers
+        .MCLICBASE_ADDR   (`CLIC_START_ADDR),        // Base address for CLIC memory mapped registers
+        .SHADOW           (1)
     ) FC_CORE_i (
 
         // Clock and Reset
@@ -211,6 +227,16 @@ module fc_subsystem #(
         .data_addr_o           (core_data_addr),
         .data_wdata_o          (core_data_wdata),
         .data_rdata_i          (core_data_rdata),
+
+        // Shadow memory interface
+        .shadow_req_o          (core_shadow_req),
+        .shadow_gnt_i          (core_shadow_gnt),
+        .shadow_rvalid_i       (core_shadow_rvalid),
+        .shadow_we_o           (core_shadow_we),
+        .shadow_be_o           (core_shadow_be),
+        .shadow_addr_o         (core_shadow_addr),
+        .shadow_wdata_o        (core_shadow_wdata),
+        .shadow_rdata_i        (core_shadow_rdata),
 
         // apu-interconnect
         // handshake signals

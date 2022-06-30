@@ -50,6 +50,7 @@ module soc_interconnect_wrap
        input logic test_en_i,
        XBAR_TCDM_BUS.Slave      tcdm_fc_data, //Data Port of the Fabric Controller
        XBAR_TCDM_BUS.Slave      tcdm_fc_instr, //Instruction Port of the Fabric Controller
+       XBAR_TCDM_BUS.Slave      tcdm_fc_shadow, //Shadow Save Port of the Fabric Controller
        XBAR_TCDM_BUS.Slave      tcdm_udma_tx, //TX Channel for the uDMA
        XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
        XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
@@ -244,6 +245,22 @@ module soc_interconnect_wrap
             tcdm_fc_data_addr_remapped.add[31:20] = 12'h1c0;
     end
 
+    XBAR_TCDM_BUS tcdm_fc_shadow_addr_remapped();
+    assign tcdm_fc_shadow_addr_remapped.req = tcdm_fc_shadow.req;
+    assign tcdm_fc_shadow_addr_remapped.wen = tcdm_fc_shadow.wen;
+    assign tcdm_fc_shadow_addr_remapped.wdata = tcdm_fc_shadow.wdata;
+    assign tcdm_fc_shadow_addr_remapped.be = tcdm_fc_shadow.be;
+    assign tcdm_fc_shadow.gnt = tcdm_fc_shadow_addr_remapped.gnt;
+    assign tcdm_fc_shadow.r_opc = tcdm_fc_shadow_addr_remapped.r_opc;
+    assign tcdm_fc_shadow.r_rdata = tcdm_fc_shadow_addr_remapped.r_rdata;
+    assign tcdm_fc_shadow.r_valid = tcdm_fc_shadow_addr_remapped.r_valid;
+    //Remap address prefix 1c0 to 000
+    always_comb begin
+        tcdm_fc_shadow_addr_remapped.add = tcdm_fc_shadow.add;
+        if (tcdm_fc_shadow.add[31:20] == 12'h000)
+            tcdm_fc_shadow_addr_remapped.add[31:20] = 12'h1c0;
+    end
+
     //////////////////////////////
     // Instantiate Interconnect //
     //////////////////////////////
@@ -264,16 +281,17 @@ module soc_interconnect_wrap
     //Assign Master Ports to array
     `TCDM_ASSIGN_INTF(master_ports[0], tcdm_fc_data_addr_remapped)
     `TCDM_ASSIGN_INTF(master_ports[1], tcdm_fc_instr)
-    `TCDM_ASSIGN_INTF(master_ports[2], tcdm_udma_tx)
-    `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_rx)
-    `TCDM_ASSIGN_INTF(master_ports[4], tcdm_debug)
+    `TCDM_ASSIGN_INTF(master_ports[2], tcdm_fc_shadow_addr_remapped)
+    `TCDM_ASSIGN_INTF(master_ports[3], tcdm_udma_tx)
+    `TCDM_ASSIGN_INTF(master_ports[4], tcdm_udma_rx)
+    `TCDM_ASSIGN_INTF(master_ports[5], tcdm_debug)
 
     //Assign the 4 master ports from the AXI plug to the interface array
 
     //Synopsys 2019.3 has a bug; It doesn't handle expressions for array indices on the left-hand side of assignments.
     // Using a macro instead of a package parameter is an ugly but necessary workaround.
     // E.g. assign a[param+i] = b[i] doesn't work, but assign a[i] = b[i-param] does.
-    `define NR_SOC_TCDM_MASTER_PORTS 5 // FC instructions, FC data, uDMA RX, uDMA TX, debug acces
+    `define NR_SOC_TCDM_MASTER_PORTS 6 // FC instructions, FC data, FC shadow, uDMA RX, uDMA TX, debug acces
     `define NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS 4 // ext periph (x1)
 
     // wrap ext->soc tcdm ports
