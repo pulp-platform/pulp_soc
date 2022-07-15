@@ -256,7 +256,7 @@ module apb_soc_ctrl #(
             PRDATA = {31'h0, sel_clk_i};
           `REG_CLUSTER_CTRL:
             PRDATA = {
-              29'h0,
+              28'h0,
               r_cluster_rstn,
               r_cluster_fetch_enable,
               r_cluster_pow,
