@@ -48,7 +48,7 @@ module soc_peripherals #(
     output logic [7:0]                        soc_jtag_reg_o,
 
     input logic                               bootsel_valid_i,
-    input logic [1:0]                         bootsel_i,
+    input logic [2:0]                         bootsel_i,
     // fc fetch enable can be controlled through this signal or through an APB
     // write to the fc fetch enable register
     input logic                               fc_fetch_en_valid_i,

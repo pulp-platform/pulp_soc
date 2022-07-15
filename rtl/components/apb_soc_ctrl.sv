@@ -56,7 +56,7 @@ module apb_soc_ctrl #(
 
     input  logic                      sel_clk_i,
     input  logic                      bootsel_valid_i,
-    input  logic [1:0]                bootsel_i,
+    input  logic [2:0]                bootsel_i,
     input  logic                      fc_fetch_en_valid_i,
     input  logic                      fc_fetch_en_i,
 
@@ -104,7 +104,7 @@ module apb_soc_ctrl #(
    logic            r_sel_hyper_axi;
    logic            r_sel_spi_dir;
    logic            r_sel_i2c_mux;
-   logic      [1:0] r_bootsel;
+   logic      [2:0] r_bootsel;
 
    logic            s_apb_write;
 
@@ -141,7 +141,7 @@ module apb_soc_ctrl #(
         r_jtag_regi_sync[1]    <= 'h0;
         r_jtag_rego            <= 'h0;
         r_bootaddr             <= 32'h1A000080;
-        r_bootsel              <= 2'h0;
+        r_bootsel              <= 3'h0;
         r_fetchen              <= 1'h0; // on reset, fc doesn't do anything
         r_cluster_pow          <= 1'b0;
         r_cluster_byp          <= 1'b1;
@@ -177,7 +177,7 @@ module apb_soc_ctrl #(
                 `REG_BOOTSEL:
                  begin
                    // allow bootsel to be controlled through JTAG
-                   r_bootsel <= PWDATA[1:0];
+                   r_bootsel <= PWDATA[2:0];
                  end
                 `REG_FCFETCH:
                  begin
@@ -251,7 +251,7 @@ module apb_soc_ctrl #(
           `REG_CS_RO:
             PRDATA = r_corestatus;
           `REG_BOOTSEL:
-            PRDATA =  {30'h0, r_bootsel};
+            PRDATA =  {29'h0, r_bootsel};
           `REG_CLKSEL:
             PRDATA = {31'h0, sel_clk_i};
           `REG_CLUSTER_CTRL:
