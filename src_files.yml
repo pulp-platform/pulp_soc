@@ -1,13 +1,13 @@
 pulp_soc:
   incdirs: [
     rtl/include,
-    ../../rtl/includes,
+    ../../hw/includes,
     ../axi/axi/include,
     ../register_interface/include,
   ]
   files: [
     ../axi/axi/src/axi_pkg.sv,
-    ../../rtl/includes/control_pulp_pkg.sv,
+    ../../hw/includes/control_pulp_pkg.sv,
     ../cv32e40p/rtl/include/cv32e40p_apu_core_pkg.sv,
     rtl/pulp_soc/pkg_soc_interconnect.sv,
     rtl/pulp_soc/axi64_2_lint32_wrap.sv,
@@ -37,7 +37,7 @@ pulp_soc:
   ]
 udma_subsystem:
   incdirs: [
-    ../../rtl/includes,
+    ../../hw/includes,
     .,
   ]
   files: [
@@ -47,7 +47,7 @@ udma_subsystem:
 fc:
   incdirs: [
     .,
-    ../../rtl/includes,
+    ../../hw/includes,
     ../register_interface/include,
   ]
   vlog_opts : [
@@ -64,7 +64,7 @@ fc:
 
 components:
   incdirs: [
-    ../../rtl/includes,
+    ../../hw/includes,
   ]
   files: [
     rtl/components/apb_clkdiv.sv,
@@ -78,7 +78,7 @@ components:
 
 components_rtl:
   incdirs: [
-    ../../rtl/includes,
+    ../../hw/includes,
   ]
   targets: [
     rtl,
@@ -91,7 +91,7 @@ components_rtl:
 
 components_behav:
   incdirs: [
-    ../../rtl/includes,
+    ../../hw/includes,
   ]
   targets: [
     rtl,
