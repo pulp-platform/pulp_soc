@@ -23,26 +23,6 @@ module l2_ram_bank_interleaved #(
     output logic [DataWidth-1:0] rdata_o
 );
 
-
-`ifdef PULP_FPGA_EMUL
-  if (NumWords == 28672) begin : l2_ram_interleaved_28672x32_fpga
-    fpga_interleaved_ram #(
-        .ADDR_WIDTH($clog2(NumWords))
-    ) i_l2_ram_bank_interleaved_28672x32_fpga (
-        .clk_i,
-        .rst_ni,
-        .csn_i(~req_i),
-        .wen_i(~we_i),
-        .be_i,
-        .addr_i,
-        .wdata_i,
-        .rdata_o
-    );
-  end else // block: l2_ram_interleaved_28672x32_fpga
-    $fatal(1, "NumWords does not match the supported values.");
-
-`else
-
   // L2 Interleaved SRAM
   if (BehavMem) begin : l2_ram_interleaved_behav
     tc_sram #(
@@ -75,7 +55,5 @@ module l2_ram_bank_interleaved #(
     );
 
   end  // block: l2_ram_interleaved_macro
-
-`endif // !`ifdef PULP_FPGA_EMUL
   
 endmodule

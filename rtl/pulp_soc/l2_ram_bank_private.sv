@@ -23,26 +23,6 @@ module l2_ram_bank_private #(
     output logic [DataWidth-1:0] rdata_o
 );
 
-
-`ifdef PULP_FPGA_EMUL
-  if (NumWords == 8192) begin : l2_ram_private_8192x32_fpga
-    fpga_private_ram #(
-        .ADDR_WIDTH($clog2(NumWords))
-    ) i_l2_ram_bank_pri_8192x32_fpga (
-        .clk_i,
-        .rst_ni,
-        .csn_i(~req_i),
-        .wen_i(~we_i),
-        .be_i,
-        .addr_i,
-        .wdata_i,
-        .rdata_o
-    );
-  end else  // block: l2_ram_private_8192x32_fpga
-    $fatal(1, "NumWords does not match the supported values.");
-
-`else
-
   if (BehavMem) begin : l2_ram_pri_behav
     tc_sram #(
         .NumWords (NumWords),
@@ -74,7 +54,5 @@ module l2_ram_bank_private #(
     );
 
   end  // block: l2_ram_pri_macro
-
-`endif // !`ifdef PULP_FPGA_EMUL
   
 endmodule
