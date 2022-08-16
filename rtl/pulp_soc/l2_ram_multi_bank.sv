@@ -15,7 +15,8 @@ module l2_ram_multi_bank #(
    // Don't forget to adjust the SRAM macros and the FPGA settings if you change the banksizes
    parameter int unsigned BANK_SIZE_INTL_SRAM = 32768, //Number of 32-bit words
    parameter int unsigned L2_BANK_SIZE_PRI = 8192, // Number of 32-bit words in private banks
-   parameter int unsigned BEHAV_MEM = 1
+   parameter int unsigned BEHAV_MEM = 1,
+   parameter int unsigned FPGA_MEM = 0
 ) (
    input logic             clk_i,
    input logic             rst_ni,
@@ -55,6 +56,7 @@ module l2_ram_multi_bank #(
        // L2 interleaved SRAM
        l2_ram_bank_interleaved #(
           .BehavMem(BEHAV_MEM),
+          .FPGAMem(FPGA_MEM),
           .NumWords(BANK_SIZE_INTL_SRAM), //28672 words
           .DataWidth(32)
        ) i_l2_bank_interleaved (
@@ -89,6 +91,7 @@ module l2_ram_multi_bank #(
     // L2 PRI0 SRAM
     l2_ram_bank_private #(
        .BehavMem(BEHAV_MEM),
+       .FPGAMem(FPGA_MEM),
        .NumWords(BANK_SIZE_PRI0), //8192 words
        .DataWidth(32)
     ) i_l2_bank_pri0 (
@@ -121,6 +124,7 @@ module l2_ram_multi_bank #(
     // L2 PRI1 SRAM
     l2_ram_bank_private #(
        .BehavMem(BEHAV_MEM),
+       .FPGAMem(FPGA_MEM),
        .NumWords(BANK_SIZE_PRI1), //8192 words
        .DataWidth(32)
     ) i_l2_bank_pri1 (

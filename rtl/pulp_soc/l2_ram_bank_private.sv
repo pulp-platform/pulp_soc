@@ -10,6 +10,7 @@
 
 module l2_ram_bank_private #(
     parameter int unsigned BehavMem  = 1,
+    parameter int unsigned FPGAMem   = 1,
     parameter int unsigned NumWords  = 0,
     parameter int unsigned DataWidth = 0
 ) (
@@ -23,7 +24,7 @@ module l2_ram_bank_private #(
     output logic [DataWidth-1:0] rdata_o
 );
 
-  if (BehavMem) begin : l2_ram_pri_behav
+  if (BehavMem || FPGAMem) begin : l2_ram_pri_behav
     tc_sram #(
         .NumWords (NumWords),
         .DataWidth(DataWidth),
@@ -54,5 +55,5 @@ module l2_ram_bank_private #(
     );
 
   end  // block: l2_ram_pri_macro
-  
+
 endmodule

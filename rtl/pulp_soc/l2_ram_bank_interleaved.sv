@@ -10,6 +10,7 @@
 
 module l2_ram_bank_interleaved #(
     parameter int unsigned BehavMem  = 1,
+    parameter int unsigned FPGAMem   = 0,
     parameter int unsigned NumWords  = 0,
     parameter int unsigned DataWidth = 0
 ) (
@@ -24,7 +25,7 @@ module l2_ram_bank_interleaved #(
 );
 
   // L2 Interleaved SRAM
-  if (BehavMem) begin : l2_ram_interleaved_behav
+  if (BehavMem || FPGAMem) begin : l2_ram_interleaved_behav
     tc_sram #(
         .NumWords (NumWords),
         .DataWidth(DataWidth),
@@ -55,5 +56,5 @@ module l2_ram_bank_interleaved #(
     );
 
   end  // block: l2_ram_interleaved_macro
-  
+
 endmodule
