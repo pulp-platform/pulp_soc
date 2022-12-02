@@ -126,12 +126,13 @@ module pulp_soc import dm::*; #(
     output logic                                                pf_evt_ack_o,
     input logic                                                 pf_evt_valid_i,
 
+    // Timer Channels
     output logic [3:0]                                          timer_ch0_o,
     output logic [3:0]                                          timer_ch1_o,
     output logic [3:0]                                          timer_ch2_o,
     output logic [3:0]                                          timer_ch3_o,
 
-    // uDMA Connections
+    // Peripheral Connections
     // UART
     output                                                      uart_pkg::uart_to_pad_t [udma_cfg_pkg::N_UART-1:0] uart_to_pad_o,
     input                                                       uart_pkg::pad_to_uart_t [udma_cfg_pkg::N_UART-1:0] pad_to_uart_i,
