@@ -60,9 +60,6 @@ module soc_peripherals
     APB.Master                         apb_hwpe_master,
     APB.Master                         apb_debug_master,
     APB.Master                         apb_chip_ctrl_master,
-   // MASTER PORT TO PLLs
-    REG_BUS.out                        regbus_pll_cfg_master,
-
 
     // FABRIC CONTROLLER MASTER REFILL PORT
     XBAR_TCDM_BUS.Master               l2_rx_master,

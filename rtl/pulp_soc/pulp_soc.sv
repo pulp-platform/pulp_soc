@@ -548,15 +548,20 @@ module pulp_soc import dm::*; #(
     ) soc_peripherals_i (
 
         .clk_i                  ( soc_clk_i              ),
+        .rst_ni                 ( soc_rstn_synced_i      ),
         .periph_clk_i           ( per_clk_i              ),
-        .periph_rstn_i          ( per_rstn_synced_i        ),
-        .rst_ni                 ( soc_rstn_synced_i        ),
+        .periph_rstn_i          ( per_rstn_synced_i      ),
+
         .slow_clk_i             ( slow_clk_i             ),
         .slow_rstn_i            ( slow_clk_rstn_synced_i ),
-        .sel_pll_clk_i          ( s_sel_fll_clk          ),
 
+        .sel_pll_clk_i          ( s_sel_fll_clk          ),
         .dft_test_mode_i        ( dft_test_mode_i        ),
         .dft_cg_enable_i        ( dft_cg_enable_i        ),
+        .fc_bootaddr_o          ( s_fc_bootaddr          ),
+        .fc_fetchen_o           ( s_fc_fetchen           ),
+        .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
+        .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
 
         .boot_l2_i              ( boot_l2_i              ),
         .bootsel_i              ( bootsel_i              ),
@@ -564,34 +569,29 @@ module pulp_soc import dm::*; #(
         .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
         .fc_fetch_en_i          ( fc_fetch_en_i          ),
 
-        .fc_bootaddr_o          ( s_fc_bootaddr          ),
-        .fc_fetchen_o           ( s_fc_fetchen           ),
 
-        .axi_lite_slave              ( s_periph_bus       ),
+        .axi_lite_slave         ( s_periph_bus           ),
 
         .apb_intrpt_ctrl_master ( s_apb_intrpt_ctrl_bus  ),
-        .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_hwpe_master        ( s_apb_hwpe_bus         ),
+        .apb_debug_master       ( s_apb_debug_bus        ),
         .apb_chip_ctrl_master   ( s_apb_chip_ctrl_bus    ),
 
         .l2_rx_master           ( s_lint_udma_rx_bus     ),
         .l2_tx_master           ( s_lint_udma_tx_bus     ),
 
-        .soc_jtag_reg_i         ( soc_jtag_reg_tap       ),
-        .soc_jtag_reg_o         ( soc_jtag_reg_soc       ),
-
-        .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
-        .fc_interrupts_o        ( s_fc_interrupts        ),
-
         .dma_pe_evt_i           ( s_dma_pe_evt           ),
         .dma_pe_irq_i           ( s_dma_pe_irq           ),
         .pf_evt_i               ( s_pf_evt               ),
+        .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
+        .fc_interrupts_o        ( s_fc_interrupts        ),
 
-        .soc_fll_master         ( s_soc_fll_master       ),
 
-        .gpio_i,
-        .gpio_o,
-        .gpio_tx_en_o,
+        .timer_ch0_o            ( timer_ch0_o            ),
+        .timer_ch1_o            ( timer_ch1_o            ),
+        .timer_ch2_o            ( timer_ch2_o            ),
+        .timer_ch3_o            ( timer_ch3_o            ),
+
         // UART
         .uart_to_pad_o,
         .pad_to_uart_i,
@@ -613,10 +613,10 @@ module pulp_soc import dm::*; #(
         .hyper_to_pad_o,
         .pad_to_hyper_i,
 
-        .timer_ch0_o            ( timer_ch0_o            ),
-        .timer_ch1_o            ( timer_ch1_o            ),
-        .timer_ch2_o            ( timer_ch2_o            ),
-        .timer_ch3_o            ( timer_ch3_o            ),
+        // GPIO
+        .gpio_i,
+        .gpio_o,
+        .gpio_tx_en_o,
 
         .cl_event_data_o        ( s_cl_event_data        ),
         .cl_event_valid_o       ( s_cl_event_valid       ),
