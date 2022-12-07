@@ -806,6 +806,7 @@ module pulp_soc import dm::*; #(
     );
     assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
 
+
     jtag_tap_top  #(
         .IDCODE_VALUE             ( `PULP_JTAG_IDCODE  )
     ) jtag_tap_top_i (
@@ -815,35 +816,35 @@ module pulp_soc import dm::*; #(
         .td_i                     ( int_td             ),
         .td_o                     ( jtag_tdo_o         ),
 
-        .test_clk_i        ( 1'b0               ),
-        .test_rstn_i       ( soc_rstn_synced_i    ),
+        .test_clk_i               ( 1'b0               ),
+        .test_rstn_i              ( soc_rstn_synced_i  ),
 
-        .jtag_shift_dr_o   ( s_jtag_shift_dr    ),
-        .jtag_update_dr_o  ( s_jtag_update_dr   ),
-        .jtag_capture_dr_o ( s_jtag_capture_dr  ),
+        .jtag_shift_dr_o          ( s_jtag_shift_dr    ),
+        .jtag_update_dr_o         ( s_jtag_update_dr   ),
+        .jtag_capture_dr_o        ( s_jtag_capture_dr  ),
 
-        .axireg_sel_o      ( s_jtag_lint_sel    ),
-        .lint_scan_in_o    ( s_jtag_lint_tdi    ),
-        .lint_scan_out_i   ( s_jtag_lint_tdo    ),
-        .soc_jtag_reg_i    ( soc_jtag_reg_soc   ),
-        .soc_jtag_reg_o    ( soc_jtag_reg_tap   ),
-        .sel_fll_clk_o     ( s_sel_fll_clk      )
+        .axireg_sel_o             ( s_jtag_axireg_sel  ),
+        .dbg_axi_scan_in_o        ( s_jtag_axireg_tdi  ),
+        .dbg_axi_scan_out_i       ( s_jtag_axireg_tdo  ),
+        .soc_jtag_reg_i           ( soc_jtag_reg_soc   ),
+        .soc_jtag_reg_o           ( soc_jtag_reg_tap   ),
+        .sel_fll_clk_o            ( s_sel_fll_clk      )
     );
 
     assign jtag_tap_bypass_fll_clk_o = s_sel_fll_clk;
 
     lint_jtag_wrap i_lint_jtag (
         .tck_i                    ( jtag_tck_i           ),
-        .tdi_i                    ( s_jtag_lint_tdi      ),
+        .tdi_i                    ( s_jtag_axireg_tdi    ),
         .trstn_i                  ( jtag_trst_ni         ),
-        .tdo_o                    ( s_jtag_lint_tdo      ),
+        .tdo_o                    ( s_jtag_axireg_tdo    ),
         .shift_dr_i               ( s_jtag_shift_dr      ),
         .pause_dr_i               ( 1'b0                 ),
         .update_dr_i              ( s_jtag_update_dr     ),
         .capture_dr_i             ( s_jtag_capture_dr    ),
-        .lint_select_i            ( s_jtag_lint_sel      ),
+        .lint_select_i            ( s_jtag_axireg_sel    ),
         .clk_i                    ( soc_clk_i            ),
-        .rst_ni                   ( soc_rstn_synced_i      ),
+        .rst_ni                   ( soc_rstn_synced_i    ),
         .jtag_lint_master         ( s_lint_pulp_jtag_bus )
     );
 
