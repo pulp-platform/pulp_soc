@@ -59,6 +59,7 @@ sources:
       - rtl/pulp_soc/soc_interconnect.sv
       - rtl/pulp_soc/soc_interconnect_wrap.sv
       - rtl/pulp_soc/soc_peripherals.sv
+      - rtl/pulp_soc/jtag_tap_top.sv
       - rtl/pulp_soc/pulp_soc.sv
   # fc
   - target: rtl
