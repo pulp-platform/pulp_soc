@@ -19,7 +19,6 @@ module pulp_soc import dm::*; #(
     parameter USE_XPULP           = 1,
     parameter USE_FPU             = 1,
     parameter USE_HWPE            = 1,
-    parameter USE_CLUSTER_EVENT   = 1,
     parameter SIM_STDOUT          = 1,
     parameter AXI_ADDR_WIDTH      = 32,
     parameter AXI_DATA_IN_WIDTH   = 64,
