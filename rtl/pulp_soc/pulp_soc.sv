@@ -46,11 +46,20 @@ module pulp_soc import dm::*; #(
     localparam S2C_AR_WIDTH       = AXI_ID_OUT_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+1
 ) (
     input logic                                                 slow_clk_i,
-    input logic                                                 slow_clk_rst_ni,
+    /// Async reset with deassertion synced to slow_clk rising edge. Do not just
+    /// reset domains individually! This needs clock domain/reset domain crossing
+    /// safe sequencing!!!
+    input logic                                                 slow_clk_rstn_synced_i,
     input logic                                                 soc_clk_i,
-    input logic                                                 soc_rst_ni,
+    /// Async reset with deassertion synced to soc_clk rising edge. Do not just
+    /// reset domains individually! This needs clock domain/reset domain crossing
+    /// safe sequencing!!!
+    input logic                                                 soc_rstn_synced_i,
     input logic                                                 per_clk_i,
-    input logic                                                 per_rst_ni,
+    /// Async reset with deassertion synced to per_clk rising edge. Do not just
+    /// reset domains individually! This needs clock domain/reset domain crossing
+    /// safe sequencing!!!
+    input logic                                                 per_rstn_synced_i,
 
     input logic                                                 dft_test_mode_i,
     input logic                                                 dft_cg_enable_i,
@@ -265,9 +274,6 @@ module pulp_soc import dm::*; #(
 
     logic [31:0]           s_fc_bootaddr;
 
-    logic                  s_soc_rstn_sync;
-    logic                  s_per_rstn_sync;
-    logic                  s_slow_rstn_sync;
     logic                  s_sel_fll_clk;
 
     logic                  s_dma_pe_evt;
@@ -475,7 +481,7 @@ module pulp_soc import dm::*; #(
      .axi_resp_t(s2c_resp_t             ),
     .LogDepth        ( CDC_FIFOS_LOG_DEPTH               )
     ) axi_master_cdc_i (
-     .src_rst_ni                       ( s_soc_rstn_sync     ),
+     .src_rst_ni                       ( soc_rstn_synced_i     ),
      .src_clk_i                        ( soc_clk_i                   ),
      .src_req_i                        ( src_req                     ),
      .src_resp_o                       ( src_resp                    ),
@@ -505,7 +511,7 @@ module pulp_soc import dm::*; #(
         .BANK_SIZE_INTL_SRAM   ( L2_BANK_SIZE )
     ) l2_ram_i (
         .clk_i           ( soc_clk_i          ),
-        .rst_ni          ( s_soc_rstn_sync    ),
+        .rst_ni          ( soc_rstn_synced_i    ),
         .init_ni         ( 1'b1               ),
         .test_mode_i     ( dft_test_mode_i    ),
         .mem_slave       ( s_mem_l2_bus       ),
@@ -521,7 +527,7 @@ module pulp_soc import dm::*; #(
         .ROM_ADDR_WIDTH(ROM_ADDR_WIDTH)
     ) boot_rom_i (
         .clk_i       ( soc_clk_i       ),
-        .rst_ni      ( s_soc_rstn_sync ),
+        .rst_ni      ( soc_rstn_synced_i ),
         .init_ni     ( 1'b1            ),
         .mem_slave   ( s_mem_rom_bus   ),
         .test_mode_i ( dft_test_mode_i )
@@ -543,14 +549,14 @@ module pulp_soc import dm::*; #(
 
         .clk_i                  ( soc_clk_i              ),
         .periph_clk_i           ( per_clk_i              ),
-        .periph_rstn_i          ( s_per_rstn_sync        ),
-        .rst_ni                 ( s_soc_rstn_sync        ),
+        .periph_rstn_i          ( per_rstn_synced_i        ),
+        .rst_ni                 ( soc_rstn_synced_i        ),
         .slow_clk_i             ( slow_clk_i             ),
-        .slow_rstn_i            ( s_slow_rstn_sync       ),
+        .slow_rstn_i            ( slow_clk_rstn_synced_i ),
         .sel_pll_clk_i          ( s_sel_fll_clk          ),
 
         .dft_test_mode_i        ( dft_test_mode_i        ),
-        .dft_cg_enable_i        ( 1'b0                   ),
+        .dft_cg_enable_i        ( dft_cg_enable_i        ),
 
         .boot_l2_i              ( boot_l2_i              ),
         .bootsel_i              ( bootsel_i              ),
@@ -628,7 +634,7 @@ module pulp_soc import dm::*; #(
       .LOG_DEPTH(CDC_FIFOS_LOG_DEPTH),
       .SYNC_STAGES(2)
     ) i_event_cdc_src (
-      .src_rst_ni               ( s_soc_rstn_sync             ),
+      .src_rst_ni               ( soc_rstn_synced_i             ),
       .src_clk_i                ( soc_clk_i                   ),
       .src_data_i               ( s_cl_event_data             ),
       .src_valid_i              ( s_cl_event_valid            ),
@@ -640,7 +646,7 @@ module pulp_soc import dm::*; #(
 
     edge_propagator_rx ep_dma_pe_evt_i (
         .clk_i   ( soc_clk_i               ),
-        .rstn_i  ( s_soc_rstn_sync ),
+        .rstn_i  ( soc_rstn_synced_i ),
         .valid_o ( s_dma_pe_evt            ),
         .ack_o   ( dma_pe_evt_ack_o        ),
         .valid_i ( dma_pe_evt_valid_i      )
@@ -648,7 +654,7 @@ module pulp_soc import dm::*; #(
 
     edge_propagator_rx ep_dma_pe_irq_i (
         .clk_i   ( soc_clk_i               ),
-        .rstn_i  ( s_soc_rstn_sync ),
+        .rstn_i  ( soc_rstn_synced_i ),
         .valid_o ( s_dma_pe_irq            ),
         .ack_o   ( dma_pe_irq_ack_o        ),
         .valid_i ( dma_pe_irq_valid_i      )
@@ -656,7 +662,7 @@ module pulp_soc import dm::*; #(
 `ifndef PULP_FPGA_EMUL
     edge_propagator_rx ep_pf_evt_i (
         .clk_i   ( soc_clk_i               ),
-        .rstn_i  ( s_soc_rstn_sync ),
+        .rstn_i  ( soc_rstn_synced_i ),
         .valid_o ( s_pf_evt                ),
         .ack_o   ( pf_evt_ack_o            ),
         .valid_i ( pf_evt_valid_i          )
@@ -674,7 +680,7 @@ module pulp_soc import dm::*; #(
         .USE_HWPE      ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i              ( soc_clk_i                     ),
-        .rst_ni             ( s_soc_rstn_sync               ),
+        .rst_ni             ( soc_rstn_synced_i               ),
 
         .test_en_i          ( dft_test_mode_i               ),
 
@@ -698,31 +704,6 @@ module pulp_soc import dm::*; #(
         .supervisor_mode_o  ( s_supervisor_mode             )
     );
 
-    // Reset synchonizer for soc reset
-    rstgen i_soc_rstn_sync (
-      .clk_i       ( soc_clk_i       ),
-      .rst_ni      ( soc_rst_ni      ),
-      .test_mode_i ( dft_test_mode_i ),
-      .rst_no      ( s_soc_rstn_sync ),
-      .init_no     (                 ) // Not used
-      );
-
-    rstgen i_per_rstn_sync (
-      .clk_i       ( per_clk_i       ),
-      .rst_ni      ( per_rst_ni      ),
-      .test_mode_i ( dft_test_mode_i ),
-      .rst_no      ( s_per_rstn_sync ),
-      .init_no     (                 ) // Not used
-    );
-
-    rstgen i_slow_rstn_sync (
-      .clk_i       ( slow_clk_i       ),
-      .rst_ni      ( slow_clk_rst_ni  ),
-      .test_mode_i ( dft_test_mode_i  ),
-      .rst_no      ( s_slow_rstn_sync ),
-      .init_no     (                  ) // Not used
-    );
-
     soc_interconnect_wrap #(
       .NR_HWPE_PORTS   ( NB_HWPE_PORTS   ),
       .NR_L2_PORTS     ( NB_L2_BANKS     ),
@@ -730,7 +711,7 @@ module pulp_soc import dm::*; #(
       .AXI_USER_WIDTH  ( AXI_USER_WIDTH  )
     ) i_soc_interconnect_wrap (
       .clk_i                   ( soc_clk_i           ),
-      .rst_ni                  ( s_soc_rstn_sync     ),
+      .rst_ni                  ( soc_rstn_synced_i     ),
       .test_en_i               ( dft_test_mode_i     ),
       .tcdm_fc_data            ( s_lint_fc_data_bus  ),
       .tcdm_fc_instr           ( s_lint_fc_instr_bus ),
@@ -752,7 +733,7 @@ module pulp_soc import dm::*; #(
         .IdcodeValue          ( `DMI_JTAG_IDCODE    )
     ) i_dmi_jtag (
         .clk_i                ( soc_clk_i           ),
-        .rst_ni               ( s_soc_rstn_sync     ),
+        .rst_ni               ( soc_rstn_synced_i     ),
         .testmode_i           ( 1'b0                ),
         .dmi_req_o            ( jtag_dmi_req        ),
         .dmi_req_valid_o      ( jtag_req_valid      ),
@@ -789,7 +770,7 @@ module pulp_soc import dm::*; #(
     ) i_dm_top (
 
        .clk_i             ( soc_clk_i                 ),
-       .rst_ni            ( s_soc_rstn_sync           ),
+       .rst_ni            ( soc_rstn_synced_i           ),
        .testmode_i        ( 1'b0                      ),
        .ndmreset_o        (                           ),
        .dmactive_o        (                           ), // active debug session
@@ -835,7 +816,7 @@ module pulp_soc import dm::*; #(
         .td_o                     ( jtag_tdo_o         ),
 
         .test_clk_i        ( 1'b0               ),
-        .test_rstn_i       ( s_soc_rstn_sync    ),
+        .test_rstn_i       ( soc_rstn_synced_i    ),
 
         .jtag_shift_dr_o   ( s_jtag_shift_dr    ),
         .jtag_update_dr_o  ( s_jtag_update_dr   ),
@@ -862,14 +843,14 @@ module pulp_soc import dm::*; #(
         .capture_dr_i             ( s_jtag_capture_dr    ),
         .lint_select_i            ( s_jtag_lint_sel      ),
         .clk_i                    ( soc_clk_i            ),
-        .rst_ni                   ( s_soc_rstn_sync      ),
+        .rst_ni                   ( soc_rstn_synced_i      ),
         .jtag_lint_master         ( s_lint_pulp_jtag_bus )
     );
 
     tcdm_arbiter_2x1 jtag_lint_arbiter_i
      (
         .clk_i(soc_clk_i),
-        .rst_ni(s_soc_rstn_sync),
+        .rst_ni(soc_rstn_synced_i),
         .tcdm_bus_1_i(s_lint_riscv_jtag_bus),
         .tcdm_bus_0_i(s_lint_pulp_jtag_bus),
         .tcdm_bus_o(s_lint_debug_bus)
@@ -880,7 +861,7 @@ module pulp_soc import dm::*; #(
         .APB_ADDR_WIDTH ( 32  )
     ) apb2per_newdebug_i (
         .clk_i                ( soc_clk_i               ),
-        .rst_ni               ( s_soc_rstn_sync         ),
+        .rst_ni               ( soc_rstn_synced_i         ),
 
         .PADDR                ( s_apb_debug_bus.paddr   ),
         .PWDATA               ( s_apb_debug_bus.pwdata  ),
@@ -903,8 +884,8 @@ module pulp_soc import dm::*; #(
      );
 
      assign slave_grant = dm_slave_req;
-     always_ff @(posedge soc_clk_i or negedge s_soc_rstn_sync) begin : apb2per_valid
-         if(~s_soc_rstn_sync) begin
+     always_ff @(posedge soc_clk_i or negedge soc_rstn_synced_i) begin : apb2per_valid
+         if(~soc_rstn_synced_i) begin
              slave_valid <= 0;
          end else begin
              slave_valid <= slave_grant;
