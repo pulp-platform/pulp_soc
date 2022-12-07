@@ -295,8 +295,8 @@ module soc_peripherals
  if (SIM_STDOUT) begin
      logic pready_q;
 
-     assign virtual_stdout_slave.pready  = pready_q;
-     assign virtual_stdout_slave.pslverr = 1'b0;
+     assign s_virtual_stdout_slave.pready  = pready_q;
+     assign s_virtual_stdout_slave.pslverr = 1'b0;
 
      tb_fs_handler #(
           .ADDR_WIDTH ( 32          ),
@@ -306,64 +306,64 @@ module soc_peripherals
      ) i_fs_handler (
           .clk   ( clk_i                                                  ),
           .rst_n ( rst_ni                                                 ),
-          .CSN   ( ~(virtual_stdout_slave.psel & virtual_stdout_slave.penable & pready_q) ),
-          .WEN   ( ~virtual_stdout_slave.pwrite                                   ),
-          .ADDR  ( virtual_stdout_slave.paddr                                     ),
-          .WDATA ( virtual_stdout_slave.pwdata                                    ),
+          .CSN   ( ~(s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable & pready_q) ),
+          .WEN   ( ~s_virtual_stdout_slave.pwrite                                   ),
+          .ADDR  ( s_virtual_stdout_slave.paddr                                     ),
+          .WDATA ( s_virtual_stdout_slave.pwdata                                    ),
           .BE    ( 4'hf                                                   ),
-          .RDATA ( virtual_stdout_slave.prdata                                    )
+          .RDATA ( s_virtual_stdout_slave.prdata                                    )
      );
 
      always_ff @(posedge clk_i or negedge rst_ni) begin
         if(~rst_ni) begin
            pready_q <= 0;
         end else begin
-           pready_q <= (virtual_stdout_slave.psel & virtual_stdout_slave.penable);
+           pready_q <= (s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable);
         end
      end
  end else begin
-     assign virtual_stdout_slave.pready  = 'h1;
-     assign virtual_stdout_slave.pslverr = 1'b0;
-     assign virtual_stdout_slave.prdata  = 'h0;
+     assign s_virtual_stdout_slave.pready  = 'h1;
+     assign s_virtual_stdout_slave.pslverr = 1'b0;
+     assign s_virtual_stdout_slave.prdata  = 'h0;
  end
 
     logic sys_rst_ni;
     logic sys_clk_i;
 
     pulp_io #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_pulp_io (
-        .sys_rst_ni      (rst_ni              ),
-        .sys_clk_i       (clk_i               ),
-        .periph_clk_i    (periph_clk_i        ),
+        .sys_rst_ni      (rst_ni               ),
+        .sys_clk_i       (clk_i                ),
+        .periph_clk_i    (periph_clk_i         ),
 
-        .L2_ro_wen_o     (l2_tx_master.wen    ),
-        .L2_ro_req_o     (l2_tx_master.req    ),
-        .L2_ro_gnt_i     (l2_tx_master.gnt    ),
-        .L2_ro_addr_o    (l2_tx_master.addr   ),
-        .L2_ro_be_o      (l2_tx_master.be     ),
-        .L2_ro_wdata_o   (l2_tx_master.wdata  ),
-        .L2_ro_rvalid_i  (l2_tx_master.rvalid ),
-        .L2_ro_rdata_i   (l2_tx_master.rdata  ),
+        .L2_ro_wen_o     (l2_tx_master.wen     ),
+        .L2_ro_req_o     (l2_tx_master.req     ),
+        .L2_ro_gnt_i     (l2_tx_master.gnt     ),
+        .L2_ro_addr_o    (l2_tx_master.add     ),
+        .L2_ro_be_o      (l2_tx_master.be      ),
+        .L2_ro_wdata_o   (l2_tx_master.wdata   ),
+        .L2_ro_rvalid_i  (l2_tx_master.r_valid ),
+        .L2_ro_rdata_i   (l2_tx_master.r_rdata ),
 
-        .L2_wo_wen_o     (l2_rx_master.wen    ),
-        .L2_wo_req_o     (l2_rx_master.req    ),
-        .L2_wo_gnt_i     (l2_rx_master.gnt    ),
-        .L2_wo_addr_o    (l2_rx_master.addr   ),
-        .L2_wo_wdata_o   (l2_rx_master.wdata  ),
-        .L2_wo_be_o      (l2_rx_master.be     ),
-        .L2_wo_rvalid_i  (l2_rx_master.rvalid ),
-        .L2_wo_rdata_i   (l2_rx_master.rdata  ),
+        .L2_wo_wen_o     (l2_rx_master.wen     ),
+        .L2_wo_req_o     (l2_rx_master.req     ),
+        .L2_wo_gnt_i     (l2_rx_master.gnt     ),
+        .L2_wo_addr_o    (l2_rx_master.add     ),
+        .L2_wo_wdata_o   (l2_rx_master.wdata   ),
+        .L2_wo_be_o      (l2_rx_master.be      ),
+        .L2_wo_rvalid_i  (l2_rx_master.r_valid ),
+        .L2_wo_rdata_i   (l2_rx_master.r_rdata ),
 
-        .dft_test_mode_i (dft_test_mode_i     ),
-        .dft_cg_enable_i (dft_cg_enable_i     ),
+        .dft_test_mode_i (dft_test_mode_i      ),
+        .dft_cg_enable_i (dft_cg_enable_i      ),
 
-        .udma_apb_paddr  (s_udma_slave.paddr  ),
-        .udma_apb_pwdata (s_udma_slave.pwdata ),
-        .udma_apb_pwrite (s_udma_slave.pwrite ),
-        .udma_apb_psel   (s_udma_slave.psel   ),
-        .udma_apb_penable(s_udma_slave.penable),
-        .udma_apb_prdata (s_udma_slave.prdata ),
-        .udma_apb_pready (s_udma_slave.pready ),
-        .udma_apb_pslverr(s_udma_slave.pslverr),
+        .udma_apb_paddr  (s_udma_slave.paddr   ),
+        .udma_apb_pwdata (s_udma_slave.pwdata  ),
+        .udma_apb_pwrite (s_udma_slave.pwrite  ),
+        .udma_apb_psel   (s_udma_slave.psel    ),
+        .udma_apb_penable(s_udma_slave.penable ),
+        .udma_apb_prdata (s_udma_slave.prdata  ),
+        .udma_apb_pready (s_udma_slave.pready  ),
+        .udma_apb_pslverr(s_udma_slave.pslverr ),
 
         .gpio_apb_paddr  (s_gpio_slave.paddr     ),
         .gpio_apb_pwdata (s_gpio_slave.pwdata    ),
