@@ -42,7 +42,10 @@ module boot_rom #(
 
         generic_rom #(
             .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
-            .DATA_WIDTH(32)
+            .DATA_WIDTH(32),
+            .FILE_NAME("./boot/boot_code.cde") // CDE file is looked for in a
+                                              // folder relative to the
+                                              // simulation folder.
          ) rom_mem_i (
             .CLK            (  clk_i                ),
             .CEN            (  ~mem_slave.req        ),
