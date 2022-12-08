@@ -175,6 +175,9 @@ module pulp_soc import dm::*; #(
     output logic [2:0]                                          apb_chip_ctrl_master_pprot_o,
     output logic                                                apb_chip_ctrl_master_psel_o,
     output logic                                                apb_chip_ctrl_master_penable_o,
+    output logic                                                apb_chip_ctrl_master_pwrite_o,
+    output logic [31:0]                                         apb_chip_ctrl_master_pwdata_o,
+    output logic [3:0]                                          apb_chip_ctrl_master_pstrb_o,
     input logic [31:0]                                          apb_chip_ctrl_master_prdata_i,
     input logic                                                 apb_chip_ctrl_master_pready_i,
     input logic                                                 apb_chip_ctrl_master_pslverr_i,
@@ -333,6 +336,9 @@ module pulp_soc import dm::*; #(
     assign apb_chip_ctrl_master_pprot_o = s_apb_chip_ctrl_bus.pprot;
     assign apb_chip_ctrl_master_psel_o = s_apb_chip_ctrl_bus.psel;
     assign apb_chip_ctrl_master_penable_o = s_apb_chip_ctrl_bus.penable;
+    assign apb_chip_ctrl_master_pwrite_o = s_apb_chip_ctrl_bus.pwrite;
+    assign apb_chip_ctrl_master_pwdata_o = s_apb_chip_ctrl_bus.pwdata;
+    assign apb_chip_ctrl_master_pstrb_o = s_apb_chip_ctrl_bus.pstrb;
     assign s_apb_chip_ctrl_bus.prdata = apb_chip_ctrl_master_prdata_i;
     assign s_apb_chip_ctrl_bus.pready = apb_chip_ctrl_master_pready_i;
     assign s_apb_chip_ctrl_bus.pslverr = apb_chip_ctrl_master_pslverr_i;
