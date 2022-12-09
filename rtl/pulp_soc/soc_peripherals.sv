@@ -120,12 +120,13 @@ module soc_peripherals
     logic [NGPIO-1:0] s_gpio_sync;
     logic       s_sel_hyper_axi;
 
-    logic       s_gpio_event      ;
-    logic [1:0] s_spim_event      ;
-    logic       s_uart_event      ;
-    logic       s_i2c_event       ;
-    logic       s_i2s_event       ;
-    logic       s_i2s_cam_event   ;
+    logic             s_gpio_global_interrupt      ;
+    logic [NGPIO-1:0] s_gpio_pin_level_interrupt;
+    logic [1:0]       s_spim_event      ;
+    logic             s_uart_event      ;
+    logic             s_i2c_event       ;
+    logic             s_i2s_event       ;
+    logic             s_i2s_cam_event   ;
 
     logic [3:0] s_adv_timer_events;
     logic [1:0] s_fc_hp_events;
@@ -152,7 +153,7 @@ module soc_peripherals
     assign s_events[136]              = s_adv_timer_events[1];
     assign s_events[137]              = s_adv_timer_events[2];
     assign s_events[138]              = s_adv_timer_events[3];
-    assign s_events[139]              = s_gpio_event;
+    assign s_events[139]              = s_gpio_global_interrupt;
     assign s_events[140]              = fc_hwpe_events_i[0];
     assign s_events[141]              = fc_hwpe_events_i[1];
     assign s_events[159:142]          = '0;
@@ -166,7 +167,7 @@ module soc_peripherals
     assign fc_interrupts_o[12]  = pf_evt_i;
     assign fc_interrupts_o[13]  = 1'b0;
     assign fc_interrupts_o[14]  = s_ref_rise_event | s_ref_fall_event;
-    assign fc_interrupts_o[15]  = s_gpio_event;
+    assign fc_interrupts_o[15]  = s_gpio_global_interrupt;
     assign fc_interrupts_o[16]  = 1'b0;
     assign fc_interrupts_o[17]  = s_adv_timer_events[0];
     assign fc_interrupts_o[18]  = s_adv_timer_events[1];
@@ -379,24 +380,25 @@ module soc_peripherals
         .event_data_i    (s_pr_event_data     ),
         .event_ready_o   (s_pr_event_ready    ),
 
-        .uart_to_pad      (uart_to_pad_o  ),
-        .pad_to_uart      (pad_to_uart_i  ),
-        .i2c_to_pad       (i2c_to_pad_o   ),
-        .pad_to_i2c       (pad_to_i2c_i   ),
-        .sdio_to_pad      (sdio_to_pad_o  ),
-        .pad_to_sdio      (pad_to_sdio_i  ),
-        .i2s_to_pad       (i2s_to_pad_o   ),
-        .pad_to_i2s       (pad_to_i2s_i   ),
-        .qspi_to_pad      (qspi_to_pad_o  ),
-        .pad_to_qspi      (pad_to_qspi_i  ),
-        .pad_to_cpi       (pad_to_cpi_i   ),
-        .hyper_to_pad     (hyper_to_pad_o ),
-        .pad_to_hyper     (pad_to_hyper_i ),
-        .gpio_in          (gpio_i         ),
-        .gpio_out         (gpio_o         ),
-        .gpio_tx_en_o     (gpio_tx_en_o   ),
-        .gpio_in_sync_o   (s_gpio_sync    ),
-        .gpio_interrupt_o (s_gpio_event   )
+        .uart_to_pad                (uart_to_pad_o              ),
+        .pad_to_uart                (pad_to_uart_i              ),
+        .i2c_to_pad                 (i2c_to_pad_o               ),
+        .pad_to_i2c                 (pad_to_i2c_i               ),
+        .sdio_to_pad                (sdio_to_pad_o              ),
+        .pad_to_sdio                (pad_to_sdio_i              ),
+        .i2s_to_pad                 (i2s_to_pad_o               ),
+        .pad_to_i2s                 (pad_to_i2s_i               ),
+        .qspi_to_pad                (qspi_to_pad_o              ),
+        .pad_to_qspi                (pad_to_qspi_i              ),
+        .pad_to_cpi                 (pad_to_cpi_i               ),
+        .hyper_to_pad               (hyper_to_pad_o             ),
+        .pad_to_hyper               (pad_to_hyper_i             ),
+        .gpio_in                    (gpio_i                     ),
+        .gpio_out                   (gpio_o                     ),
+        .gpio_tx_en_o               (gpio_tx_en_o               ),
+        .gpio_in_sync_o             (s_gpio_sync                ),
+        .gpio_global_interrupt_o    (s_gpio_global_interrupt    ),
+        .gpio_pin_level_interrupt_o (s_gpio_pin_level_interrupt )
     );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
