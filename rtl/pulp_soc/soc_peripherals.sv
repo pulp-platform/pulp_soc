@@ -46,7 +46,6 @@ module soc_peripherals
     input  logic [7:0]                 soc_jtag_reg_i,
     output logic [7:0]                 soc_jtag_reg_o,
 
-    input  logic                       boot_l2_i,
     input  logic [1:0]                 bootsel_i,
     // fc fetch enable can be controlled through this signal or through an APB
     // write to the fc fetch enable register
