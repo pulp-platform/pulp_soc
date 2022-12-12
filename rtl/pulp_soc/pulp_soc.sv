@@ -61,17 +61,32 @@ module pulp_soc import dm::*; #(
     /// safe sequencing!!!
     input logic                                                 per_rstn_synced_i,
 
+    /// DFT signals, if you need DFT double check each internal connection. Some
+    /// connections are likely to be missing
     input logic                                                 dft_test_mode_i,
     input logic                                                 dft_cg_enable_i,
 
+    /// Boot mode selection. The boot firmare in the bootrom reads the bootsel
+    /// bits via the soc_ctrl register and initiates the desired boot procedure.
+    /// The meaining of each bootsel value thus depends on the boot firmware used.
     input logic [1:0]                                           bootsel_i,
 
+    /// Enable/Disable the instruction fetcher of the fabric controller. After
+    /// reset, fetching is by default disabled. It can be enabled with these two
+    /// signals or by writing to soc_ctrl register e.g. through the JTAG debug unit.
     input logic                                                 fc_fetch_en_valid_i,
     input logic                                                 fc_fetch_en_i,
 
+    /// Active-low cluster reset request from soc_ctrl register. This signal is
+    /// supposed to reset the external cluster (if present). MAKE SURE TO PROPERLY
+    /// HANDLY RESET DOMAIN CROSSINGS AND CDC RESETTING. YOU CANNOT JUST RESET ONE
+    /// SIDE OF A CDC (see header of
+    /// https://github.com/pulp-platform/common_cells/blob/master/src/cdc_reset_ctrlr.sv
+    /// for more information )!!!
     output logic                                                cluster_rstn_req_o,
 
-   //  AXI4 SLAVE
+    /// Asnychronous CDC crossing signals to/from external cluster (if present)
+    //  AXI4 SLAVE
     input logic [CDC_FIFOS_LOG_DEPTH:0]                         async_data_slave_aw_wptr_i,
     input logic [2**CDC_FIFOS_LOG_DEPTH-1:0][C2S_AW_WIDTH-1:0]  async_data_slave_aw_data_i,
     output logic [CDC_FIFOS_LOG_DEPTH:0]                        async_data_slave_aw_rptr_o,
@@ -134,13 +149,14 @@ module pulp_soc import dm::*; #(
     output logic                                                pf_evt_ack_o,
     input logic                                                 pf_evt_valid_i,
 
+
+    // Peripheral Connections
     // Timer Channels
     output logic [3:0]                                          timer_ch0_o,
     output logic [3:0]                                          timer_ch1_o,
     output logic [3:0]                                          timer_ch2_o,
     output logic [3:0]                                          timer_ch3_o,
 
-    // Peripheral Connections
     // UART
     output                                                      uart_pkg::uart_to_pad_t [udma_cfg_pkg::N_UART-1:0] uart_to_pad_o,
     input                                                       uart_pkg::pad_to_uart_t [udma_cfg_pkg::N_UART-1:0] pad_to_uart_i,
@@ -170,7 +186,17 @@ module pulp_soc import dm::*; #(
     /////////////////////////////////////////
     // Configuration ports to Chip Control //
     /////////////////////////////////////////
+    // FLL bypass request bit from the PULP JTAG TAP. Connect this to your FLL
+    // bypass multiplexers (e.g. by combining it with an externa bypass_pad
+    // signal).  MAKE SURE TO USE A GLITCH-FREE CLOCK MULTIPLEXER FOR THIS!!!
     output logic                                                jtag_tap_bypass_fll_clk_o,
+    // General Purpose Configuration Port for all chip specific configuration
+    // (e.g. clock generation). All transactions to address space
+    // `SOC_MEM_MAP_CHIP_CTRL_START_ADDR - `SOC_MEM_MAP_CHIP_CTRL_END_ADDR  are
+    // routed to this port (see soc_mem_map.svh header files in chip level
+    // repositories. The definitions of the address spaces are not in this repo
+    // but defined by the toplevle chip repo.)
+    // ALL SIGNALS OF THE CHIP-CTRL PORT ARE SYNCHRONOUS TO SOC_CLK_I.
     output logic [31:0]                                         apb_chip_ctrl_master_paddr_o,
     output logic [2:0]                                          apb_chip_ctrl_master_pprot_o,
     output logic                                                apb_chip_ctrl_master_psel_o,
@@ -183,11 +209,20 @@ module pulp_soc import dm::*; #(
     input logic                                                 apb_chip_ctrl_master_pslverr_i,
 
     // JTAG signals
+    // pulp-soc's JTAG chain contains two JTAG taps:
+    // TDI-> RISC-DEBUG TAP (IR-size: 5, IDCODE: 0x50001db3) -> Legacy PULP JTAG TAP (IR-size: 5, IDCODE: 0x5fffedb3) -> TDO.
+    // The reason we keep the legacy pulp JTAG tap is, that it provides much faster read/write access to the system memory and
+    // it is much easier to generate static test vectors for SoC testing.
     input logic                                                 jtag_tck_i,
     input logic                                                 jtag_trst_ni,
     input logic                                                 jtag_tms_i,
     input logic                                                 jtag_tdi_i,
     output logic                                                jtag_tdo_o,
+    // Debug request lines from the RISC-V debug unit to the cluster cores. Upon
+    // debug request, the debugged harts/cores will start to communicate with
+    // the debug unit by fetching instructions from a speciac debug ROM within
+    // the debug unit itself (which is exposed as a normal soc peripheral to the
+    // soc_peripheral interconnect).
     output logic [NB_CORES-1:0]                                 cluster_dbg_irq_valid_o
 );
 
