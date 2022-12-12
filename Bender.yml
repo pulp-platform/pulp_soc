@@ -86,3 +86,9 @@ sources:
   - files:
       - rtl/components/tb_fs_handler.sv
     target: all(rtl, not(synthesis))
+external_import:
+  - name: reggen
+    target_dir: "util"
+    upstream: { git: "https://github.com/pulp-platform/register_interface.git", rev: "e3a4955071fcf554febd4b29a7c7a52c7f1e7fc6"}
+    mapping:
+      - { from: 'vendor/lowrisc_opentitan/util', to: 'reggen'}
