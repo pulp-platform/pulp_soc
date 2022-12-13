@@ -19,14 +19,19 @@
 module soc_peripherals
     import pkg_soc_interconnect::addr_map_rule_t;
 #(
-    parameter MEM_ADDR_WIDTH = 13,
-    parameter APB_ADDR_WIDTH = 32,
-    parameter APB_DATA_WIDTH = 32,
-    parameter NB_CORES       = 4,
-    parameter NB_CLUSTERS    = 0,
-    parameter EVNT_WIDTH     = 8,
-    parameter SIM_STDOUT     = 1,
-    localparam NGPIO         = gpio_reg_pkg::GPIOCount // Have a look at the
+    parameter  MEM_ADDR_WIDTH = 13,
+    parameter  APB_ADDR_WIDTH = 32,
+    parameter  APB_DATA_WIDTH = 32,
+    parameter  NB_CORES = 4,
+    parameter  NB_CLUSTERS = 0,
+    parameter  EVNT_WIDTH = 8,
+    parameter  SIM_STDOUT = 1,
+    parameter  SOC_VERSION,
+    parameter  CORE_TYPE,
+    parameter  FPU_PRESENT,
+    parameter  ZFINX,
+    parameter  HWPE_PRESENT,
+    localparam NGPIO = gpio_reg_pkg::GPIOCount // Have a look at the
                                 // README in the GPIO repo in order to change
                                 // the number of GPIOs.
 ) (
@@ -117,7 +122,6 @@ module soc_peripherals
     localparam UDMA_EVENTS = 16*8;
 
     logic [NGPIO-1:0] s_gpio_sync;
-    logic       s_sel_hyper_axi;
 
     logic             s_gpio_global_interrupt      ;
     logic [NGPIO-1:0] s_gpio_pin_level_interrupt;
@@ -409,50 +413,49 @@ module soc_peripherals
     // ╚═╝  ╚═╝╚═╝     ╚═════╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    apb_soc_ctrl #(
-        .NB_CORES       ( NB_CORES       ),
-        .NB_CLUSTERS    ( NB_CLUSTERS    ),
-        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
-        .NBIT_PADCFG    ( 3              ) // APB SoC control is no longer
-                                           // responsible for pad config. This is handled
-                                           // by the padmux IP genreated by
-                                           // Padrick. The value here is thus irrelevant.
-    ) i_apb_soc_ctrl (
-        .HCLK                ( clk_i                  ),
-        .HRESETn             ( rst_ni                 ),
+    REG_BUS #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_regbus_soc_ctrl_reg(.clk_i);
+    soc_ctrl_reg_pkg::soc_ctrl_reg2hw_t s_soc_ctrl_reg_reg2hw;
+    soc_ctrl_reg_pkg::soc_ctrl_hw2reg_t s_soc_ctrl_reg_hw2reg;
 
-        .PADDR               ( s_soc_ctrl_slave.paddr   ),
-        .PWDATA              ( s_soc_ctrl_slave.pwdata  ),
-        .PWRITE              ( s_soc_ctrl_slave.pwrite  ),
-        .PSEL                ( s_soc_ctrl_slave.psel    ),
-        .PENABLE             ( s_soc_ctrl_slave.penable ),
-        .PRDATA              ( s_soc_ctrl_slave.prdata  ),
-        .PREADY              ( s_soc_ctrl_slave.pready  ),
-        .PSLVERR             ( s_soc_ctrl_slave.pslverr ),
 
-        .sel_pll_clk_i       ( sel_pll_clk_i          ),
-        .boot_l2_i           ( boot_l2_i              ),
-        .bootsel_i           ( bootsel_i              ),
-        .fc_fetch_en_valid_i ( fc_fetch_en_valid_i    ),
-        .fc_fetch_en_i       ( fc_fetch_en_i          ),
-
-        .fc_bootaddr_o       ( fc_bootaddr_o          ),
-        .fc_fetchen_o        ( fc_fetchen_o           ),
-
-        .soc_jtag_reg_i      ( soc_jtag_reg_i         ),
-        .soc_jtag_reg_o      ( soc_jtag_reg_o         ),
-
-        .pad_mux             (                        ), // Not used. Padmuxing is handled externally.
-        .pad_cfg             (                        ), // Not used. Padmuxing is handled externally.
-        .cluster_pow_o       ( cluster_pow_o          ),
-        .sel_hyper_axi_o     ( s_sel_hyper_axi        ),
-
-        .cluster_byp_o            (                        ), // Not used anymore
-        .cluster_boot_addr_o      (                        ), // Not used anymore
-        .cluster_fetch_enable_o   (                        ), // Not used anymore
-        .cluster_rstn_o           ( cluster_rstn_req_o     ),
-        .cluster_irq_o            (                        )  // Not used anymore
+    // Convert APB to regbus
+    apb_to_reg_intf #(
+      .DATA_WIDTH(32),
+      .ADDR_WIDTH(32)
+    ) i_soc_ctrl_apb2reg (
+      .apb_i(s_soc_ctrl_slave),
+      .reg_o(s_regbus_soc_ctrl_reg)
     );
+
+    soc_ctrl_reg_top_intf i_soc_ctrl (
+      .clk_i,
+      .rst_ni,
+      .regbus_slave ( s_regbus_soc_ctrl_reg ),
+      .reg2hw       ( s_soc_ctrl_reg_reg2hw ),
+      .hw2reg       ( s_soc_ctrl_reg_hw2reg ),
+      .devmode_i    ( 1'b1                  ) // Enable error response for
+                                              // invalid reg access
+    );
+    // Wire up the soc_ctrl_reg signals
+    assign s_soc_ctrl_reg_hw2reg.info.ncores           = NB_CORES;
+    assign s_soc_ctrl_reg_hw2reg.info.nclusters        = NB_CLUSTERS;
+    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.d             = soc_jtag_reg_i;
+    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.de            = 1'b1;
+    assign s_soc_ctrl_reg_hw2reg.fc_fetch_en.d         = fc_fetch_en_i;
+    assign s_soc_ctrl_reg_hw2reg.fc_fetch_en.de        = fc_fetch_en_valid_i;
+    assign s_soc_ctrl_reg_hw2reg.soc_info.version      = SOC_VERSION;
+    assign s_soc_ctrl_reg_hw2reg.soc_info.core_type    = CORE_TYPE;
+    assign s_soc_ctrl_reg_hw2reg.soc_info.fpu_present  = FPU_PRESENT;
+    assign s_soc_ctrl_reg_hw2reg.soc_info.zfinx        = ZFINX;
+    assign s_soc_ctrl_reg_hw2reg.soc_info.hwpe_present = HWPE_PRESENT;
+    assign s_soc_ctrl_reg_hw2reg.corestatus_read_only  = s_soc_ctrl_reg_reg2hw.corestatus;
+    assign s_soc_ctrl_reg_hw2reg.bootsel               = bootsel_i;
+    assign s_soc_ctrl_reg_hw2reg.clksel                = sel_pll_clk_i;
+    assign fc_bootaddr_o                               = s_soc_ctrl_reg_reg2hw.fc_bootaddr.q;
+    assign fc_fetchen_o                                = s_soc_ctrl_reg_reg2hw.fc_fetch_en.q;
+    assign cluster_rstn_req_o                          = s_soc_ctrl_reg_reg2hw.cluster_ctrl.q;
+    assign soc_jtag_reg_o                              = s_soc_ctrl_reg_reg2hw.jtagreg.confreg_out.q;
+
 
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),

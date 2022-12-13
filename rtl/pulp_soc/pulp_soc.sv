@@ -15,11 +15,23 @@
 `include "axi/assign.svh"
 
 module pulp_soc import dm::*; #(
-    parameter CORE_TYPE           = 0,
-    parameter USE_XPULP           = 1,
-    parameter USE_FPU             = 1,
-    parameter USE_HWPE            = 1,
-    parameter SIM_STDOUT          = 1,
+    parameter  CORE_TYPE          = 0, // 0 for CV32E40P with XPULP Extensions, 1 for IBEX RV32IMC (formerly ZERORISCY), 2 for IBEX RV32EC (formerly MICRORISCY)
+    parameter  USE_XPULP          = 1, // Enable XPULP extensions on CV32E40P.
+                                       // Has no effect if an IBEX core variant
+                                       // is use.
+    parameter  USE_FPU            = 1, // Mutually exclusive with the use of IBEX. I.e.
+                                       // if an IBEX core variant is used, this paraeter
+                                       // is ignored.
+    parameter  USE_ZFINX          = 1, // Standard RISC-V extension: Reuses the integer
+                                       // regfile for FPU usage instead of requiring a
+                                       // dedicated FPU regfile. Requires correct
+                                       // compiler settings for software to work!
+    parameter  USE_HWPE           = 1,
+    parameter  SIM_STDOUT         = 1, // Enable the virtual stdout interface
+                                       // for communication with simulated
+                                       // testbenches. This parameter must be
+                                       // disabled during any form of physical
+                                       // implementation.
     parameter AXI_ADDR_WIDTH      = 32,
     parameter AXI_DATA_IN_WIDTH   = 64,
     parameter AXI_DATA_OUT_WIDTH  = 32,
@@ -32,7 +44,12 @@ module pulp_soc import dm::*; #(
     parameter EVNT_WIDTH          = 8,
     parameter NB_CORES            = 8,
     parameter NB_HWPE_PORTS       = 4,
-    parameter USE_ZFINX           = 1,
+    localparam SOC_VERSION        = 5, // A increasing number that software can
+                                       // read from soc_ctrl_reg to determine which
+                                       // version of pulp_soc it running on. Increase
+                                       // this number by one whenever something
+                                       // significant changed in pulp_soc or
+                                       // when you freeze a tapeout.
     localparam NGPIO              = gpio_reg_pkg::GPIOCount,
     localparam C2S_AW_WIDTH       = AXI_ID_IN_WIDTH+AXI_ADDR_WIDTH+AXI_USER_WIDTH+$bits(axi_pkg::len_t)+$bits(axi_pkg::size_t)+$bits(axi_pkg::burst_t)+$bits(axi_pkg::cache_t)+$bits(axi_pkg::prot_t)+$bits(axi_pkg::qos_t)+$bits(axi_pkg::region_t)+$bits(axi_pkg::atop_t)+1,
     localparam C2S_W_WIDTH        = AXI_USER_WIDTH+AXI_STRB_WIDTH_IN+AXI_DATA_IN_WIDTH+1,
@@ -61,6 +78,12 @@ module pulp_soc import dm::*; #(
     /// safe sequencing!!!
     input logic                                                 per_rstn_synced_i,
 
+    /// If you want to individually reset either the cluster or the SoC clock
+    /// domain, a toplevel reset controller is REQUIRED. The controller should
+    /// first gate both, the SoC and the cluster clock domain, reset the desired
+    /// one of the two domains while ALSO asserting the soc_cluster_cdc_rst_ni
+    /// signal and finally ungate both clock domains.
+    input logic                                                 soc_cluster_cdc_rst_ni,
     /// DFT signals, if you need DFT double check each internal connection. Some
     /// connections are likely to be missing
     input logic                                                 dft_test_mode_i,
@@ -412,12 +435,17 @@ module pulp_soc import dm::*; #(
     XBAR_TCDM_BUS s_lint_fc_instr_bus ();
     XBAR_TCDM_BUS s_lint_hwpe_bus[NB_HWPE_PORTS-1:0]();
 
-    `ifdef REMAP_ADDRESS
-        logic [3:0] base_addr_int;
-        assign base_addr_int = 4'b0001; //FIXME attach this signal somewhere in the soc peripherals --> IGOR
-    `endif
 
+    ////////////////////////
+    // Cluster connection //
+    ////////////////////////
 
+    // This is only relevant if pulp_soc is instantiated next to a PULP cluster.
+    // In thi case the following module instantiations handle the CDC crossing
+    // for communication between cluster and soc. There are two independent AXI
+    // channels for communication: A smaller 32-bit Axi channel with soc domain
+    // acting as master and cluster as slave and a wider 64-bit AXI connection
+    // with reversed roles.
 
     assign cluster_test_en_o = dft_test_mode_i;
     // If you want to connect a real PULP cluster you also need a cluster_busy_i signal
@@ -450,6 +478,19 @@ module pulp_soc import dm::*; #(
   `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
   `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
 
+  // One-sided CDC Reset
+  // In the case of pulp_cluster and pulp_soc we not only have the issue of clock
+  // domain crossing, we also have a problem with reset domain crossings. Since
+  // both, the cluster and the SoC can be reset individually, we need to be
+  // extremely carefuly in how we handle these one-sided resets on the clock
+  // domain boundaries.
+  //
+  // WARNING: Do not just connect each domains specific reset signal
+  // to the respective side of the cdc. this will not work at all.
+  //
+  // In order to handle one-sided resets properly, a toplevel reset controller
+  // has to gate both clock domains and assert the CDC reset signal.
+
   // CLUSTER TO SOC AXI
   axi_cdc_dst #(
      .aw_chan_t (c2s_aw_chan_t),
@@ -461,7 +502,7 @@ module pulp_soc import dm::*; #(
      .axi_resp_t(c2s_resp_t   ),
      .LogDepth        ( 3                      )
     ) axi_slave_cdc_i (
-     .dst_rst_ni                       ( s_rstn_cluster_sync_soc    ),
+     .dst_rst_ni                       ( soc_cluster_cdc_rst_ni     ),
      .dst_clk_i                        ( soc_clk_i                  ),
      .dst_req_o                        ( dst_req                    ),
      .dst_resp_i                       ( dst_resp                   ),
@@ -522,7 +563,7 @@ module pulp_soc import dm::*; #(
      .axi_resp_t(s2c_resp_t             ),
     .LogDepth        ( CDC_FIFOS_LOG_DEPTH               )
     ) axi_master_cdc_i (
-     .src_rst_ni                       ( soc_rstn_synced_i     ),
+     .src_rst_ni                       ( soc_cluster_cdc_rst_ni      ),
      .src_clk_i                        ( soc_clk_i                   ),
      .src_req_i                        ( src_req                     ),
      .src_resp_o                       ( src_resp                    ),
@@ -585,7 +626,12 @@ module pulp_soc import dm::*; #(
         .NB_CORES           ( NB_CORES                              ),
         .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
         .EVNT_WIDTH         ( EVNT_WIDTH                            ),
-        .SIM_STDOUT         ( SIM_STDOUT                            )
+        .SIM_STDOUT         ( SIM_STDOUT                            ),
+        .SOC_VERSION        ( SOC_VERSION                           ),
+        .CORE_TYPE          ( CORE_TYPE                             ),
+        .FPU_PRESENT        ( USE_FPU                               ),
+        .ZFINX              ( USE_ZFINX                             ),
+        .HWPE_PRESENT       ( USE_HWPE                              )
     ) soc_peripherals_i (
 
         .clk_i                  ( soc_clk_i              ),
@@ -674,7 +720,7 @@ module pulp_soc import dm::*; #(
       .LOG_DEPTH(CDC_FIFOS_LOG_DEPTH),
       .SYNC_STAGES(2)
     ) i_event_cdc_src (
-      .src_rst_ni               ( soc_rstn_synced_i             ),
+      .src_rst_ni               ( soc_cluster_cdc_rst_ni      ),
       .src_clk_i                ( soc_clk_i                   ),
       .src_data_i               ( s_cl_event_data             ),
       .src_valid_i              ( s_cl_event_valid            ),
