@@ -377,9 +377,9 @@ module pulp_soc import dm::*; #(
     logic                  s_jtag_shift_dr;
     logic                  s_jtag_update_dr;
     logic                  s_jtag_capture_dr;
-    logic                  s_jtag_lint_sel;
-    logic                  s_jtag_lint_tdi;
-    logic                  s_jtag_lint_tdo;
+    logic                  s_jtag_axireg_sel;
+    logic                  s_jtag_axireg_tdi;
+    logic                  s_jtag_axireg_tdo;
 
 
     APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_apb_intrpt_ctrl_bus ();
