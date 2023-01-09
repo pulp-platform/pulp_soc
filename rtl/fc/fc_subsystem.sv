@@ -237,6 +237,18 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .debug_running_o       (),
         .debug_halted_o        (),
 
+        // Recovery Ports for RF
+        .recover_i         ( '0 ),
+        // Write Port A
+        .regfile_waddr_a_i ( '0 ),
+        .regfile_wdata_a_i ( '0 ),
+        .regfile_we_a_i    ( '0 ),
+     
+        // Write Port B
+        .regfile_waddr_b_i ( '0 ),
+        .regfile_wdata_b_i ( '0 ),
+        .regfile_we_b_i    ( '0 ),
+
         // CPU Control Signals
         .fetch_enable_i        (fetch_en_int),
         .core_sleep_o          ()
