@@ -177,7 +177,8 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .PULP_CLUSTER     (0),
         .FPU              (USE_FPU),
         .PULP_ZFINX       (USE_ZFINX),
-        .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS)
+        .NUM_EXTERNAL_PERF(N_EXT_PERF_COUNTERS),
+        .NUM_MHPMCOUNTERS (1)
     ) FC_CORE_i (
 
         // Clock and Reset
@@ -239,7 +240,9 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
 
         // CPU Control Signals
         .fetch_enable_i        (fetch_en_int),
-        .core_sleep_o          ()
+        .core_sleep_o          (),
+
+        .external_perf_i       ('0)
     );
 
     assign supervisor_mode_o = 1'b1;
