@@ -233,6 +233,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
 
         // Debug Interface
         .debug_req_i           (debug_req_i),
+        .debug_resume_i        ( 1'b0 ),
         .debug_havereset_o     (),
         .debug_running_o       (),
         .debug_halted_o        (),
@@ -243,11 +244,18 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .regfile_waddr_a_i ( '0 ),
         .regfile_wdata_a_i ( '0 ),
         .regfile_we_a_i    ( '0 ),
-     
         // Write Port B
         .regfile_waddr_b_i ( '0 ),
         .regfile_wdata_b_i ( '0 ),
         .regfile_we_b_i    ( '0 ),
+        // Backup ports to the RF
+        .regfile_backup_i   ( '0 ),
+        .regfile_raddr_ra_i ( '0 ),
+        .regfile_raddr_rb_i ( '0 ),
+        .regfile_raddr_rc_i ( '0 ),
+        .regfile_rdata_ra_o ( ),
+        .regfile_rdata_rb_o ( ),
+        .regfile_rdata_rc_o ( ),
 
         // CPU Control Signals
         .fetch_enable_i        (fetch_en_int),
