@@ -240,6 +240,11 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .debug_running_o       (),
         .debug_halted_o        (),
 
+        // Program Counter Recovery
+        .pc_recover_i ('0),
+        .recovery_program_counter_i ('0),
+        .recovery_branch_i ( '0 ),
+        .recovery_branch_addr_i ( '0 ),
         // Recovery Ports for RF
         .recover_i         ( '0 ),
         // Write Port A
