@@ -240,6 +240,10 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .debug_running_o       (),
         .debug_halted_o        (),
 
+        // Program Counter Backup
+        .backup_program_counter_o (),
+        .backup_branch_o (),
+        .backup_branch_addr_o (),
         // Program Counter Recovery
         .pc_recover_i ('0),
         .recovery_program_counter_i ('0),
@@ -255,6 +259,15 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .regfile_waddr_b_i ( '0 ),
         .regfile_wdata_b_i ( '0 ),
         .regfile_we_b_i    ( '0 ),
+        // Outputs from RF
+        // Port A
+        .regfile_we_a_o (),
+        .regfile_waddr_a_o (),
+        .regfile_wdata_a_o (),
+        // Port B
+        .regfile_we_b_o (),
+        .regfile_waddr_b_o (),
+        .regfile_wdata_b_o (),
         // Backup ports to the RF
         .regfile_backup_i   ( '0 ),
         .regfile_raddr_ra_i ( '0 ),
