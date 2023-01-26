@@ -184,6 +184,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         // Clock and Reset
         .clk_i,
         .rst_ni,
+        .setback_i ('0),
 
         // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
         .pulp_clock_en_i      ('0 ),
