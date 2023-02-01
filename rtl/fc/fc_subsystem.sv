@@ -239,13 +239,21 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .debug_running_o       (),
         .debug_halted_o        (),
 
-        // Program Counter Recovery
-        .pc_recover_i ('0),
-        .recovery_program_counter_i ('0),
-        .recovery_branch_i ( '0 ),
-        .recovery_branch_addr_i ( '0 ),
-        // Recovery Ports for RF
         .recover_i         ( '0 ),
+        // Program Counter Recovery
+        .pc_recover_i               ( '0 ),
+        .recovery_program_counter_i ( '0 ),
+        .recovery_branch_i          ( '0 ),
+        .recovery_branch_addr_i     ( '0 ),
+        // CSRs Recovery
+        .recovery_mstatus_i  ( '0 ),
+        .recovery_mie_i      ( '0 ),
+        .recovery_mtvec_i    ( '0 ),
+        .recovery_mscratch_i ( '0 ),
+        .recovery_mip_i      ( '0 ),
+        .recovery_mepc_i     ( '0 ),
+        .recovery_mcause_i   ( '0 ),
+        // Recovery Ports for RF
         // Write Port A
         .regfile_waddr_a_i ( '0 ),
         .regfile_wdata_a_i ( '0 ),
