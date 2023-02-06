@@ -131,6 +131,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     obi_pulp_adapter i_obi_pulp_adapter_data (
         .rst_ni       (rst_ni),
         .clk_i        (clk_i),
+        .setback_i    ('0),
         .core_req_i   (core_data_req),
         .mem_gnt_i    (core_data_gnt),
         .mem_rvalid_i (core_data_rvalid),
@@ -151,6 +152,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     obi_pulp_adapter i_obi_pulp_adapter_instr (
         .rst_ni       (rst_ni),
         .clk_i        (clk_i),
+        .setback_i    ('0),
         .core_req_i   (core_instr_req),
         .mem_gnt_i    (core_instr_gnt),
         .mem_rvalid_i (core_instr_rvalid),

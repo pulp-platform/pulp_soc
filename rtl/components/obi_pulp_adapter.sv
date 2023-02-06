@@ -15,6 +15,7 @@
 module obi_pulp_adapter (
   input  logic rst_ni,
   input  logic clk_i,
+  input  logic setback_i,
   // Master (core) interface
   input  logic core_req_i,
   // Slave (memory) interface
@@ -32,7 +33,11 @@ module obi_pulp_adapter (
     if (!rst_ni) begin
       ps <= WAIT_GNT;
     end else begin
-      ps <= ns;
+      if (setback_i) begin
+        ps <= WAIT_GNT;
+      end else begin
+        ps <= ns;
+      end
     end
   end
 
