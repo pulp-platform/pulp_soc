@@ -242,12 +242,19 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
 
         // CSRs Recovery
         .recovery_mstatus_i  ( '0 ),
+        .backup_mstatus_o    (),
         .recovery_mie_i      ( '0 ),
+        .backup_mie_o        (),
         .recovery_mtvec_i    ( '0 ),
+        .backup_mtvec_o      (),
         .recovery_mscratch_i ( '0 ),
+        .backup_mscratch_o   (),
         .recovery_mip_i      ( '0 ),
+        .backup_mip_o        (),
         .recovery_mepc_i     ( '0 ),
+        .backup_mepc_o       (),
         .recovery_mcause_i   ( '0 ),
+        .backup_mcause_o     (),
         // Program Counter Backup
         .backup_program_counter_o (),
         .backup_branch_o (),
