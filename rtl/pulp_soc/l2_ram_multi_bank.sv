@@ -11,8 +11,12 @@
 `include "soc_mem_map.svh"
 
 module l2_ram_multi_bank #(
-   parameter NB_BANKS                   = 4,
-   parameter int unsigned BANK_SIZE_INTL_SRAM = 32768 //Number of 32-bit words
+  //  parameter NB_BANKS                   = 4,
+  //  parameter int unsigned BANK_SIZE_INTL_SRAM = 32768 //Number of 32-bit words
+  
+  parameter NB_BANKS                   = 8, // for the memlayout exercise (interleaved)
+  parameter int unsigned BANK_SIZE_INTL_SRAM = 2*32768 // for the memlayout exercise (interleaved)
+
 ) (
    input logic             clk_i,
    input logic             rst_ni,
