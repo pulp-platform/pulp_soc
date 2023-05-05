@@ -1,0 +1,102 @@
+package:
+  name: pulp_soc
+  authors:
+    - "Robert Balas <balasr@iis.ee.ethz.ch>"
+    - "Pasquale Davide Schiavone <pschiavo@iis.ee.ethz.ch>"
+    - "Germain Haugou <haugoug@iis.ee.ethz.ch>"
+    - "Francesco Conti <f.conti@unibo.it>"
+    - "Pirmin Vogel <vogelpi@lowrisc.org>"
+    - "Stefan Mach <smach@iis.ee.ethz.ch>"
+    - "Antonio Pullini <pullinia@iis.ee.ethz.ch>"
+    - "Gianmarco Ottavi <gianmarco.ottavi2@unibo.it>"
+    - "Manuel Eggimann <meggiman@iis.ee.ethz.ch>"
+    - "Luca Valente <luca.valente2@unibo.it>"
+
+dependencies:
+  L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
+  adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.5 }
+  apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
+  apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
+  apb_gpio:               { git: "https://github.com/pulp-platform/apb_gpio.git", rev: "control-pulp" }
+  apb_node:               { git: "https://github.com/pulp-platform/apb_node.git", version: 0.1.1 }
+  axi:                    { git: "https://github.com/pulp-platform/axi.git", rev: "mem_interleaved_intf" }
+  # axi_node:               { git: "https://github.com/pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
+  # todo burn axi_slice:              { git: "https://github.com/pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
+  timer_unit:             { git: "https://github.com/pulp-platform/timer_unit.git", version: 1.0.3 }
+  common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", rev: "control-pulp" }
+  cluster_interconnect:   { git: "https://github.com/pulp-platform/cluster_interconnect.git", rev: "control-pulp" }
+  # fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.6 }
+  jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", version: 0.3.0 }
+  cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "control-pulp"}
+  scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.1.1 }
+  tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.11 }
+  udma_core:              { git: "https://github.com/pulp-platform/udma_core.git", rev: "control-pulp" }
+  udma_uart:              { git: "https://github.com/pulp-platform/udma_uart.git", rev: "control-pulp" }
+  udma_i2c:               { git: "https://github.com/pulp-platform/udma_i2c.git", rev: "control-pulp" }
+  udma_qspi:              { git: "https://github.com/pulp-platform/udma_qspi.git", rev: "control-pulp" }
+  udma_filter:            { git: "https://github.com/pulp-platform/udma_filter.git", version: 1.0.3 }
+  riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.0 }
+  register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.3 }
+  clic:                   { git: "https://github.com/pulp-platform/clic.git", version: 1.0.1 }
+
+sources:
+  # pulp_soc
+  - include_dirs:
+      - rtl/include
+    files:
+      - rtl/pulp_soc/pkg_soc_interconnect.sv
+      - rtl/pulp_soc/axi64_2_lint32_wrap.sv
+      - rtl/pulp_soc/lint_2_axi_wrap.sv
+      - rtl/pulp_soc/contiguous_crossbar.sv
+      - rtl/pulp_soc/interleaved_crossbar.sv
+      - rtl/pulp_soc/tcdm_demux.sv
+      - rtl/pulp_soc/boot_rom.sv
+      - rtl/pulp_soc/asic_autogen_rom.sv
+      - rtl/pulp_soc/l2_ram_bank_interleaved.sv
+      - rtl/pulp_soc/l2_ram_bank_private.sv
+      - rtl/pulp_soc/l2_ram_multi_bank.sv
+      - rtl/pulp_soc/lint_jtag_wrap.sv
+      - rtl/pulp_soc/periph_bus_wrap.sv
+      - rtl/pulp_soc/soc_event_arbiter.sv
+      - rtl/pulp_soc/soc_event_generator.sv
+      - rtl/pulp_soc/soc_event_queue.sv
+      - rtl/pulp_soc/tcdm_error_slave.sv
+      - rtl/pulp_soc/soc_interconnect.sv
+      - rtl/pulp_soc/soc_interconnect_wrap.sv
+      - rtl/pulp_soc/soc_peripherals.sv
+      - rtl/pulp_soc/pulp_soc.sv
+  # udma_subsystem
+  - files:
+      - rtl/udma_subsystem/udma_subsystem.sv
+  # fc
+  - target: rtl
+    defines:
+      TRACE_EXECUTION: ~
+    files:
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/cv32e40p_fp_wrapper.sv
+      - rtl/fc/event_to_level_int.sv
+  - target: not(rtl)
+    files:
+      - rtl/fc/fc_demux.sv
+      - rtl/fc/fc_subsystem.sv
+      - rtl/fc/cv32e40p_fp_wrapper.sv
+  # components
+  - files:
+      - rtl/components/apb_clkdiv.sv
+      - rtl/components/apb_soc_ctrl.sv
+      - rtl/components/memory_models.sv
+      - rtl/components/pulp_interfaces.sv
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/tcdm_arbiter_2x1.sv
+      - rtl/components/obi_pulp_adapter.sv
+  # components_rtl
+  - files:
+      - rtl/components/glitch_free_clk_mux.sv
+      - rtl/components/apb_dummy.sv
+    target: rtl
+  # components_behav
+  - files:
+      - rtl/components/freq_meter.sv
+    target: all(rtl, not(synthesis))
