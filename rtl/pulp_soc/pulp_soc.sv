@@ -1129,6 +1129,8 @@ module pulp_soc import dm::*; #(
        .master_gnt_i      ( s_lint_riscv_jtag_bus.gnt      ),
        .master_r_valid_i  ( s_lint_riscv_jtag_bus.r_valid  ),
        .master_r_rdata_i  ( s_lint_riscv_jtag_bus.r_rdata  ),
+       .master_r_other_err_i ('0                           ),
+       .master_r_err_i       ('0                           ),
 
        .dmi_rst_ni        ( s_soc_rstn                ),
        .dmi_req_valid_i   ( jtag_req_valid            ),
