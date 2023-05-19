@@ -38,7 +38,7 @@ module periph_bus_wrap #(
     APB_BUS.Master i2c_slv_1_master
 );
 
-    localparam NB_MASTER = `NB_MASTER;
+    localparam NB_MASTER = `PERIPH_NB_MASTER;
 
     logic [NB_MASTER-1:0][APB_ADDR_WIDTH-1:0] s_start_addr;
     logic [NB_MASTER-1:0][APB_ADDR_WIDTH-1:0] s_end_addr;
