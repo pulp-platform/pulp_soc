@@ -14,40 +14,29 @@ package:
 
 dependencies:
   L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
-  apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.1.0 }
+  apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.2.2 }
   adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.2 }
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
-  apb_fll_if:             { git: "https://github.com/pulp-platform/apb_fll_if.git", version: 0.1.3 }
-  apb_gpio:               { git: "https://github.com/pulp-platform/apb_gpio.git", rev: "0e9f142f2f11278445c953ad011fce1c7ed85b66" }
-  apb_node:               { git: "https://github.com/pulp-platform/apb_node.git", version: 0.1.1 }
-  apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", version: 0.1.1 }
-  axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.29.1 }
+  apb_fll_if:             { git: "https://github.com/pulp-platform/apb_fll_if.git", version: 0.2.0 }
+  apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", version: 0.2.0 }
+  axi:                    { git: "https://github.com/pulp-platform/axi.git", version: 0.38.0 }
   # axi_node:               { git: "https://github.com/pulp-platform/axi_node.git", version: 1.1.4 } # deprecated, replaced by axi_xbar (in axi repo)
   axi_slice:              { git: "https://github.com/pulp-platform/axi_slice.git", version: 1.1.4 } # deprecated, replaced by axi_cut (in axi repo)
   timer_unit:             { git: "https://github.com/pulp-platform/timer_unit.git", version: 1.0.2 }
   common_cells:           { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
   cluster_interconnect:   { git: "https://github.com/pulp-platform/cluster_interconnect.git", version: 1.1.1 }
   fpnew:                  { git: "https://github.com/pulp-platform/fpnew.git", version: 0.6.6 }
-  jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", rev: v0.2.0 }
+  jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", version: 0.2.0 }
   cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "pulpissimo-v4.1.0"}
   ibex:                   { git: "https://github.com/pulp-platform/ibex.git", rev: "pulpissimo-v6.1.2" }
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
-  generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", rev: "1c92dc73a940392182fd4cb7b86f35649b349595" }
+  generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", version: 0.2.0 }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
-  udma_core:              { git: "https://github.com/pulp-platform/udma_core.git", version: 1.1.2 }
-  udma_uart:              { git: "https://github.com/pulp-platform/udma_uart.git", version: 1.0.2 }
-  udma_i2c:               { git: "https://github.com/pulp-platform/udma_i2c.git", version: 2.0.0 }
-  udma_i2s:               { git: "https://github.com/pulp-platform/udma_i2s.git", version: 1.1.2 }
-  udma_qspi:              { git: "https://github.com/pulp-platform/udma_qspi.git", version: 1.0.4 }
-  udma_sdio:              { git: "https://github.com/pulp-platform/udma_sdio.git", version: 1.1.2 }
-  udma_camera:            { git: "https://github.com/pulp-platform/udma_camera.git", version: 1.1.2 }
-  udma_filter:            { git: "https://github.com/pulp-platform/udma_filter.git", version: 1.0.3 }
-  udma_external_per:      { git: "https://github.com/pulp-platform/udma_external_per.git", version: 1.0.4 }
-  udma_hyper:             { git: "https://github.com/pulp-platform/udma_hyper.git", rev: "83ab704f9d1c5f9e5353268c901fe95c36bcea36" }
+  pulp_io:                { git: "https://github.com/pulp-platform/pulp-io.git", rev: v0.1.0-draft }
   hwpe-mac-engine:        { git: "https://github.com/pulp-platform/hwpe-mac-engine.git", version: 1.3.3 }
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.5.0 }
-  register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.1 }
+  register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.8 }
 
 sources:
   # pulp_soc
@@ -63,19 +52,17 @@ sources:
       - rtl/pulp_soc/boot_rom.sv
       - rtl/pulp_soc/l2_ram_multi_bank.sv
       - rtl/pulp_soc/lint_jtag_wrap.sv
-      - rtl/pulp_soc/periph_bus_wrap.sv
-      - rtl/pulp_soc/soc_clk_rst_gen.sv
       - rtl/pulp_soc/soc_event_arbiter.sv
       - rtl/pulp_soc/soc_event_generator.sv
       - rtl/pulp_soc/soc_event_queue.sv
       - rtl/pulp_soc/tcdm_error_slave.sv
       - rtl/pulp_soc/soc_interconnect.sv
       - rtl/pulp_soc/soc_interconnect_wrap.sv
+      - rtl/pulp_soc/soc_ctrl_reg/src/soc_ctrl_reg_pkg.sv
+      - rtl/pulp_soc/soc_ctrl_reg/src/soc_ctrl_reg_top.sv
       - rtl/pulp_soc/soc_peripherals.sv
+      - rtl/pulp_soc/jtag_tap_top.sv
       - rtl/pulp_soc/pulp_soc.sv
-  # udma_subsystem
-  - files:
-      - rtl/udma_subsystem/udma_subsystem.sv
   # fc
   - target: rtl
     defines:
@@ -94,7 +81,6 @@ sources:
   # components
   - files:
       - rtl/components/apb_clkdiv.sv
-      - rtl/components/apb_soc_ctrl.sv
       - rtl/components/memory_models.sv
       - rtl/components/pulp_interfaces.sv
       - rtl/components/glitch_free_clk_mux.sv
@@ -112,3 +98,9 @@ sources:
       - rtl/components/freq_meter.sv
       - rtl/components/tb_fs_handler.sv
     target: all(rtl, not(synthesis))
+external_import:
+  - name: reggen
+    target_dir: "util"
+    upstream: { git: "https://github.com/pulp-platform/register_interface.git", rev: "e3a4955071fcf554febd4b29a7c7a52c7f1e7fc6"}
+    mapping:
+      - { from: 'vendor/lowrisc_opentitan/util', to: 'reggen'}
