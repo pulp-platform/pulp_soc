@@ -77,7 +77,7 @@ module apb_soc_ctrl #(
     output logic                      PREADY,
     output logic                      PSLVERR,
 
-    input  logic                      sel_fll_clk_i,
+    input  logic                      sel_pll_clk_i,
     input  logic                      boot_l2_i,
     input  logic [1:0]                bootsel_i,
     input  logic                      fc_fetch_en_valid_i,
@@ -485,7 +485,7 @@ module apb_soc_ctrl #(
           `REG_BOOTSEL:
             PRDATA =  {30'h0, r_bootsel};
           `REG_CLKSEL:
-            PRDATA = {31'h0,sel_fll_clk_i};
+            PRDATA = {31'h0,sel_pll_clk_i};
           `REG_CLUSTER_CTRL:
             PRDATA = {
               29'h0,

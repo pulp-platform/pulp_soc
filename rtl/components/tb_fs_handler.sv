@@ -338,7 +338,7 @@ module tb_fs_handler_debug #(
 
           if (SILENT_MODE == "OFF") begin
             if (FULL_LINE == "ON") begin
-              $display("[STDOUT-CL%0d_PE%0d] %s", CLUSTER_ID, core_index,
+              $display("[STDOUT-CL%0d_PE%0d, %t] %s", CLUSTER_ID, core_index, $realtime,
                        LINE_BUFFER[core_index].substr(0, LINE_BUFFER[core_index].len() - 2));
               LINE_BUFFER[core_index] = "";
             end else begin
