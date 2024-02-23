@@ -42,7 +42,6 @@ sources:
       - rtl/include
     files:
       - rtl/pulp_soc/pkg_soc_interconnect.sv
-      - rtl/pulp_soc/axi64_2_lint32_wrap.sv
       - rtl/pulp_soc/lint_2_axi_wrap.sv
       - rtl/pulp_soc/contiguous_crossbar.sv
       - rtl/pulp_soc/interleaved_crossbar.sv
