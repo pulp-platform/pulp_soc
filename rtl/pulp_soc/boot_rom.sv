@@ -40,34 +40,27 @@ module boot_rom #(
 
     `ifndef PULP_FPGA_EMUL
 
-        generic_rom #(
-            .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
-            .DATA_WIDTH(32),
-            .FILE_NAME("./boot/boot_code.cde") // CDE file is looked for in a
-                                              // folder relative to the
-                                              // simulation folder.
-         ) rom_mem_i (
-            .CLK            (  clk_i                ),
-            .CEN            (  ~mem_slave.req        ),
-            .A              (  address[ROM_ADDR_WIDTH-1:2]  ), //Cutoff insignificant address bits. The
-                                                                     //interconnect makes sure we only receive addresses in the bootrom address space
-            .Q              (  mem_slave.r_rdata      )
+        asic_autogen_rom #(
+            .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
+            .DATA_WIDTH(32)
+        ) rom_mem_i (
+            .CLK ( clk_i                       ),
+            .CEN ( ~mem_slave.req              ),
+            .A   ( address[ROM_ADDR_WIDTH-1:2] ),
+            .Q   ( mem_slave.r_rdata           )
         );
-
-        // assign mem_slave.add[31:ROM_ADDR_WIDTH] = '0;
 
     `else // !`ifndef PULP_FPGA_EMUL
 
-    fpga_bootrom #(
-                   .ADDR_WIDTH(ROM_ADDR_WIDTH-2), //The ROM uses 32-bit word addressing while the bus addresses bytes
-                   .DATA_WIDTH(32)
-                   ) rom_mem_i (
-                            .CLK(clk_i),
-                            .CEN(~mem_slave.req),
-                            .A(address[ROM_ADDR_WIDTH-1:2]), //Cutoff insignificant address bits. The interconnect
-                                                                   //makes sure we only receive addresses in the bootrom address space
-                            .Q(mem_slave.r_rdata)
-                            );
+        fpga_autogen_rom #(
+            .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
+            .DATA_WIDTH(32)
+        ) rom_mem_i (
+            .CLK ( clk_i                       ),
+            .CEN ( ~mem_slave.req              ),
+            .A   ( address[ROM_ADDR_WIDTH-1:2] ),
+            .Q   ( mem_slave.r_rdata           )
+        );
 
     `endif
 
