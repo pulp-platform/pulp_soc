@@ -89,6 +89,7 @@ module soc_interconnect_wrap
     ) i_axi64_to_lint32 (
         .clk_i,
         .rst_ni,
+        .test_i      (test_en_i),
         .busy_o      (),
         .axi_bus     (axi_master_plug),
         .mem_req_o   (axi_bridge_2_interconnect_req),

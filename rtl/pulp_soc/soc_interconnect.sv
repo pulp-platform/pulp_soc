@@ -19,6 +19,7 @@
 // specific language governing permissions and limitations under the License.
 //-----------------------------------------------------------------------------
 `include "tcdm_macros.svh"
+`include "axi/typedef.svh"
 `include "axi/assign.svh"
 
 module soc_interconnect
@@ -245,19 +246,40 @@ module soc_interconnect
       .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
       .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
     ) axi_bridge_2_axi_xbar[NR_MASTER_PORTS]();
+    `AXI_TYPEDEF_ALL(axi_mgr, logic[31:0], logic[AXI_MASTER_ID_WIDTH-1:0], logic[31:0], logic[3:0], logic[AXI_USER_WIDTH-1:0])
+    axi_mgr_req_t  [NR_MASTER_PORTS-1:0] axi_bridge_2_axi_xbar_reqs;
+    axi_mgr_resp_t [NR_MASTER_PORTS-1:0] axi_bridge_2_axi_xbar_resps;
 
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_tcdm_2_axi_bridge
-        lint2axi_wrap #(
-          .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
-          .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
+        axi_from_mem #(
+            .MemAddrWidth ( 32 ),
+            .AxiAddrWidth ( 32 ),
+            .DataWidth    ( 32 ),
+            .MaxRequests  ( 2 ),
+            .AxiProt      ( 3'b0 ),
+            .axi_req_t    ( axi_mgr_req_t ),
+            .axi_rsp_t    ( axi_mgr_resp_t )
         ) i_lint2axi_bridge (
-          .clk_i,
-          .rst_ni,
-          .master ( l2_demux_2_axi_bridge[i] ),
-          .slave  ( axi_bridge_2_axi_xbar[i] )
+            .clk_i,
+            .rst_ni,
+            .mem_req_i       ( l2_demux_2_axi_bridge[i].req     ),
+            .mem_addr_i      ( l2_demux_2_axi_bridge[i].add     ),
+            .mem_we_i        ( ~l2_demux_2_axi_bridge[i].wen    ),
+            .mem_wdata_i     ( l2_demux_2_axi_bridge[i].wdata   ),
+            .mem_be_i        ( l2_demux_2_axi_bridge[i].be      ),
+            .mem_gnt_o       ( l2_demux_2_axi_bridge[i].gnt     ),
+            .mem_rsp_valid_o ( l2_demux_2_axi_bridge[i].r_valid ),
+            .mem_rsp_rdata_o ( l2_demux_2_axi_bridge[i].r_rdata ),
+            .mem_rsp_error_o ( l2_demux_2_axi_bridge[i].r_opc   ),
+            .slv_aw_cache_i  ( '0 ),
+            .slv_ar_cache_i  ( '0 ),
+            .axi_req_o       ( axi_bridge_2_axi_xbar_reqs[i] ),
+            .axi_rsp_i       ( axi_bridge_2_axi_xbar_resps[i] )
         );
-    end
 
+        `AXI_ASSIGN_FROM_REQ(axi_bridge_2_axi_xbar[i], axi_bridge_2_axi_xbar_reqs[i])
+        `AXI_ASSIGN_TO_RESP(axi_bridge_2_axi_xbar_resps[i], axi_bridge_2_axi_xbar[i])
+    end
 
     ///////////////////
     // AXI4 Crossbar //
@@ -277,6 +299,7 @@ module soc_interconnect
       //per slave port
       FallThrough: 1,       //Use the reccomended default config
       LatencyMode: axi_pkg::CUT_MST_AX | axi_pkg::MuxW,
+      PipelineStages: 0,
       AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
       AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
       UniqueIds: 0,
