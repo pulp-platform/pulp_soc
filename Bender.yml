@@ -13,7 +13,6 @@ package:
     - "Luca Valente <luca.valente2@unibo.it>"
 
 dependencies:
-  L2_tcdm_hybrid_interco: { git: "https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git", version: 1.0.0 }
   apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.2.2 }
   adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", version: 0.0.2 }
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }

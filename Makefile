@@ -4,6 +4,7 @@ VENVDIR?=$(WORKDIR)/.venv
 REQUIREMENTS_TXT?=$(wildcard requirements.txt)
 include Makefile.venv
 
+.PHONY: regenerate_soc_ctrl
 ## Regenerate the register file and HAL C-header the soc_ctrl register.
 regenerate_soc_ctrl: | venv
 	@echo Regenerating SoC control register...
