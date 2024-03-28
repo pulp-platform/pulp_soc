@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Use pulp-io for peripherals -> updated udma subsystem and corresponding peripherals
+- Use new gpio peripheral
+- Externalize clock generator modules
+- Remove IPApproX support
+- Clean up & update dependencies
+- Update AXI to TCDM IPs
+
 ## [4.4.0] - 2022-06-10
 - Bump cv32e40p to pulpissimo-v4.1.0 (Unlock all interrupts and increases fpu latency)
 

@@ -1,0 +1,263 @@
+# A slightly modified reimplementation of the legacy apb_soc_ctrl using reggen.
+# All original registers that still served a function where kept with the same semantics
+# and offset. Additionally, the register offsets formerly occupied with pad control functionality
+# now provide room for some new registers. See the hjson below for more information.
+#
+# Removed registers/bitfields compared to the old apb_soc_ctrl:
+# - All PADCFG & PADFUN regs: Pad control/muxing is now handled in the toplevel repo and no longer in pulp_soc
+# - All fields in CLUSTER_CTRL except for "cluster reset": The other fields were not attached to the cluster and thus served no purpose anymore.
+# - CTRL_PER, CLUSTER_IRQ, CLUSTER_BOOT_ADDR0, CLUSTER_BOOT_ADDR1: Was not connected to anything anymore.
+{
+    name: "soc_ctrl"
+    clock_primary: "clk_i"
+    reset_primary: "rst_ni"
+    param_list: []
+    bus_interfaces: [
+        { protocol: "reg_iface", direction: "device"}
+    ]
+    regwidth: 32,
+    registers: [
+        {
+            name: "INFO"
+            desc: "Contains information about the current SoC architecture. Present for legacy reasons."
+            swaccess: "ro",
+            hwaccess: "hwo",
+            hwext: true
+            fields: [
+                {
+                    name: "NCLUSTERS"
+                    bits: "15:0"
+                    desc: "The number of clusters in this SoC."
+                }
+                {
+                    name: "NCORES"
+                    bits: "31:16"
+                    desc: "The number of cores in this SoC."
+                }
+            ]
+        }
+        {
+            name: "FC_BOOTADDR"
+            desc: "The boot address of the FC upon hard reset. "
+            swaccess: "rw"
+            hwaccess: "hro"
+            fields: [
+                {
+                  bits: "31:0"
+                  resval: 0x1A000080
+                }
+            ]
+
+        }
+        {
+            name: "FC_FETCH_EN"
+            desc: '''
+                  Enable instruction fetching on the fabric controller. By default this is enabled and has
+                  to be enabled either by altering the value in this register or by enabling it via the toplevel
+                  fc_en port exposed by pulp_soc.
+            '''
+            swaccess: "rw"
+            hwaccess: "hrw"
+            fields: [
+                {
+                    bits: "1"
+                    resval: 0
+                }
+            ]
+        }
+        {
+            name: "SOC_INFO"
+            desc: "Contains additional information about this SoC including version and parametrization."
+            swaccess: "ro"
+            hwaccess: "hwo"
+            hwext: true
+            fields: [
+                {
+                    name: "VERSION"
+                    bits: "15:0"
+                    desc: '''
+                        An increasing version ID that allows identification of the current pulp_soc
+                        version.
+                    '''
+                    resval: 5
+                }
+                {
+                    name: "CORE_TYPE"
+                    bits: "18:16"
+                    desc: "The type of RISC-V core used for the fabric controller"
+                    enum: [
+                          { value: 0, name: "CV32E40P", desc: "FC is CV32E40P core with XPULP custom ISA extension"},
+                          { value: 1, name: "IBEX RV32IMC", desc: "FC is IBEX with RV32IMC base ISA"},
+                          { value: 2, name: "IBEX RV32EC", desc: "FC is IBEX with RV32EC base ISA"}
+                    ]
+                }
+                {
+                    name: "FPU_PRESENT"
+                    bits: "19"
+                    desc: "Indicates the presence of a dedicated FPU for the fabric controller"
+                }
+                {
+                    name: "ZFINX"
+                    bits: "20"
+                    desc: '''
+                       Indicates the usage of the RISC-V ZFINX extension that reuses the integer registers
+                       for FPU usage rather than using a separate dedicated FPU register file.
+                    '''
+                }
+                {
+                    name: "HWPE_PRESENT"
+                    bits: "21"
+                    desc: "Indicates the presence of the HWPE MAC accelerator"
+                }
+
+            ]
+        }
+        { multireg:
+          { name: "GP_TESTREG"
+            cname: "GP_TESTREG"
+            count: "4"
+            desc: '''
+                  A collection of general purpose registers that software/external test equipment can use
+                  for silicon testing. These register have no effect on the SoC hardware and puerely act as memory elements.
+            '''
+            swaccess: "rw"
+            hwaccess: none
+            fields: [{ bits: "31:0", resval: 0}]
+          }
+        }
+        {skipto: "0x70" }
+        {
+            name: "CLUSTER_CTRL"
+            desc: ''' This is a legacy register that provides r/w access to put an external
+                  cluster into reset state. The control bits written to this repository are
+                  exposed to the pulp_soc toplevel and are supposed to be connected to a pulp
+                  cluster (if present).
+            '''
+            swaccess: "rw"
+            hwaccess: "hro"
+            fields: [
+                {
+                    bits: 0
+                    name: "RESETN"
+                    desc: '''
+                          Active-low reset signal sent to the cluster. Writing a zero to this register
+                          will assert the clusters reset line and keep it in reset until a 1 is written
+                          to this register.
+                    '''
+                    resval: 1
+                }
+            ]
+        }
+        {
+            name: "JTAGREG"
+            desc: '''
+                  A control register that is exposed directly via the PULP legacy
+                  JTAG Tap as a JTAG register. It is mainly used during the JTAG boot
+                  procedure to communicate the FC how it should boot. I.e. the user writes
+                  some value into this register using the PULP legacy JTAG TAPs config register
+                  and the boot firmware is then supposed to read this register via normal APB
+                  access to decide how to continue the boot procedure. Default value 0 means:
+                  'do nothing and wait for the debug unit'.
+            '''
+            fields: [
+                {
+                    bits: "7:0"
+                    swaccess: "wo"
+                    hwaccess: "hro"
+                    name: "CONFREG_OUT"
+                    desc: "Value to be sent to the JTAG confreg on JTAG read"
+                }
+                {
+                    bits: "15:8"
+                    swaccess: "ro"
+                    hwaccess: "hwo"
+                    name: "CONFREG_IN"
+                    desc: "Value received by the JTAG confreg during the last JTAG write"
+                    resval: 0
+                }
+            ]
+        }
+        {skipto: "0xA0"}
+        {
+            name: "CORESTATUS"
+            desc: '''
+                  A register used by the software runtime to indicate the return code of the
+                  main function. Once main returns regularly or terminates ungracefully, the software
+                  runtime is supposed to indicate the termination of main + its exit code by writing
+                  to this register. An external JTAG debugger can poll this register to wait for
+                  compliation of the firmware running on pulp_soc and figure out the exit code of main.
+            '''
+            swaccess: "rw"
+            hwaccess: "hro"
+            fields: [
+                {
+                    bits: "30:0"
+                    name: "EXIT_CODE"
+                    desc: "The lower 30 bits of the exit code"
+                    resval: 0
+                }
+                {
+                    bits: "31"
+                    name: "EOC"
+                    desc: "End of computation bit. Indicates whether compuation has terminated."
+                    resval: 0
+                }
+            ]
+        }
+        {skipto: "0xC0"}
+        {
+            name: "CORESTATUS_READ_ONLY"
+            desc: "Ready-only mirror of the CORESTATUS register"
+            swaccess: "ro"
+            hwaccess: "hwo"
+            hwext: true
+            fields: [
+                {
+                    bits: "30:0"
+                    name: "EXIT_CODE"
+                    desc: "The lower 30 bits of the exit code"
+                    resval: 0
+                }
+                {
+                    bits: "31"
+                    name: "EOC"
+                    desc: "End of computation bit. Indicates whether compuation has terminated."
+                    resval: 0
+                }
+            ]
+        }
+        {
+            name: "BOOTSEL"
+            desc: '''
+                  Allows software to determine the bootmode that was used. I.e. it gives
+                  read-only access to the value of the boot_sel pads. The bootrom makes use of this
+                  register to start the correct boot procedure.
+            '''
+            swaccess: "ro"
+            hwaccess: "hwo"
+            hwext: true
+            fields: [
+                {
+                    bits: "1:0"
+                }
+            ]
+        }
+        {
+            name: "CLKSEL"
+            desc: '''
+                  The legacy PULP JTAG TAP contains a control bit that is supposed control the
+                  FLL/PLL bypass multiplexer. Nowadays, the clock generation logic is no longer
+                  embedded in pulp_soc but externalized to the toplevel. Therefore this control
+                  signal is just exposed as an output port to the toplevel which is supposed to
+                  connect it to the clock multiplexer. This register provides software read-only
+                  only access to the signal to determine its current value.
+            '''
+            swaccess: "ro"
+            hwaccess: "hwo"
+            hwext: true
+            fields: [
+                { bits: "0"}
+            ]
+        }
+    ]
+}
