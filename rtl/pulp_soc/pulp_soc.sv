@@ -761,13 +761,14 @@ module pulp_soc import dm::*; #(
 `endif
 
     fc_subsystem #(
-        .CORE_TYPE  ( CORE_TYPE          ),
-        .USE_XPULP  ( USE_XPULP          ),
-        .USE_FPU    ( USE_FPU            ),
-        .USE_ZFINX  ( USE_ZFINX          ),
-        .CORE_ID    ( FC_CORE_CORE_ID    ),
-        .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
-        .USE_HWPE   ( USE_HWPE           )
+        .NB_HWPE_PORTS ( NB_HWPE_PORTS      ),
+        .CORE_TYPE     ( CORE_TYPE          ),
+        .USE_XPULP     ( USE_XPULP          ),
+        .USE_FPU       ( USE_FPU            ),
+        .USE_ZFINX     ( USE_ZFINX          ),
+        .CORE_ID       ( FC_CORE_CORE_ID    ),
+        .CLUSTER_ID    ( FC_CORE_CLUSTER_ID ),
+        .USE_HWPE      ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk           ),
         .rst_ni              ( s_soc_rstn          ),
