@@ -230,8 +230,20 @@ module soc_peripherals
     `AXI_LITE_ASSIGN_FROM_RESP(axi_lite_slave, s_axi_lite_master_resp)
 
     // APB Slaves
-    localparam NumAPBSlaves = 12;
-    addr_map_rule_t [NumAPBSlaves-1:0] apb_addr_ranges;
+    localparam int unsigned NumAPBSlaves = 11;
+    localparam addr_map_rule_t [NumAPBSlaves-1:0] APBAddrRanges = '{
+        '{ idx: 0,  start_addr: `SOC_MEM_MAP_GPIO_START_ADDR,           end_addr: `SOC_MEM_MAP_GPIO_END_ADDR           },
+        '{ idx: 1,  start_addr: `SOC_MEM_MAP_UDMA_START_ADDR,           end_addr: `SOC_MEM_MAP_UDMA_END_ADDR           },
+        '{ idx: 2,  start_addr: `SOC_MEM_MAP_SOC_CTRL_START_ADDR,       end_addr: `SOC_MEM_MAP_SOC_CTRL_END_ADDR       },
+        '{ idx: 3,  start_addr: `SOC_MEM_MAP_ADV_TIMER_START_ADDR,      end_addr: `SOC_MEM_MAP_ADV_TIMER_END_ADDR      },
+        '{ idx: 4,  start_addr: `SOC_MEM_MAP_SOC_EVENT_GEN_START_ADDR,  end_addr: `SOC_MEM_MAP_SOC_EVENT_GEN_END_ADDR  },
+        '{ idx: 5,  start_addr: `SOC_MEM_MAP_INTERRUPT_CTRL_START_ADDR, end_addr: `SOC_MEM_MAP_INTERRUPT_CTRL_END_ADDR },
+        '{ idx: 6,  start_addr: `SOC_MEM_MAP_APB_TIMER_START_ADDR,      end_addr: `SOC_MEM_MAP_APB_TIMER_END_ADDR      },
+        '{ idx: 7,  start_addr: `SOC_MEM_MAP_HWPE_START_ADDR,           end_addr: `SOC_MEM_MAP_HWPE_END_ADDR           },
+        '{ idx: 8,  start_addr: `SOC_MEM_MAP_VIRTUAL_STDOUT_START_ADDR, end_addr: `SOC_MEM_MAP_VIRTUAL_STDOUT_END_ADDR },
+        '{ idx: 9,  start_addr: `SOC_MEM_MAP_DEBUG_START_ADDR,          end_addr: `SOC_MEM_MAP_DEBUG_END_ADDR          },
+        '{ idx: 10, start_addr: `SOC_MEM_MAP_CHIP_CTRL_START_ADDR,      end_addr: `SOC_MEM_MAP_CHIP_CTRL_END_ADDR      }};
+
     apb_req_t [NumAPBSlaves-1:0] s_apb_slaves_req;
     apb_resp_t [NumAPBSlaves-1:0] s_apb_slaves_resp;
 
@@ -243,23 +255,22 @@ module soc_peripherals
 // will be routed to the new slave. The macro will generate a new APB interface
 // instance with the name s_<slave_name>_slave that should be hooked up to the
 // APB slave module.
-`define SOC_PERIPHERALS_CREATE_SLAVE(port_idx, slave_name, start_address, end_address) \
+`define SOC_PERIPHERALS_CREATE_SLAVE(port_idx, slave_name) \
   APB #(.ADDR_WIDTH(32), .DATA_WIDTH(32)) s_``slave_name``_slave(); \
-  assign apb_addr_ranges[port_idx] = '{ idx: port_idx, start_addr: start_address, end_addr: end_address}; \
   `APB_ASSIGN_FROM_REQ(s_``slave_name``_slave, s_apb_slaves_req[port_idx]) \
   `APB_ASSIGN_TO_RESP(s_apb_slaves_resp[port_idx], s_``slave_name``_slave)
 
-    `SOC_PERIPHERALS_CREATE_SLAVE(0,  gpio,           `SOC_MEM_MAP_GPIO_START_ADDR,           `SOC_MEM_MAP_GPIO_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(1,  udma,           `SOC_MEM_MAP_UDMA_START_ADDR,           `SOC_MEM_MAP_UDMA_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(2,  soc_ctrl,       `SOC_MEM_MAP_SOC_CTRL_START_ADDR,       `SOC_MEM_MAP_SOC_CTRL_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(3,  adv_timer,      `SOC_MEM_MAP_ADV_TIMER_START_ADDR,      `SOC_MEM_MAP_ADV_TIMER_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(4,  soc_event_gen,  `SOC_MEM_MAP_SOC_EVENT_GEN_START_ADDR,  `SOC_MEM_MAP_SOC_EVENT_GEN_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(5,  interrupt_ctrl, `SOC_MEM_MAP_INTERRUPT_CTRL_START_ADDR, `SOC_MEM_MAP_INTERRUPT_CTRL_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(6,  apb_timer,      `SOC_MEM_MAP_APB_TIMER_START_ADDR,      `SOC_MEM_MAP_APB_TIMER_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(7,  hwpe,           `SOC_MEM_MAP_HWPE_START_ADDR,           `SOC_MEM_MAP_HWPE_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(8,  virtual_stdout, `SOC_MEM_MAP_VIRTUAL_STDOUT_START_ADDR, `SOC_MEM_MAP_VIRTUAL_STDOUT_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(9,  debug,          `SOC_MEM_MAP_DEBUG_START_ADDR,          `SOC_MEM_MAP_DEBUG_END_ADDR)
-    `SOC_PERIPHERALS_CREATE_SLAVE(10, chip_ctrl,      `SOC_MEM_MAP_CHIP_CTRL_START_ADDR,      `SOC_MEM_MAP_CHIP_CTRL_END_ADDR)
+    `SOC_PERIPHERALS_CREATE_SLAVE(0,  gpio           )
+    `SOC_PERIPHERALS_CREATE_SLAVE(1,  udma           )
+    `SOC_PERIPHERALS_CREATE_SLAVE(2,  soc_ctrl       )
+    `SOC_PERIPHERALS_CREATE_SLAVE(3,  adv_timer      )
+    `SOC_PERIPHERALS_CREATE_SLAVE(4,  soc_event_gen  )
+    `SOC_PERIPHERALS_CREATE_SLAVE(5,  interrupt_ctrl )
+    `SOC_PERIPHERALS_CREATE_SLAVE(6,  apb_timer      )
+    `SOC_PERIPHERALS_CREATE_SLAVE(7,  hwpe           )
+    `SOC_PERIPHERALS_CREATE_SLAVE(8,  virtual_stdout )
+    `SOC_PERIPHERALS_CREATE_SLAVE(9,  debug          )
+    `SOC_PERIPHERALS_CREATE_SLAVE(10, chip_ctrl      )
 
 
  // AXI Lite to APB converter with integrated APB Crossbar
@@ -282,7 +293,7 @@ module soc_peripherals
       .axi_lite_resp_o ( s_axi_lite_master_resp ),
       .apb_req_o       ( s_apb_slaves_req       ),
       .apb_resp_i      ( s_apb_slaves_resp      ),
-      .addr_map_i      ( apb_addr_ranges        )
+      .addr_map_i      ( APBAddrRanges          )
     );
 
     // Assign internal slave signals to external APB ports
