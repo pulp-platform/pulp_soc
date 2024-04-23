@@ -31,7 +31,7 @@ dependencies:
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", version: 0.2.0 }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
   pulp_io:                { git: "https://github.com/pulp-platform/pulp-io.git", rev: v0.1.0-draft }
-  hwpe-mac-engine:        { git: "https://github.com/pulp-platform/hwpe-mac-engine.git", version: 1.3.3 }
+  fir-hwpe:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-hwpe.git", rev: "cb6b9a5f9dd0c01dabb77af827f293f1427d4f03" }
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.5.0 }
   register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.4.1 }
 
