@@ -10,7 +10,7 @@
 
 `include "periph_bus_defines.sv"
 
-module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
+module fc_subsystem #(
     parameter CORE_TYPE           = 0,
     parameter USE_XPULP           = 1,
     parameter USE_FPU             = 1,
@@ -103,16 +103,16 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     XBAR_TCDM_BUS core_instr_bus ();
 
     // APU Core to FP Wrapper
-    logic                               apu_req;
+    /* logic                               apu_req;
     logic [    APU_NARGS_CPU-1:0][31:0] apu_operands;
     logic [      APU_WOP_CPU-1:0]       apu_op;
-    logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags;
+    logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags; */
 
     // APU FP Wrapper to Core
-    logic                               apu_gnt;
+    /* logic                               apu_gnt;
     logic                               apu_rvalid;
     logic [                 31:0]       apu_rdata;
-    logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags;
+    logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags; */
 
     //********************************************************
     //************ CORE DEMUX (TCDM vs L2) *******************
@@ -161,23 +161,53 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     //************ RISCV CORE ********************************
     //********************************************************
 
+    import cv32e40x_pkg::*;
+
+    // X-if declaration
+    cv32e40x_if_xif core_xif ();
+
+    // Tying input signals
+  assign core_xif.compressed_ready = 1'b1;
+  assign core_xif.compressed_resp.instr = '0;
+  assign core_xif.compressed_resp.accept = 1'b1;
+  assign core_xif.issue_ready = 1'b1;
+  assign core_xif.issue_resp.accept = 1'b1;
+  assign core_xif.issue_resp.writeback = 1'b0;
+  assign core_xif.issue_resp.dualwrite = 1'b0;
+  assign core_xif.issue_resp.dualread = '0;
+  assign core_xif.issue_resp.loadstore = 1'b0;
+  assign core_xif.issue_resp.ecswrite = 1'b0;
+  assign core_xif.issue_resp.exc = 1'b0;
+  assign core_xif.mem_valid = 1'b1;
+  assign core_xif.mem_req = 1'b0;
+  assign core_xif.result_valid = 1'b1;
+  assign core_xif.result = '0;  
+
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i;
 `ifdef PULP_FPGA_EMUL
-    cv32e40p_core #(
+    cv32e40x_core #(
 `elsif SYNTHESIS
-    cv32e40p_core #(
+    cv32e40x_core #(
 `elsif VERILATOR
-    cv32e40p_core #(
+    cv32e40x_core #(
 `else
-    cv32e40p_wrapper #(
+    cv32e40x_core #(
 `endif
-        .PULP_XPULP       (USE_XPULP),
-        .PULP_CLUSTER     (0),
-        .FPU              (USE_FPU),
-        .PULP_ZFINX       (USE_ZFINX),
-        .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS)
+        .RV32        (RV32I),
+        .M_EXT       (M_NONE),
+        .X_EXT       (0),
+        .DM_REGION_START (`DEBUG_START_ADDR),
+        .DM_REGION_END   (`DEBUG_END_ADDR),
+        //.X_NUM_RS    (),
+        //.X_ID_WIDTH  (),
+        .X_MEM_WIDTH ( 32 ),
+        .X_RFR_WIDTH ( 32 ),
+        .X_RFW_WIDTH ( 32 ),
+        //.X_MISA      (),
+        //.X_ECS_XS    (),
+        .NUM_MHPMCOUNTERS ( N_EXT_PERF_COUNTERS )
     ) FC_CORE_i (
 
         // Clock and Reset
@@ -185,13 +215,15 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .rst_ni,
 
         // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
-        .pulp_clock_en_i      ('0 ),
+        //.pulp_clock_en_i      ('0 ),
         .scan_cg_en_i         (test_en_i),
         .boot_addr_i          (boot_addr),
         .mtvec_addr_i         (32'h0),
+
         .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
-        .hart_id_i            (hart_id),
+        .mhartid_i            (hart_id),
         .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
+        .mimpid_patch_i       ('0),
 
         // Instruction memory interface
         .instr_req_o           (core_instr_req),
@@ -199,6 +231,10 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .instr_rvalid_i        (core_instr_rvalid),
         .instr_addr_o          (core_instr_addr),
         .instr_rdata_i         (core_instr_rdata),
+        .instr_memtype_o       (),
+        .instr_prot_o          (),
+        .instr_dbg_o           (),
+        .instr_err_i           (core_instr_err),
 
         // Data memory interface
         .data_req_o            (core_data_req),
@@ -209,33 +245,67 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .data_addr_o           (core_data_addr),
         .data_wdata_o          (core_data_wdata),
         .data_rdata_i          (core_data_rdata),
+        .data_memtype_o        (),
+        .data_prot_o           (),
+        .data_dbg_o            (),
+        .data_atop_o           (),
+        .data_err_i            (core_data_err),
+        .data_exokay_i         (1'b1),
+
+        .mcycle_o              (),
+
+        .time_i                ('0),
 
         // apu-interconnect
         // handshake signals
-        .apu_req_o             (apu_req),
-        .apu_gnt_i             (apu_gnt),
+        //.apu_req_o             (apu_req),
+        //.apu_gnt_i             (apu_gnt),
 
         // request channel
-        .apu_operands_o        (apu_operands),
-        .apu_op_o              (apu_op),
+        //.apu_operands_o        (apu_operands),
+        //.apu_op_o              (apu_op),
         //.apu_type_o            (),
-        .apu_flags_o           (apu_flags),
+        //.apu_flags_o           (apu_flags),
 
         // response channel
-        .apu_rvalid_i          (apu_rvalid),
-        .apu_result_i          (apu_rdata),
-        .apu_flags_i           (apu_rflags),
+        //.apu_rvalid_i          (apu_rvalid),
+        //.apu_result_i          (apu_rdata),
+        //.apu_flags_i           (apu_rflags),
+
+        // X interfaces
+        .xif_compressed_if     (core_xif.cpu_compressed),
+        .xif_issue_if          (core_xif.cpu_issue),
+        .xif_commit_if         (core_xif.cpu_commit),
+        .xif_mem_if            (core_xif.cpu_mem),
+        .xif_mem_result_if     (core_xif.cpu_mem_result),
+        .xif_result_if         (core_xif.cpu_result),
 
         // Interrupt inputs
         .irq_i                 (core_irq_x),
-        .irq_ack_o             (core_irq_ack),
-        .irq_id_o              (core_irq_ack_id),
+        //.irq_ack_o             (core_irq_ack),
+        //.irq_id_o              (core_irq_ack_id),
+
+        // Wait-for-event wakeup
+        .wu_wfe_i              ('0),
+                 
+        // CLIC interrupts
+        .clic_irq_i            ('0),
+        .clic_irq_id_i         ('0),
+        .clic_irq_level_i      ('0),
+        .clic_irq_priv_i       ('0),
+        .clic_irq_shv_i        ('0),
+
+        // Fence.i flush handshake
+        .fencei_flush_req_o    (),
+        .fencei_flush_ack_i    (1'b0),
 
         // Debug Interface
         .debug_req_i           (debug_req_i),
         .debug_havereset_o     (),
         .debug_running_o       (),
         .debug_halted_o        (),
+        .debug_pc_valid_o      (),
+        .debug_pc_o            (),
 
         // CPU Control Signals
         .fetch_enable_i        (fetch_en_int),
@@ -387,7 +457,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     //****** APU INTERFACE WITH FPU *******
     //*************************************
 
-    if (USE_FPU && CORE_TYPE == 0) begin
+   /* if (USE_FPU && CORE_TYPE == 0) begin
         cv32e40p_fp_wrapper #(
             .FP_DIVSQRT (1)
         ) fp_wrapper_i (
@@ -411,6 +481,6 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         assign apu_rvalid   = 1'b0;
         assign apu_rdata    = 1'b0;
         assign apu_rflags   = 1'b0;
-    end
+    end */
 
 endmodule
