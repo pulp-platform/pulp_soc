@@ -83,7 +83,7 @@ module soc_interconnect_wrap
         .AXI_DATA_WIDTH(AXI_IN_DATA_WIDTH),
         .AXI_USER_WIDTH(AXI_USER_WIDTH),
         .MEM_DATA_WIDTH(32),
-        .BUF_DEPTH     (0),
+        .BUF_DEPTH     (2),
         .HIDE_STRB     (1'b1),
         .OUT_FIFO_DEPTH(2)
     ) i_axi64_to_lint32 (
