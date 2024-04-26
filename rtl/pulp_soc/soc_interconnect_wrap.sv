@@ -68,27 +68,40 @@ module soc_interconnect_wrap
     //////////////////////////////////////////////////////////////
     // 64-bit AXI to TCDM Bridge (Cluster to SoC communication) //
     //////////////////////////////////////////////////////////////
-    XBAR_TCDM_BUS axi_bridge_2_interconnect[pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS](); //We need 4
-                                                                                                         //32-bit TCDM
-                                                                                                         //ports to
-                                                                                                         //achieve full
-                                                                                                         //bandwidth
-                                                                                                         //with one
-                                                                                                         //64-bit AXI
-                                                                                                         //port
+    // We need 4 32-bit TCDM ports to achieve full bandwidth with one 64-bit AXI port
+    XBAR_TCDM_BUS axi_bridge_2_interconnect[pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS]();
+    `TCDM_EXPLODE_ARRAY_DECLARE(axi_bridge_2_interconnect, pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS)
+    logic [pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS-1:0] axi_bridge_2_interconnect_we;
+    for (genvar i = 0; i < pkg_soc_interconnect::NR_CLUSTER_2_SOC_TCDM_MASTER_PORTS; i++) begin
+        `TCDM_SLAVE_EXPLODE(axi_bridge_2_interconnect[i], axi_bridge_2_interconnect, [i])
+        assign axi_bridge_2_interconnect_wen[i] = ~axi_bridge_2_interconnect_we[i];
+    end
 
-    axi64_2_lint32_wrap #(
-                     .AXI_USER_WIDTH(AXI_USER_WIDTH),
-                     .AXI_ID_WIDTH(AXI_IN_ID_WIDTH)
-                     ) i_axi64_to_lint32(
-                                         .clk_i,
-                                         .rst_ni,
-                                         .test_en_i,
-                                         .axi_master(axi_master_plug),
-                                         .tcdm_slaves(axi_bridge_2_interconnect)
-                                         );
-
-
+    axi_to_mem_split_intf #(
+        .AXI_ID_WIDTH  (AXI_IN_ID_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_IN_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(AXI_IN_DATA_WIDTH),
+        .AXI_USER_WIDTH(AXI_USER_WIDTH),
+        .MEM_DATA_WIDTH(32),
+        .BUF_DEPTH     (0),
+        .HIDE_STRB     (1'b1),
+        .OUT_FIFO_DEPTH(2)
+    ) i_axi64_to_lint32 (
+        .clk_i,
+        .rst_ni,
+        .test_i      (test_en_i),
+        .busy_o      (),
+        .axi_bus     (axi_master_plug),
+        .mem_req_o   (axi_bridge_2_interconnect_req),
+        .mem_gnt_i   (axi_bridge_2_interconnect_gnt),
+        .mem_addr_o  (axi_bridge_2_interconnect_add),
+        .mem_wdata_o (axi_bridge_2_interconnect_wdata),
+        .mem_strb_o  (axi_bridge_2_interconnect_be),
+        .mem_atop_o  (), // unsupported
+        .mem_we_o    (axi_bridge_2_interconnect_we),
+        .mem_rvalid_i(axi_bridge_2_interconnect_r_valid),
+        .mem_rdata_i (axi_bridge_2_interconnect_r_rdata)
+    );
 
     ////////////////////////////////////////
     // Address Rules for the interconnect //
