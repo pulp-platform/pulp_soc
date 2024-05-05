@@ -27,6 +27,7 @@ dependencies:
   jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", version: 0.2.0 }
 #  cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "7a49867b2232d97344cde1b8a1e05bcb38634894"}
   cv32e40x:               { git: "https://github.com/pulp-platform/cv32e40x.git", rev: "baba1eeb3b845306c45be714f677ff786753f136" }
+  fir-xifu:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-xifu.git", rev: main }
   ibex:                   { git: "https://github.com/pulp-platform/ibex.git", rev: "pulpissimo-v6.1.2" }
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", version: 0.2.0 }

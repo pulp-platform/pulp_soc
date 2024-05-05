@@ -16,6 +16,7 @@ module fc_subsystem #(
     parameter USE_FPU             = 1,
     parameter USE_ZFINX           = 1,
     parameter USE_HWPE            = 1,
+    parameter USE_XIFU            = 1,
     parameter N_EXT_PERF_COUNTERS = 1,
     parameter EVENT_ID_WIDTH      = 8,
     parameter PER_ID_WIDTH        = 32,
@@ -167,21 +168,39 @@ module fc_subsystem #(
     cv32e40x_if_xif core_xif ();
 
     // Tying input signals
-  assign core_xif.compressed_ready = 1'b1;
-  assign core_xif.compressed_resp.instr = '0;
-  assign core_xif.compressed_resp.accept = 1'b1;
-  assign core_xif.issue_ready = 1'b1;
-  assign core_xif.issue_resp.accept = 1'b1;
-  assign core_xif.issue_resp.writeback = 1'b0;
-  assign core_xif.issue_resp.dualwrite = 1'b0;
-  assign core_xif.issue_resp.dualread = '0;
-  assign core_xif.issue_resp.loadstore = 1'b0;
-  assign core_xif.issue_resp.ecswrite = 1'b0;
-  assign core_xif.issue_resp.exc = 1'b0;
-  assign core_xif.mem_valid = 1'b1;
-  assign core_xif.mem_req = 1'b0;
-  assign core_xif.result_valid = 1'b1;
-  assign core_xif.result = '0;  
+
+    if(USE_XIFU == 0) begin: gen_no_xifu
+      assign core_xif.compressed_ready = 1'b1;
+      assign core_xif.compressed_resp.instr = '0;
+      assign core_xif.compressed_resp.accept = 1'b1;
+      assign core_xif.issue_ready = 1'b1;
+      assign core_xif.issue_resp.accept = 1'b1;
+      assign core_xif.issue_resp.writeback = 1'b0;
+      assign core_xif.issue_resp.dualwrite = 1'b0;
+      assign core_xif.issue_resp.dualread = '0;
+      assign core_xif.issue_resp.loadstore = 1'b0;
+      assign core_xif.issue_resp.ecswrite = 1'b0;
+      assign core_xif.issue_resp.exc = 1'b0;
+      assign core_xif.mem_valid = 1'b1;
+      assign core_xif.mem_req = 1'b0;
+      assign core_xif.result_valid = 1'b1;
+      assign core_xif.result = '0;  
+    end
+    else begin: gen_xifu
+      fir_xifu_top #(
+        .NB_REGS ( 4 )
+      ) i_fir_xifu_top (
+        .clk_i            ( clk_i                      ),
+        .rst_ni           ( rst_ni                     ),
+        .clear_i          ( 1'b0                       ),
+        .xif_issue_i      ( core_xif ),
+        .xif_compressed_i ( core_xif ),
+        .xif_commit_i     ( core_xif ),
+        .xif_mem_o        ( core_xif ),
+        .xif_mem_result_i ( core_xif ),
+        .xif_result_o     ( core_xif )
+      );
+    end
 
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
@@ -197,7 +216,7 @@ module fc_subsystem #(
 `endif
         .RV32        (RV32I),
         .M_EXT       (M_NONE),
-        .X_EXT       (0),
+        .X_EXT       (1),
         .DM_REGION_START (`DEBUG_START_ADDR),
         .DM_REGION_END   (`DEBUG_END_ADDR),
         //.X_NUM_RS    (),
