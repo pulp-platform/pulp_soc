@@ -33,8 +33,8 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
     XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS-1:0],
-    APB_BUS.Slave                     apb_slave_eu,
-    APB_BUS.Slave                     apb_slave_hwpe,
+    APB.Slave                         apb_slave_eu,
+    APB.Slave                         apb_slave_hwpe,
 
     input  logic                      fetch_en_i,
     input  logic [31:0]               boot_addr_i,
@@ -43,7 +43,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
     input  logic                      event_fifo_valid_i,
     output logic                      event_fifo_fulln_o,
     input  logic [EVENT_ID_WIDTH-1:0] event_fifo_data_i, // goes indirectly to core interrupt
-    input  logic [31:0]               events_i, // goes directly to core interrupt, should be called irqs
+    input  logic [31:0]               interrupts_i, // goes directly to core interrupt, should be called irqs
     output logic [1:0]                hwpe_events_o,
 
     output logic                      supervisor_mode_o
@@ -330,7 +330,7 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
         .clk_i              ( clk_i              ),
         .rst_ni             ( rst_ni             ),
         .test_mode_i        ( test_en_i          ),
-        .events_i           ( events_i           ),
+        .events_i           ( interrupts_i       ),
         .event_fifo_valid_i ( event_fifo_valid_i ),
         .event_fifo_fulln_o ( event_fifo_fulln_o ),
         .event_fifo_data_i  ( event_fifo_data_i  ),
