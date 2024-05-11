@@ -26,14 +26,14 @@ dependencies:
   fpnew:                  { git: "https://github.com/pulp-platform/cvfpu.git", rev: pulp-v0.1.3 }
   jtag_pulp:              { git: "https://github.com/pulp-platform/jtag_pulp.git", version: 0.2.0 }
 #  cv32e40p:               { git: "https://github.com/pulp-platform/cv32e40p.git", rev: "7a49867b2232d97344cde1b8a1e05bcb38634894"}
-  cv32e40x:               { git: "https://github.com/pulp-platform/cv32e40x.git", rev: fc/xif-fixes }
-  fir-xifu:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-xifu.git", rev: main }
+  cv32e40x:               { git: "https://github.com/pulp-platform/cv32e40x.git", rev: "636785cd4aef6e857b320834b3ec158b2be7d2c8" } # branch fc/xif-fixes
+  fir-xifu:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-xifu.git", rev: "2491bd2ac4ec1c45fc08dcb1f964ae6f520e29da" } # branch main
   ibex:                   { git: "https://github.com/pulp-platform/ibex.git", rev: "pulpissimo-v6.1.2" }
   scm:                    { git: "https://github.com/pulp-platform/scm.git", version: 1.0.1}
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", version: 0.2.0 }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
   pulp_io:                { git: "https://github.com/pulp-platform/pulp-io.git", rev: v0.1.0-draft }
-  fir-hwpe:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-hwpe.git", rev: "cb6b9a5f9dd0c01dabb77af827f293f1427d4f03" }
+  fir-hwpe:               { git: "git@iis-git.ee.ethz.ch:ades-labs/fir-hwpe.git", rev: "4761bc1ab915c134e9d6eb3dc4e783944073e860" } # branch fc/soc
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.5.0 }
   register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.4.1 }
 
