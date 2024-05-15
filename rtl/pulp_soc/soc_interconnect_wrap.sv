@@ -77,29 +77,29 @@ module soc_interconnect_wrap
   end
 
   axi_to_mem_split_intf #(
-    .AXI_ID_WIDTH  (AXI_IN_ID_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_IN_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(AXI_IN_DATA_WIDTH),
-    .AXI_USER_WIDTH(AXI_USER_WIDTH),
-    .MEM_DATA_WIDTH(32),
-    .BUF_DEPTH     (2),
-    .HIDE_STRB     (1'b1),
-    .OUT_FIFO_DEPTH(2)
+    .AXI_ID_WIDTH   ( AXI_IN_ID_WIDTH  ),
+    .AXI_ADDR_WIDTH ( AXI_IN_ADDR_WIDTH),
+    .AXI_DATA_WIDTH ( AXI_IN_DATA_WIDTH),
+    .AXI_USER_WIDTH ( AXI_USER_WIDTH   ),
+    .MEM_DATA_WIDTH ( 32               ),
+    .BUF_DEPTH      ( 2                ),
+    .HIDE_STRB      ( 1'b1             ),
+    .OUT_FIFO_DEPTH ( 2                )
   ) i_axi64_to_lint32 (
     .clk_i,
     .rst_ni,
-    .test_i      (test_en_i),
-    .busy_o      (),
-    .axi_bus     (axi_master_plug),
-    .mem_req_o   (axi_bridge_2_interconnect_req),
-    .mem_gnt_i   (axi_bridge_2_interconnect_gnt),
-    .mem_addr_o  (axi_bridge_2_interconnect_add),
-    .mem_wdata_o (axi_bridge_2_interconnect_wdata),
-    .mem_strb_o  (axi_bridge_2_interconnect_be),
-    .mem_atop_o  (), // unsupported
-    .mem_we_o    (axi_bridge_2_interconnect_we),
-    .mem_rvalid_i(axi_bridge_2_interconnect_r_valid),
-    .mem_rdata_i (axi_bridge_2_interconnect_r_rdata)
+    .test_i       ( test_en_i                         ),
+    .busy_o       (                                   ),
+    .axi_bus      ( axi_master_plug                   ),
+    .mem_req_o    ( axi_bridge_2_interconnect_req     ),
+    .mem_gnt_i    ( axi_bridge_2_interconnect_gnt     ),
+    .mem_addr_o   ( axi_bridge_2_interconnect_add     ),
+    .mem_wdata_o  ( axi_bridge_2_interconnect_wdata   ),
+    .mem_strb_o   ( axi_bridge_2_interconnect_be      ),
+    .mem_atop_o   (                                   ), // unsupported
+    .mem_we_o     ( axi_bridge_2_interconnect_we      ),
+    .mem_rvalid_i ( axi_bridge_2_interconnect_r_valid ),
+    .mem_rdata_i  ( axi_bridge_2_interconnect_r_rdata )
   );
 
   ////////////////////////////////////////
@@ -108,13 +108,13 @@ module soc_interconnect_wrap
   localparam NR_RULES_L2_DEMUX = 3;
   //Everything that is not routed to port 1 or 2 ends up in port 0 by default
   localparam addr_map_rule_t [NR_RULES_L2_DEMUX-1:0] L2_DEMUX_RULES = '{
-     '{ idx: 1 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK1_END_ADDR} , //Both , bank0 and bank1 are in the  same address block
-     '{ idx: 1 , start_addr: `SOC_MEM_MAP_BOOT_ROM_START_ADDR      , end_addr: `SOC_MEM_MAP_BOOT_ROM_END_ADDR}      ,
-     '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }};
+    '{ idx: 1 , start_addr: `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR , end_addr: `SOC_MEM_MAP_PRIVATE_BANK1_END_ADDR} , //Both , bank0 and bank1 are in the  same address block
+    '{ idx: 1 , start_addr: `SOC_MEM_MAP_BOOT_ROM_START_ADDR      , end_addr: `SOC_MEM_MAP_BOOT_ROM_END_ADDR}      ,
+    '{ idx: 2 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }};
 
   localparam NR_RULES_INTERLEAVED_REGION = 1;
   localparam addr_map_rule_t [NR_RULES_INTERLEAVED_REGION-1:0] INTERLEAVED_ADDR_SPACE = '{
-     '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }};
+    '{ idx: 1 , start_addr: `SOC_MEM_MAP_TCDM_START_ADDR          , end_addr: `SOC_MEM_MAP_TCDM_END_ADDR }};
 
   localparam NR_RULES_CONTIG_CROSSBAR = 3;
   localparam addr_map_rule_t [NR_RULES_CONTIG_CROSSBAR-1:0] CONTIGUOUS_CROSSBAR_RULES = '{
@@ -124,8 +124,8 @@ module soc_interconnect_wrap
 
   localparam NR_RULES_AXI_CROSSBAR = 2;
   localparam addr_map_rule_t [NR_RULES_AXI_CROSSBAR-1:0] AXI_CROSSBAR_RULES = '{
-     '{ idx: 0, start_addr: `SOC_MEM_MAP_AXI_PLUG_START_ADDR,    end_addr: `SOC_MEM_MAP_AXI_PLUG_END_ADDR},
-     '{ idx: 1, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
+    '{ idx: 0, start_addr: `SOC_MEM_MAP_AXI_PLUG_START_ADDR,    end_addr: `SOC_MEM_MAP_AXI_PLUG_END_ADDR},
+    '{ idx: 1, start_addr: `SOC_MEM_MAP_PERIPHERALS_START_ADDR, end_addr: `SOC_MEM_MAP_PERIPHERALS_END_ADDR}};
 
   //For legacy reasons, the fc_data port can alias the address prefix 0x000 to 0x1c0. E.g. an access to 0x00001234 is
   //mapped to 0x1c001234. The following lines perform this remapping.
@@ -150,11 +150,12 @@ module soc_interconnect_wrap
   //////////////////////////////
 
   //Internal wiring to APB protocol converter
-  AXI_BUS #(.AXI_ADDR_WIDTH(32),
-        .AXI_DATA_WIDTH(32),
-        .AXI_ID_WIDTH(pkg_soc_interconnect::AXI_ID_OUT_WIDTH),
-        .AXI_USER_WIDTH(AXI_USER_WIDTH)
-        ) axi_to_axi_lite_bridge();
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( 32                                     ),
+    .AXI_DATA_WIDTH ( 32                                     ),
+    .AXI_ID_WIDTH   ( pkg_soc_interconnect::AXI_ID_OUT_WIDTH ),
+    .AXI_USER_WIDTH ( AXI_USER_WIDTH                         )
+  ) axi_to_axi_lite_bridge();
 
   //Wiring signals to interconncet. Unfortunately Synopsys-2019.3 does not support assignment patterns in port lists
   //directly
