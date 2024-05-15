@@ -282,14 +282,6 @@ module fc_subsystem
       .debug_running_o       (),
       .debug_halted_o        (),
 
-      // Debug Interface
-      .debug_req_i           (debug_req_i),
-      .debug_havereset_o     (),
-      .debug_running_o       (),
-      .debug_halted_o        (),
-      .debug_pc_valid_o      (),
-      .debug_pc_o            (),
-
       // CPU Control Signals
       .fetch_enable_i        (fetch_en_int),
       .core_sleep_o          ()
