@@ -46,8 +46,6 @@ module jtag_tap_top #(
 
     logic [7:0] s_soc_jtag_reg_sync;
 
-
-
     // jtag tap controller
     tap_top  #(
         .IDCODE_VALUE      ( IDCODE_VALUE       )
@@ -85,35 +83,35 @@ module jtag_tap_top #(
     )
     confreg
     (
-        .clk_i                  ( tck_i               ),
-        .rst_ni                 ( trst_ni             ),
-        .enable_i               ( confreg_sel         ),
-        .capture_dr_i           ( jtag_capture_dr_o   ),
-        .shift_dr_i             ( jtag_shift_dr_o     ),
-        .update_dr_i            ( jtag_update_dr_o    ),
-        .jtagreg_in_i           ( {1'b0, s_soc_jtag_reg_sync} ), //at sys rst enable the fll
-        .mode_i                 ( 1'b1                ),
-        .scan_in_i              ( s_scan_i            ),
-        .jtagreg_out_o          ( s_confreg           ),
-        .scan_out_o             ( confscan            )
+        .clk_i         ( tck_i                       ),
+        .rst_ni        ( trst_ni                     ),
+        .enable_i      ( confreg_sel                 ),
+        .capture_dr_i  ( jtag_capture_dr_o           ),
+        .shift_dr_i    ( jtag_shift_dr_o             ),
+        .update_dr_i   ( jtag_update_dr_o            ),
+        .jtagreg_in_i  ( {1'b0, s_soc_jtag_reg_sync} ), //at sys rst enable the fll
+        .mode_i        ( 1'b1                        ),
+        .scan_in_i     ( s_scan_i                    ),
+        .jtagreg_out_o ( s_confreg                   ),
+        .scan_out_o    ( confscan                    )
     );
 
     always_ff @(posedge tck_i or negedge trst_ni) begin
-      if(~trst_ni) begin
+    if(~trst_ni) begin
         r_soc_reg0 <= 0;
         r_soc_reg1 <= 0;
-      end else begin
+    end else begin
         r_soc_reg1 <= soc_jtag_reg_i;
         r_soc_reg0 <= r_soc_reg1;
-      end
+    end
     end
 
-   assign s_soc_jtag_reg_sync =r_soc_reg0;
+   assign s_soc_jtag_reg_sync = r_soc_reg0;
 
-   assign dbg_axi_scan_in_o           =  s_scan_i;
+   assign dbg_axi_scan_in_o   =  s_scan_i;
 
-   assign soc_jtag_reg_o              =  s_confreg[7:0];
+   assign soc_jtag_reg_o      =  s_confreg[7:0];
 
-   assign sel_fll_clk_o               =  s_confreg[8];
+   assign sel_fll_clk_o       =  s_confreg[8];
 
 endmodule

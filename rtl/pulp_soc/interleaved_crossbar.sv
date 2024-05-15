@@ -26,16 +26,16 @@
 `include "tcdm_macros.svh"
 
 module interleaved_crossbar
-    #(
-      parameter int unsigned NR_MASTER_PORTS,
-      parameter int unsigned NR_SLAVE_PORTS //Must be a power of two
-      )(
-        input logic clk_i,
-        input logic rst_ni,
-        input logic test_en_i,
-        XBAR_TCDM_BUS.Slave master_ports[NR_MASTER_PORTS],
-        XBAR_TCDM_BUS.Master slave_ports[NR_SLAVE_PORTS]
-        );
+#(
+    parameter int unsigned NR_MASTER_PORTS,
+    parameter int unsigned NR_SLAVE_PORTS //Must be a power of two
+)(
+    input logic clk_i,
+    input logic rst_ni,
+    input logic test_en_i,
+    XBAR_TCDM_BUS.Slave master_ports[NR_MASTER_PORTS],
+    XBAR_TCDM_BUS.Master slave_ports[NR_SLAVE_PORTS]
+);
     // Do **not** change. The TCDM interface uses hardcoded bus widths so we cannot just change them here.
     localparam int unsigned BE_WIDTH = 4;
     localparam int unsigned ADDR_WIDTH = 32;
@@ -98,27 +98,27 @@ module interleaved_crossbar
 
     //Crossbar instantiation
     xbar #(
-           .NumIn(NR_MASTER_PORTS),
-           .NumOut(NR_SLAVE_PORTS),
-           .ReqDataWidth(REQ_AGG_DATA_WIDTH),
-           .RespDataWidth(RESP_AGG_DATA_WIDTH),
-           .RespLat(1),
-           .WriteRespOn(1)
-        ) i_xbar (
-                        .clk_i,
-                        .rst_ni,
-                        .req_i   ( master_ports_req       ),
-                        .add_i   ( port_sel                ),
-                        .wen_i   ( master_ports_wen     ),
-                        .wdata_i ( req_data_agg_in          ),
-                        .gnt_o   ( master_ports_gnt       ),
-                        .rdata_o ( resp_data_agg_out),
-                        .rr_i    ( '0                   ),
-                        .vld_o   ( master_ports_r_valid   ),
-                        .gnt_i   ( slave_ports_gnt     ),
-                        .req_o   ( slave_ports_req     ),
-                        .wdata_o ( req_data_agg_out         ),
-                        .rdata_i ( resp_data_agg_in )
-                        );
+        .NumIn         ( NR_MASTER_PORTS     ),
+        .NumOut        ( NR_SLAVE_PORTS      ),
+        .ReqDataWidth  ( REQ_AGG_DATA_WIDTH  ),
+        .RespDataWidth ( RESP_AGG_DATA_WIDTH ),
+        .RespLat       ( 1                   ),
+        .WriteRespOn   ( 1                   )
+    ) i_xbar (
+        .clk_i,
+        .rst_ni,
+        .req_i   ( master_ports_req     ),
+        .add_i   ( port_sel             ),
+        .wen_i   ( master_ports_wen     ),
+        .wdata_i ( req_data_agg_in      ),
+        .gnt_o   ( master_ports_gnt     ),
+        .rdata_o ( resp_data_agg_out    ),
+        .rr_i    ( '0                   ),
+        .vld_o   ( master_ports_r_valid ),
+        .gnt_i   ( slave_ports_gnt      ),
+        .req_o   ( slave_ports_req      ),
+        .wdata_o ( req_data_agg_out     ),
+        .rdata_i ( resp_data_agg_in     )
+    );
 
 endmodule : interleaved_crossbar
