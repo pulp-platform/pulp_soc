@@ -10,74 +10,74 @@
 
 
 module soc_event_arbiter #(
-    parameter EVNT_NUM=256
+  parameter EVNT_NUM=256
 ) (
-    input  logic                clk_i,
-    input  logic                rstn_i,
-    input  logic [EVNT_NUM-1:0] req_i,
-    output logic [EVNT_NUM-1:0] grant_o,
-    input  logic                grant_ack_i,
-    output logic                anyGrant_o
+  input  logic                clk_i,
+  input  logic                rstn_i,
+  input  logic [EVNT_NUM-1:0] req_i,
+  output logic [EVNT_NUM-1:0] grant_o,
+  input  logic                grant_ack_i,
+  output logic                anyGrant_o
 );
-    localparam S = $clog2(EVNT_NUM);
-    // internal pointers
-    reg [EVNT_NUM-1:0] r_priority; // one-hot priority vector
+  localparam S = $clog2(EVNT_NUM);
+  // internal pointers
+  reg [EVNT_NUM-1:0] r_priority; // one-hot priority vector
 
-    // Outputs of combinational logic - real wires - declared as regs for use in a alway block
-    // Better to change to wires and use generate statements in the future
+  // Outputs of combinational logic - real wires - declared as regs for use in a alway block
+  // Better to change to wires and use generate statements in the future
 
-    reg [EVNT_NUM-1:0] g[  S:0]; // S levels of priority generate
-    reg [EVNT_NUM-1:0] p[S-1:0]; // S-1 levels of priority propagate
+  reg [EVNT_NUM-1:0] g[  S:0]; // S levels of priority generate
+  reg [EVNT_NUM-1:0] p[S-1:0]; // S-1 levels of priority propagate
 
-    // internal synonym wires of true outputs anyGrant and grant
-    wire                anyGnt;
-    wire [EVNT_NUM-1:0] gnt   ;
+  // internal synonym wires of true outputs anyGrant and grant
+  wire                anyGnt;
+  wire [EVNT_NUM-1:0] gnt   ;
 
-    assign anyGrant_o = anyGnt;
-    assign grant_o    = gnt;
+  assign anyGrant_o = anyGnt;
+  assign grant_o    = gnt;
 
 /////////////////////////////////////////////////
 // Parallel prefix arbitration phase
 /////////////////////////////////////////////////
-    integer i,j;
+  integer i,j;
 
-    // arbitration phase
-    always@(req_i or r_priority)
-    begin
-        // transfer request vector to the first propagate positions
-        p[0] = {~req_i[EVNT_NUM-2:0], ~req_i[EVNT_NUM-1]};
+  // arbitration phase
+  always@(req_i or r_priority)
+  begin
+    // transfer request vector to the first propagate positions
+    p[0] = {~req_i[EVNT_NUM-2:0], ~req_i[EVNT_NUM-1]};
 
-        // transfer priority vector to the first generate positions
-        g[0] = r_priority;
+    // transfer priority vector to the first generate positions
+    g[0] = r_priority;
 
-        // first log_2n - 1 prefix levels
-        for (i=1; i < S; i = i + 1) begin
-            for (j = 0; j < EVNT_NUM ; j = j + 1) begin
-                if (j-2**(i-1) < 0) begin
-                    g[i][j] = g[i-1][j] | (p[i-1][j] & g[i-1][EVNT_NUM+j-2**(i-1)]);
-                    p[i][j] = p[i-1][j] & p[i-1][EVNT_NUM+j-2**(i-1)];
-                end
-                else begin
-                    g[i][j] = g[i-1][j] | (p[i-1][j] & g[i-1][j-2**(i-1)]);
-                    p[i][j] = p[i-1][j] & p[i-1][j-2**(i-1)];
-                end
-            end
+    // first log_2n - 1 prefix levels
+    for (i=1; i < S; i = i + 1) begin
+      for (j = 0; j < EVNT_NUM ; j = j + 1) begin
+        if (j-2**(i-1) < 0) begin
+          g[i][j] = g[i-1][j] | (p[i-1][j] & g[i-1][EVNT_NUM+j-2**(i-1)]);
+          p[i][j] = p[i-1][j] & p[i-1][EVNT_NUM+j-2**(i-1)];
         end
-
-        // last prefix level
-        for (j = 0; j < EVNT_NUM; j = j + 1) begin
-            if (j-2**(S-1) < 0)
-                g[S][j] = g[S-1][j] | (p[S-1][j] & g[S-1][EVNT_NUM+j-2**(S-1)]);
-            else
-                g[S][j] = g[S-1][j] | (p[S-1][j] & g[S-1][j-2**(S-1)]);
+        else begin
+          g[i][j] = g[i-1][j] | (p[i-1][j] & g[i-1][j-2**(i-1)]);
+          p[i][j] = p[i-1][j] & p[i-1][j-2**(i-1)];
         end
+      end
     end
 
-    // any grant generation at last prefix level
-    assign anyGnt = ~(p[S-1][EVNT_NUM-1] & p[S-1][EVNT_NUM/2-1]);
+    // last prefix level
+    for (j = 0; j < EVNT_NUM; j = j + 1) begin
+      if (j-2**(S-1) < 0)
+        g[S][j] = g[S-1][j] | (p[S-1][j] & g[S-1][EVNT_NUM+j-2**(S-1)]);
+      else
+        g[S][j] = g[S-1][j] | (p[S-1][j] & g[S-1][j-2**(S-1)]);
+    end
+  end
 
-    // output stage logic
-    assign gnt = req_i & g[S];
+  // any grant generation at last prefix level
+  assign anyGnt = ~(p[S-1][EVNT_NUM-1] & p[S-1][EVNT_NUM/2-1]);
+
+  // output stage logic
+  assign gnt = req_i & g[S];
 
 
 /////////////////////////////////////////////////
@@ -92,19 +92,19 @@ module soc_event_arbiter #(
 // Priority moves only when a grant was given, i.e., at least one active request
 //////////////////////////////////////////////////
 
-    always@(posedge clk_i or negedge rstn_i)
-    begin
-        if (rstn_i == 1'b0) begin
-            r_priority <= 1;
-        end
-        else begin
-            // update pointers only if at leas one match exists and if we received an ack from the controller
-            if (anyGnt && grant_ack_i) begin
-                // shift left one-hot grant vector
-                r_priority[EVNT_NUM-1:1] <= gnt[EVNT_NUM-2:0];
-                r_priority[0]            <= gnt[EVNT_NUM-1];
-            end
-        end
+  always@(posedge clk_i or negedge rstn_i)
+  begin
+    if (rstn_i == 1'b0) begin
+      r_priority <= 1;
     end
+    else begin
+      // update pointers only if at leas one match exists and if we received an ack from the controller
+      if (anyGnt && grant_ack_i) begin
+        // shift left one-hot grant vector
+        r_priority[EVNT_NUM-1:1] <= gnt[EVNT_NUM-2:0];
+        r_priority[0]            <= gnt[EVNT_NUM-1];
+      end
+    end
+  end
 
 endmodule
