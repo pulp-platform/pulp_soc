@@ -275,25 +275,25 @@ module soc_peripherals
 
  // AXI Lite to APB converter with integrated APB Crossbar
     axi_lite_to_apb #(
-      .NoApbSlaves      ( NumAPBSlaves    ),
-      .NoRules          ( NumAPBSlaves    ),
-      .AddrWidth        ( 32              ),
-      .DataWidth        ( 32              ),
-      .PipelineRequest  ( 1'b1            ),
-      .PipelineResponse ( 1'b1            ),
-      .axi_lite_req_t   ( axi_lite_req_t  ),
-      .axi_lite_resp_t  ( axi_lite_resp_t ),
-      .apb_req_t        ( apb_req_t       ),
-      .apb_resp_t       ( apb_resp_t      ),
-      .rule_t           ( addr_map_rule_t )
+        .NoApbSlaves      ( NumAPBSlaves    ),
+        .NoRules          ( NumAPBSlaves    ),
+        .AddrWidth        ( 32              ),
+        .DataWidth        ( 32              ),
+        .PipelineRequest  ( 1'b1            ),
+        .PipelineResponse ( 1'b1            ),
+        .axi_lite_req_t   ( axi_lite_req_t  ),
+        .axi_lite_resp_t  ( axi_lite_resp_t ),
+        .apb_req_t        ( apb_req_t       ),
+        .apb_resp_t       ( apb_resp_t      ),
+        .rule_t           ( addr_map_rule_t )
     ) i_axi_lite_to_apb (
-      .clk_i,
-      .rst_ni,
-      .axi_lite_req_i  ( s_axi_lite_master_req  ),
-      .axi_lite_resp_o ( s_axi_lite_master_resp ),
-      .apb_req_o       ( s_apb_slaves_req       ),
-      .apb_resp_i      ( s_apb_slaves_resp      ),
-      .addr_map_i      ( APBAddrRanges          )
+        .clk_i,
+        .rst_ni,
+        .axi_lite_req_i  ( s_axi_lite_master_req  ),
+        .axi_lite_resp_o ( s_axi_lite_master_resp ),
+        .apb_req_o       ( s_apb_slaves_req       ),
+        .apb_resp_i      ( s_apb_slaves_resp      ),
+        .addr_map_i      ( APBAddrRanges          )
     );
 
     // Assign internal slave signals to external APB ports
@@ -307,112 +307,114 @@ module soc_peripherals
         $fatal(1, "SIM_STDOUT is not synthesizable. Set SIM_STDOUT=0");
 `endif
 
- if (SIM_STDOUT) begin
-     logic pready_q;
+    if (SIM_STDOUT) begin
+        logic pready_q;
 
-     assign s_virtual_stdout_slave.pready  = pready_q;
-     assign s_virtual_stdout_slave.pslverr = 1'b0;
+        assign s_virtual_stdout_slave.pready  = pready_q;
+        assign s_virtual_stdout_slave.pslverr = 1'b0;
 
-     tb_fs_handler #(
-          .ADDR_WIDTH ( 32          ),
-          .DATA_WIDTH ( 32          ),
-          .NB_CORES   ( NB_CORES + 1), // cluster cores + fc core
-          .OPEN_FILES ( `ifdef LOG_SIM_STDOUT 1 `else 0 `endif )
-     ) i_fs_handler (
-          .clk   ( clk_i                                                  ),
-          .rst_n ( rst_ni                                                 ),
-          .CSN   ( ~(s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable & pready_q) ),
-          .WEN   ( ~s_virtual_stdout_slave.pwrite                                   ),
-          .ADDR  ( s_virtual_stdout_slave.paddr                                     ),
-          .WDATA ( s_virtual_stdout_slave.pwdata                                    ),
-          .BE    ( 4'hf                                                   ),
-          .RDATA ( s_virtual_stdout_slave.prdata                                    )
-     );
+        tb_fs_handler #(
+            .ADDR_WIDTH ( 32          ),
+            .DATA_WIDTH ( 32          ),
+            .NB_CORES   ( NB_CORES + 1), // cluster cores + fc core
+            .OPEN_FILES ( `ifdef LOG_SIM_STDOUT 1 `else 0 `endif )
+        ) i_fs_handler (
+            .clk   ( clk_i                                                  ),
+            .rst_n ( rst_ni                                                 ),
+            .CSN   ( ~(s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable & pready_q) ),
+            .WEN   ( ~s_virtual_stdout_slave.pwrite                                   ),
+            .ADDR  ( s_virtual_stdout_slave.paddr                                     ),
+            .WDATA ( s_virtual_stdout_slave.pwdata                                    ),
+            .BE    ( 4'hf                                                   ),
+            .RDATA ( s_virtual_stdout_slave.prdata                                    )
+        );
 
-     always_ff @(posedge clk_i or negedge rst_ni) begin
-        if(~rst_ni) begin
-           pready_q <= 0;
-        end else begin
-           pready_q <= (s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable);
+        always_ff @(posedge clk_i or negedge rst_ni) begin
+            if(~rst_ni) begin
+                pready_q <= 0;
+            end else begin
+                pready_q <= (s_virtual_stdout_slave.psel & s_virtual_stdout_slave.penable);
+            end
         end
-     end
- end else begin
-     assign s_virtual_stdout_slave.pready  = 'h1;
-     assign s_virtual_stdout_slave.pslverr = 1'b0;
-     assign s_virtual_stdout_slave.prdata  = 'h0;
- end
+    end else begin
+        assign s_virtual_stdout_slave.pready  = 'h1;
+        assign s_virtual_stdout_slave.pslverr = 1'b0;
+        assign s_virtual_stdout_slave.prdata  = 'h0;
+    end
 
     logic sys_rst_ni;
     logic sys_clk_i;
 
-    pulp_io #(.APB_ADDR_WIDTH(APB_ADDR_WIDTH)) i_pulp_io (
-        .sys_rst_ni      (rst_ni               ),
-        .sys_clk_i       (clk_i                ),
-        .periph_clk_i    (periph_clk_i         ),
+    pulp_io #(
+        .APB_ADDR_WIDTH ( APB_ADDR_WIDTH )
+    ) i_pulp_io (
+        .sys_rst_ni       ( rst_ni               ),
+        .sys_clk_i        ( clk_i                ),
+        .periph_clk_i     ( periph_clk_i         ),
 
-        .L2_ro_wen_o     (l2_tx_master.wen     ),
-        .L2_ro_req_o     (l2_tx_master.req     ),
-        .L2_ro_gnt_i     (l2_tx_master.gnt     ),
-        .L2_ro_addr_o    (l2_tx_master.add     ),
-        .L2_ro_be_o      (l2_tx_master.be      ),
-        .L2_ro_wdata_o   (l2_tx_master.wdata   ),
-        .L2_ro_rvalid_i  (l2_tx_master.r_valid ),
-        .L2_ro_rdata_i   (l2_tx_master.r_rdata ),
+        .L2_ro_wen_o      ( l2_tx_master.wen     ),
+        .L2_ro_req_o      ( l2_tx_master.req     ),
+        .L2_ro_gnt_i      ( l2_tx_master.gnt     ),
+        .L2_ro_addr_o     ( l2_tx_master.add     ),
+        .L2_ro_be_o       ( l2_tx_master.be      ),
+        .L2_ro_wdata_o    ( l2_tx_master.wdata   ),
+        .L2_ro_rvalid_i   ( l2_tx_master.r_valid ),
+        .L2_ro_rdata_i    ( l2_tx_master.r_rdata ),
 
-        .L2_wo_wen_o     (l2_rx_master.wen     ),
-        .L2_wo_req_o     (l2_rx_master.req     ),
-        .L2_wo_gnt_i     (l2_rx_master.gnt     ),
-        .L2_wo_addr_o    (l2_rx_master.add     ),
-        .L2_wo_wdata_o   (l2_rx_master.wdata   ),
-        .L2_wo_be_o      (l2_rx_master.be      ),
-        .L2_wo_rvalid_i  (l2_rx_master.r_valid ),
-        .L2_wo_rdata_i   (l2_rx_master.r_rdata ),
+        .L2_wo_wen_o      ( l2_rx_master.wen     ),
+        .L2_wo_req_o      ( l2_rx_master.req     ),
+        .L2_wo_gnt_i      ( l2_rx_master.gnt     ),
+        .L2_wo_addr_o     ( l2_rx_master.add     ),
+        .L2_wo_wdata_o    ( l2_rx_master.wdata   ),
+        .L2_wo_be_o       ( l2_rx_master.be      ),
+        .L2_wo_rvalid_i   ( l2_rx_master.r_valid ),
+        .L2_wo_rdata_i    ( l2_rx_master.r_rdata ),
 
-        .dft_test_mode_i (dft_test_mode_i      ),
-        .dft_cg_enable_i (dft_cg_enable_i      ),
+        .dft_test_mode_i  ( dft_test_mode_i      ),
+        .dft_cg_enable_i  ( dft_cg_enable_i      ),
 
-        .udma_apb_paddr  (s_udma_slave.paddr   ),
-        .udma_apb_pwdata (s_udma_slave.pwdata  ),
-        .udma_apb_pwrite (s_udma_slave.pwrite  ),
-        .udma_apb_psel   (s_udma_slave.psel    ),
-        .udma_apb_penable(s_udma_slave.penable ),
-        .udma_apb_prdata (s_udma_slave.prdata  ),
-        .udma_apb_pready (s_udma_slave.pready  ),
-        .udma_apb_pslverr(s_udma_slave.pslverr ),
+        .udma_apb_paddr   ( s_udma_slave.paddr   ),
+        .udma_apb_pwdata  ( s_udma_slave.pwdata  ),
+        .udma_apb_pwrite  ( s_udma_slave.pwrite  ),
+        .udma_apb_psel    ( s_udma_slave.psel    ),
+        .udma_apb_penable ( s_udma_slave.penable ),
+        .udma_apb_prdata  ( s_udma_slave.prdata  ),
+        .udma_apb_pready  ( s_udma_slave.pready  ),
+        .udma_apb_pslverr ( s_udma_slave.pslverr ),
 
-        .gpio_apb_paddr  (s_gpio_slave.paddr     ),
-        .gpio_apb_pwdata (s_gpio_slave.pwdata    ),
-        .gpio_apb_pwrite (s_gpio_slave.pwrite    ),
-        .gpio_apb_psel   (s_gpio_slave.psel      ),
-        .gpio_apb_penable(s_gpio_slave.penable   ),
-        .gpio_apb_prdata (s_gpio_slave.prdata    ),
-        .gpio_apb_pready (s_gpio_slave.pready    ),
-        .gpio_apb_pslverr(s_gpio_slave.pslverr   ),
+        .gpio_apb_paddr   ( s_gpio_slave.paddr   ),
+        .gpio_apb_pwdata  ( s_gpio_slave.pwdata  ),
+        .gpio_apb_pwrite  ( s_gpio_slave.pwrite  ),
+        .gpio_apb_psel    ( s_gpio_slave.psel    ),
+        .gpio_apb_penable ( s_gpio_slave.penable ),
+        .gpio_apb_prdata  ( s_gpio_slave.prdata  ),
+        .gpio_apb_pready  ( s_gpio_slave.pready  ),
+        .gpio_apb_pslverr ( s_gpio_slave.pslverr ),
 
-        .events_o        (s_udma_events       ),
-        .event_valid_i   (s_pr_event_valid    ),
-        .event_data_i    (s_pr_event_data     ),
-        .event_ready_o   (s_pr_event_ready    ),
+        .events_o         ( s_udma_events        ),
+        .event_valid_i    ( s_pr_event_valid     ),
+        .event_data_i     ( s_pr_event_data      ),
+        .event_ready_o    ( s_pr_event_ready     ),
 
-        .uart_to_pad                (uart_to_pad_o              ),
-        .pad_to_uart                (pad_to_uart_i              ),
-        .i2c_to_pad                 (i2c_to_pad_o               ),
-        .pad_to_i2c                 (pad_to_i2c_i               ),
-        .sdio_to_pad                (sdio_to_pad_o              ),
-        .pad_to_sdio                (pad_to_sdio_i              ),
-        .i2s_to_pad                 (i2s_to_pad_o               ),
-        .pad_to_i2s                 (pad_to_i2s_i               ),
-        .qspi_to_pad                (qspi_to_pad_o              ),
-        .pad_to_qspi                (pad_to_qspi_i              ),
-        .pad_to_cpi                 (pad_to_cpi_i               ),
-        .hyper_to_pad               (hyper_to_pad_o             ),
-        .pad_to_hyper               (pad_to_hyper_i             ),
-        .gpio_in                    (gpio_i                     ),
-        .gpio_out                   (gpio_o                     ),
-        .gpio_tx_en_o               (gpio_tx_en_o               ),
-        .gpio_in_sync_o             (s_gpio_sync                ),
-        .gpio_global_interrupt_o    (s_gpio_global_interrupt    ),
-        .gpio_pin_level_interrupt_o (s_gpio_pin_level_interrupt )
+        .uart_to_pad                ( uart_to_pad_o              ),
+        .pad_to_uart                ( pad_to_uart_i              ),
+        .i2c_to_pad                 ( i2c_to_pad_o               ),
+        .pad_to_i2c                 ( pad_to_i2c_i               ),
+        .sdio_to_pad                ( sdio_to_pad_o              ),
+        .pad_to_sdio                ( pad_to_sdio_i              ),
+        .i2s_to_pad                 ( i2s_to_pad_o               ),
+        .pad_to_i2s                 ( pad_to_i2s_i               ),
+        .qspi_to_pad                ( qspi_to_pad_o              ),
+        .pad_to_qspi                ( pad_to_qspi_i              ),
+        .pad_to_cpi                 ( pad_to_cpi_i               ),
+        .hyper_to_pad               ( hyper_to_pad_o             ),
+        .pad_to_hyper               ( pad_to_hyper_i             ),
+        .gpio_in                    ( gpio_i                     ),
+        .gpio_out                   ( gpio_o                     ),
+        .gpio_tx_en_o               ( gpio_tx_en_o               ),
+        .gpio_in_sync_o             ( s_gpio_sync                ),
+        .gpio_global_interrupt_o    ( s_gpio_global_interrupt    ),
+        .gpio_pin_level_interrupt_o ( s_gpio_pin_level_interrupt )
     );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -431,11 +433,11 @@ module soc_peripherals
 
     // Convert APB to regbus
     apb_to_reg_intf #(
-      .DATA_WIDTH(32),
-      .ADDR_WIDTH(32)
+        .DATA_WIDTH ( 32 ),
+        .ADDR_WIDTH ( 32 )
     ) i_soc_ctrl_apb2reg (
-      .apb_i(s_soc_ctrl_slave),
-      .reg_o(s_regbus_soc_ctrl_reg)
+        .apb_i ( s_soc_ctrl_slave      ),
+        .reg_o ( s_regbus_soc_ctrl_reg )
     );
 
     soc_ctrl_reg_top_intf i_soc_ctrl (
@@ -450,8 +452,8 @@ module soc_peripherals
     // Wire up the soc_ctrl_reg signals
     assign s_soc_ctrl_reg_hw2reg.info.ncores           = NB_CORES;
     assign s_soc_ctrl_reg_hw2reg.info.nclusters        = NB_CLUSTERS;
-    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.d             = soc_jtag_reg_i;
-    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.de            = 1'b1;
+    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.d  = soc_jtag_reg_i;
+    assign s_soc_ctrl_reg_hw2reg.jtagreg.confreg_in.de = 1'b1;
     assign s_soc_ctrl_reg_hw2reg.fc_fetch_en.d         = fc_fetch_en_i;
     assign s_soc_ctrl_reg_hw2reg.fc_fetch_en.de        = fc_fetch_en_valid_i;
     assign s_soc_ctrl_reg_hw2reg.soc_info.version      = SOC_VERSION;
@@ -472,10 +474,10 @@ module soc_peripherals
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .EXTSIG_NUM     ( NGPIO      )
     ) i_apb_adv_timer (
-        .HCLK            ( clk_i                   ),
-        .HRESETn         ( rst_ni                  ),
+        .HCLK            ( clk_i                     ),
+        .HRESETn         ( rst_ni                    ),
 
-        .dft_cg_enable_i ( dft_cg_enable_i         ),
+        .dft_cg_enable_i ( dft_cg_enable_i           ),
 
         .PADDR           ( s_adv_timer_slave.paddr   ),
         .PWDATA          ( s_adv_timer_slave.pwdata  ),
@@ -486,15 +488,15 @@ module soc_peripherals
         .PREADY          ( s_adv_timer_slave.pready  ),
         .PSLVERR         ( s_adv_timer_slave.pslverr ),
 
-        .low_speed_clk_i ( slow_clk_i              ),
-        .ext_sig_i       ( s_gpio_sync             ),
+        .low_speed_clk_i ( slow_clk_i                ),
+        .ext_sig_i       ( s_gpio_sync               ),
 
-        .events_o        ( s_adv_timer_events      ),
+        .events_o        ( s_adv_timer_events        ),
 
-        .ch_0_o          ( timer_ch0_o             ),
-        .ch_1_o          ( timer_ch1_o             ),
-        .ch_2_o          ( timer_ch2_o             ),
-        .ch_3_o          ( timer_ch3_o             )
+        .ch_0_o          ( timer_ch0_o               ),
+        .ch_1_o          ( timer_ch1_o               ),
+        .ch_2_o          ( timer_ch2_o               ),
+        .ch_3_o          ( timer_ch3_o               )
     );
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -513,8 +515,8 @@ module soc_peripherals
         .EVNT_WIDTH     ( EVNT_WIDTH     ),
         .FC_EVENT_POS   ( 7              )
     ) u_evnt_gen (
-        .HCLK             ( clk_i                      ),
-        .HRESETn          ( rst_ni                     ),
+        .HCLK             ( clk_i                         ),
+        .HRESETn          ( rst_ni                        ),
 
         .PADDR            ( s_soc_event_gen_slave.paddr   ),
         .PWDATA           ( s_soc_event_gen_slave.pwdata  ),
@@ -525,22 +527,22 @@ module soc_peripherals
         .PREADY           ( s_soc_event_gen_slave.pready  ),
         .PSLVERR          ( s_soc_event_gen_slave.pslverr ),
 
-        .low_speed_clk_i  ( slow_clk_i                 ),
-        .timer_event_lo_o ( s_timer_in_lo_event        ),
-        .timer_event_hi_o ( s_timer_in_hi_event        ),
-        .per_events_i     ( s_events                   ),
-        .err_event_o      ( s_fc_err_events            ),
-        .fc_events_o      ( s_fc_hp_events             ),
+        .low_speed_clk_i  ( slow_clk_i                    ),
+        .timer_event_lo_o ( s_timer_in_lo_event           ),
+        .timer_event_hi_o ( s_timer_in_hi_event           ),
+        .per_events_i     ( s_events                      ),
+        .err_event_o      ( s_fc_err_events               ),
+        .fc_events_o      ( s_fc_hp_events                ),
 
-        .fc_event_valid_o ( fc_event_valid_o           ),
-        .fc_event_data_o  ( fc_event_data_o            ),
-        .fc_event_ready_i ( fc_event_ready_i           ),
-        .cl_event_valid_o ( cl_event_valid_o           ),
-        .cl_event_data_o  ( cl_event_data_o            ),
-        .cl_event_ready_i ( cl_event_ready_i           ),
-        .pr_event_valid_o ( s_pr_event_valid           ),
-        .pr_event_data_o  ( s_pr_event_data            ),
-        .pr_event_ready_i ( s_pr_event_ready           )
+        .fc_event_valid_o ( fc_event_valid_o              ),
+        .fc_event_data_o  ( fc_event_data_o               ),
+        .fc_event_ready_i ( fc_event_ready_i              ),
+        .cl_event_valid_o ( cl_event_valid_o              ),
+        .cl_event_data_o  ( cl_event_data_o               ),
+        .cl_event_ready_i ( cl_event_ready_i              ),
+        .pr_event_valid_o ( s_pr_event_valid              ),
+        .pr_event_data_o  ( s_pr_event_data               ),
+        .pr_event_ready_i ( s_pr_event_ready              )
     );
 
 

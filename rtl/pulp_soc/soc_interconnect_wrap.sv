@@ -45,19 +45,18 @@ module soc_interconnect_wrap
        input logic clk_i,
        input logic rst_ni,
        input logic test_en_i,
-       XBAR_TCDM_BUS.Slave      tcdm_fc_data, //Data Port of the Fabric Controller
-       XBAR_TCDM_BUS.Slave      tcdm_fc_instr, //Instruction Port of the Fabric Controller
-       XBAR_TCDM_BUS.Slave      tcdm_udma_tx, //TX Channel for the uDMA
-       XBAR_TCDM_BUS.Slave      tcdm_udma_rx, //RX Channel for the uDMA
-       XBAR_TCDM_BUS.Slave      tcdm_debug, //Debug access port from either the legacy or the riscv-debug unit
-       XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS], //Hardware Processing Element ports
-       AXI_BUS.Slave            axi_master_plug, // Normaly used for cluster -> SoC communication
-       AXI_BUS.Master           axi_slave_plug, // Normaly used for SoC ->
-                                                // cluster communication
-       AXI_LITE.Master          axi_lite_peripheral_bus,  // Connects to all the SoC Peripherals
+       XBAR_TCDM_BUS.Slave      tcdm_fc_data,                       // Data Port of the Fabric Controller
+       XBAR_TCDM_BUS.Slave      tcdm_fc_instr,                      // Instruction Port of the Fabric Controller
+       XBAR_TCDM_BUS.Slave      tcdm_udma_tx,                       // TX Channel for the uDMA
+       XBAR_TCDM_BUS.Slave      tcdm_udma_rx,                       // RX Channel for the uDMA
+       XBAR_TCDM_BUS.Slave      tcdm_debug,                         // Debug access port from either the legacy or the riscv-debug unit
+       XBAR_TCDM_BUS.Slave      tcdm_hwpe[NR_HWPE_PORTS],           // Hardware Processing Element ports
+       AXI_BUS.Slave            axi_master_plug,                    // Normally used for cluster -> SoC communication
+       AXI_BUS.Master           axi_slave_plug,                     // Normally used for SoC -> cluster communication
+       AXI_LITE.Master          axi_lite_peripheral_bus,            // Connects to all the SoC Peripherals
        XBAR_TCDM_BUS.Master     l2_interleaved_slaves[NR_L2_PORTS], // Connects to the interleaved memory banks
-       XBAR_TCDM_BUS.Master     l2_private_slaves[2], // Connects to core-private memory banks
-       XBAR_TCDM_BUS.Master     boot_rom_slave //Connects to the bootrom
+       XBAR_TCDM_BUS.Master     l2_private_slaves[2],               // Connects to core-private memory banks
+       XBAR_TCDM_BUS.Master     boot_rom_slave                      // Connects to the bootrom
      );
 
     //**Do not change these values unles you verified that all downstream IPs are properly parametrized and support it**

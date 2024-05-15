@@ -469,66 +469,66 @@ module pulp_soc import dm::*; #(
         $error("C2S_R_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(c2s_r_chan_t));
 
 
-  `AXI_TYPEDEF_REQ_T(c2s_req_t,c2s_aw_chan_t,c2s_w_chan_t,c2s_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(c2s_resp_t,c2s_b_chan_t,c2s_r_chan_t)
+    `AXI_TYPEDEF_REQ_T(c2s_req_t,c2s_aw_chan_t,c2s_w_chan_t,c2s_ar_chan_t)
+    `AXI_TYPEDEF_RESP_T(c2s_resp_t,c2s_b_chan_t,c2s_r_chan_t)
 
-   c2s_req_t   dst_req ;
-   c2s_resp_t  dst_resp;
+     c2s_req_t   dst_req ;
+     c2s_resp_t  dst_resp;
 
-  `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
-  `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
+    `AXI_ASSIGN_FROM_REQ(s_data_in_bus,dst_req)
+    `AXI_ASSIGN_TO_RESP(dst_resp,s_data_in_bus)
 
-  // One-sided CDC Reset
-  // In the case of pulp_cluster and pulp_soc we not only have the issue of clock
-  // domain crossing, we also have a problem with reset domain crossings. Since
-  // both, the cluster and the SoC can be reset individually, we need to be
-  // extremely carefuly in how we handle these one-sided resets on the clock
-  // domain boundaries.
-  //
-  // WARNING: Do not just connect each domains specific reset signal
-  // to the respective side of the cdc. this will not work at all.
-  //
-  // In order to handle one-sided resets properly, a toplevel reset controller
-  // has to gate both clock domains and assert the CDC reset signal.
+    // One-sided CDC Reset
+    // In the case of pulp_cluster and pulp_soc we not only have the issue of clock
+    // domain crossing, we also have a problem with reset domain crossings. Since
+    // both, the cluster and the SoC can be reset individually, we need to be
+    // extremely carefuly in how we handle these one-sided resets on the clock
+    // domain boundaries.
+    //
+    // WARNING: Do not just connect each domains specific reset signal
+    // to the respective side of the cdc. this will not work at all.
+    //
+    // In order to handle one-sided resets properly, a toplevel reset controller
+    // has to gate both clock domains and assert the CDC reset signal.
 
-  // CLUSTER TO SOC AXI
-  axi_cdc_dst #(
-     .aw_chan_t (c2s_aw_chan_t),
-     .w_chan_t  (c2s_w_chan_t ),
-     .b_chan_t  (c2s_b_chan_t ),
-     .r_chan_t  (c2s_r_chan_t ),
-     .ar_chan_t (c2s_ar_chan_t),
-     .axi_req_t (c2s_req_t    ),
-     .axi_resp_t(c2s_resp_t   ),
-     .LogDepth        ( 3                      )
+    // CLUSTER TO SOC AXI
+    axi_cdc_dst #(
+       .aw_chan_t  ( c2s_aw_chan_t ),
+       .w_chan_t   ( c2s_w_chan_t  ),
+       .b_chan_t   ( c2s_b_chan_t  ),
+       .r_chan_t   ( c2s_r_chan_t  ),
+       .ar_chan_t  ( c2s_ar_chan_t ),
+       .axi_req_t  ( c2s_req_t     ),
+       .axi_resp_t ( c2s_resp_t    ),
+       .LogDepth   ( 3             )
     ) axi_slave_cdc_i (
-     .dst_rst_ni                       ( soc_cluster_cdc_rst_ni     ),
-     .dst_clk_i                        ( soc_clk_i                  ),
-     .dst_req_o                        ( dst_req                    ),
-     .dst_resp_i                       ( dst_resp                   ),
-     .async_data_slave_aw_wptr_i       ( async_data_slave_aw_wptr_i ),
-     .async_data_slave_aw_rptr_o       ( async_data_slave_aw_rptr_o ),
-     .async_data_slave_aw_data_i       ( async_data_slave_aw_data_i ),
-     .async_data_slave_w_wptr_i        ( async_data_slave_w_wptr_i  ),
-     .async_data_slave_w_rptr_o        ( async_data_slave_w_rptr_o  ),
-     .async_data_slave_w_data_i        ( async_data_slave_w_data_i  ),
-     .async_data_slave_ar_wptr_i       ( async_data_slave_ar_wptr_i ),
-     .async_data_slave_ar_rptr_o       ( async_data_slave_ar_rptr_o ),
-     .async_data_slave_ar_data_i       ( async_data_slave_ar_data_i ),
-     .async_data_slave_b_wptr_o        ( async_data_slave_b_wptr_o  ),
-     .async_data_slave_b_rptr_i        ( async_data_slave_b_rptr_i  ),
-     .async_data_slave_b_data_o        ( async_data_slave_b_data_o  ),
-     .async_data_slave_r_wptr_o        ( async_data_slave_r_wptr_o  ),
-     .async_data_slave_r_rptr_i        ( async_data_slave_r_rptr_i  ),
-     .async_data_slave_r_data_o        ( async_data_slave_r_data_o  )
+       .dst_rst_ni                 ( soc_cluster_cdc_rst_ni     ),
+       .dst_clk_i                  ( soc_clk_i                  ),
+       .dst_req_o                  ( dst_req                    ),
+       .dst_resp_i                 ( dst_resp                   ),
+       .async_data_slave_aw_wptr_i ( async_data_slave_aw_wptr_i ),
+       .async_data_slave_aw_rptr_o ( async_data_slave_aw_rptr_o ),
+       .async_data_slave_aw_data_i ( async_data_slave_aw_data_i ),
+       .async_data_slave_w_wptr_i  ( async_data_slave_w_wptr_i  ),
+       .async_data_slave_w_rptr_o  ( async_data_slave_w_rptr_o  ),
+       .async_data_slave_w_data_i  ( async_data_slave_w_data_i  ),
+       .async_data_slave_ar_wptr_i ( async_data_slave_ar_wptr_i ),
+       .async_data_slave_ar_rptr_o ( async_data_slave_ar_rptr_o ),
+       .async_data_slave_ar_data_i ( async_data_slave_ar_data_i ),
+       .async_data_slave_b_wptr_o  ( async_data_slave_b_wptr_o  ),
+       .async_data_slave_b_rptr_i  ( async_data_slave_b_rptr_i  ),
+       .async_data_slave_b_data_o  ( async_data_slave_b_data_o  ),
+       .async_data_slave_r_wptr_o  ( async_data_slave_r_wptr_o  ),
+       .async_data_slave_r_rptr_i  ( async_data_slave_r_rptr_i  ),
+       .async_data_slave_r_data_o  ( async_data_slave_r_data_o  )
     );
 
 
-   `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_W_CHAN_T(s2c_w_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_DATA_OUT_WIDTH/8-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_B_CHAN_T(s2c_b_chan_t,logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t,logic[AXI_ADDR_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
-   `AXI_TYPEDEF_R_CHAN_T(s2c_r_chan_t,logic[AXI_DATA_OUT_WIDTH-1:0],logic[AXI_ID_OUT_WIDTH-1:0],logic[AXI_USER_WIDTH-1:0])
+    `AXI_TYPEDEF_AW_CHAN_T(s2c_aw_chan_t, logic[AXI_ADDR_WIDTH-1:0],     logic[AXI_ID_OUT_WIDTH-1:0],     logic[AXI_USER_WIDTH-1:0])
+    `AXI_TYPEDEF_W_CHAN_T (s2c_w_chan_t,  logic[AXI_DATA_OUT_WIDTH-1:0], logic[AXI_DATA_OUT_WIDTH/8-1:0], logic[AXI_USER_WIDTH-1:0])
+    `AXI_TYPEDEF_B_CHAN_T (s2c_b_chan_t,  logic[AXI_ID_OUT_WIDTH-1:0],   logic[AXI_USER_WIDTH-1:0])
+    `AXI_TYPEDEF_AR_CHAN_T(s2c_ar_chan_t, logic[AXI_ADDR_WIDTH-1:0],     logic[AXI_ID_OUT_WIDTH-1:0],     logic[AXI_USER_WIDTH-1:0])
+    `AXI_TYPEDEF_R_CHAN_T (s2c_r_chan_t, logic[AXI_DATA_OUT_WIDTH-1:0],  logic[AXI_ID_OUT_WIDTH-1:0],     logic[AXI_USER_WIDTH-1:0])
 
     //Make sure the soc -> cluster cdc signals have the correct width
     if ($bits(s2c_aw_chan_t) != S2C_AW_WIDTH)
@@ -542,46 +542,45 @@ module pulp_soc import dm::*; #(
     if ($bits(s2c_r_chan_t) != S2C_R_WIDTH)
         $error("S2C_R_WIDTH does not mach the size of the AXI AW channel. With the current values of AXI_DATA_OUT_WIDTH, AXI_ADDR_WIDTH, AXI_ID_OUT_WIDTH and AXI_USER_WIDTH this value must be set to %d.", $bits(s2c_r_chan_t));
 
-  `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
-  `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
+    `AXI_TYPEDEF_REQ_T(s2c_req_t,s2c_aw_chan_t,s2c_w_chan_t,s2c_ar_chan_t)
+    `AXI_TYPEDEF_RESP_T(s2c_resp_t,s2c_b_chan_t,s2c_r_chan_t)
 
-   s2c_req_t   src_req ;
-   s2c_resp_t  src_resp;
+    s2c_req_t   src_req ;
+    s2c_resp_t  src_resp;
 
-  `AXI_ASSIGN_TO_REQ(src_req,s_data_out_bus)
-  `AXI_ASSIGN_FROM_RESP(s_data_out_bus,src_resp)
-
+    `AXI_ASSIGN_TO_REQ(src_req,s_data_out_bus)
+    `AXI_ASSIGN_FROM_RESP(s_data_out_bus,src_resp)
 
     // SOC TO CLUSTER
     axi_cdc_src #(
-     .aw_chan_t (s2c_aw_chan_t),
-     .w_chan_t  (s2c_w_chan_t),
-     .b_chan_t  (s2c_b_chan_t),
-     .r_chan_t  (s2c_r_chan_t),
-     .ar_chan_t (s2c_ar_chan_t),
-     .axi_req_t (s2c_req_t              ),
-     .axi_resp_t(s2c_resp_t             ),
-    .LogDepth        ( CDC_FIFOS_LOG_DEPTH               )
+        .aw_chan_t  ( s2c_aw_chan_t       ),
+        .w_chan_t   ( s2c_w_chan_t        ),
+        .b_chan_t   ( s2c_b_chan_t        ),
+        .r_chan_t   ( s2c_r_chan_t        ),
+        .ar_chan_t  ( s2c_ar_chan_t       ),
+        .axi_req_t  ( s2c_req_t           ),
+        .axi_resp_t ( s2c_resp_t          ),
+        .LogDepth   ( CDC_FIFOS_LOG_DEPTH )
     ) axi_master_cdc_i (
-     .src_rst_ni                       ( soc_cluster_cdc_rst_ni      ),
-     .src_clk_i                        ( soc_clk_i                   ),
-     .src_req_i                        ( src_req                     ),
-     .src_resp_o                       ( src_resp                    ),
-     .async_data_master_aw_wptr_o      ( async_data_master_aw_wptr_o ),
-     .async_data_master_aw_rptr_i      ( async_data_master_aw_rptr_i ),
-     .async_data_master_aw_data_o      ( async_data_master_aw_data_o ),
-     .async_data_master_w_wptr_o       ( async_data_master_w_wptr_o  ),
-     .async_data_master_w_rptr_i       ( async_data_master_w_rptr_i  ),
-     .async_data_master_w_data_o       ( async_data_master_w_data_o  ),
-     .async_data_master_ar_wptr_o      ( async_data_master_ar_wptr_o ),
-     .async_data_master_ar_rptr_i      ( async_data_master_ar_rptr_i ),
-     .async_data_master_ar_data_o      ( async_data_master_ar_data_o ),
-     .async_data_master_b_wptr_i       ( async_data_master_b_wptr_i  ),
-     .async_data_master_b_rptr_o       ( async_data_master_b_rptr_o  ),
-     .async_data_master_b_data_i       ( async_data_master_b_data_i  ),
-     .async_data_master_r_wptr_i       ( async_data_master_r_wptr_i  ),
-     .async_data_master_r_rptr_o       ( async_data_master_r_rptr_o  ),
-     .async_data_master_r_data_i       ( async_data_master_r_data_i  )
+        .src_rst_ni                  ( soc_cluster_cdc_rst_ni      ),
+        .src_clk_i                   ( soc_clk_i                   ),
+        .src_req_i                   ( src_req                     ),
+        .src_resp_o                  ( src_resp                    ),
+        .async_data_master_aw_wptr_o ( async_data_master_aw_wptr_o ),
+        .async_data_master_aw_rptr_i ( async_data_master_aw_rptr_i ),
+        .async_data_master_aw_data_o ( async_data_master_aw_data_o ),
+        .async_data_master_w_wptr_o  ( async_data_master_w_wptr_o  ),
+        .async_data_master_w_rptr_i  ( async_data_master_w_rptr_i  ),
+        .async_data_master_w_data_o  ( async_data_master_w_data_o  ),
+        .async_data_master_ar_wptr_o ( async_data_master_ar_wptr_o ),
+        .async_data_master_ar_rptr_i ( async_data_master_ar_rptr_i ),
+        .async_data_master_ar_data_o ( async_data_master_ar_data_o ),
+        .async_data_master_b_wptr_i  ( async_data_master_b_wptr_i  ),
+        .async_data_master_b_rptr_o  ( async_data_master_b_rptr_o  ),
+        .async_data_master_b_data_i  ( async_data_master_b_data_i  ),
+        .async_data_master_r_wptr_i  ( async_data_master_r_wptr_i  ),
+        .async_data_master_r_rptr_o  ( async_data_master_r_rptr_o  ),
+        .async_data_master_r_data_i  ( async_data_master_r_data_i  )
     );
 
     //********************************************************
@@ -589,15 +588,15 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     l2_ram_multi_bank #(
-        .NB_BANKS              ( NB_L2_BANKS  ),
-        .BANK_SIZE_INTL_SRAM   ( L2_BANK_SIZE )
+        .NB_BANKS            ( NB_L2_BANKS  ),
+        .BANK_SIZE_INTL_SRAM ( L2_BANK_SIZE )
     ) l2_ram_i (
-        .clk_i           ( soc_clk_i          ),
-        .rst_ni          ( soc_rstn_synced_i    ),
-        .init_ni         ( 1'b1               ),
-        .test_mode_i     ( dft_test_mode_i    ),
-        .mem_slave       ( s_mem_l2_bus       ),
-        .mem_pri_slave   ( s_mem_l2_pri_bus   )
+        .clk_i         ( soc_clk_i          ),
+        .rst_ni        ( soc_rstn_synced_i  ),
+        .init_ni       ( 1'b1               ),
+        .test_mode_i   ( dft_test_mode_i    ),
+        .mem_slave     ( s_mem_l2_bus       ),
+        .mem_pri_slave ( s_mem_l2_pri_bus   )
     );
 
 
@@ -608,11 +607,11 @@ module pulp_soc import dm::*; #(
     boot_rom #(
         .ROM_ADDR_WIDTH(ROM_ADDR_WIDTH)
     ) boot_rom_i (
-        .clk_i       ( soc_clk_i       ),
+        .clk_i       ( soc_clk_i         ),
         .rst_ni      ( soc_rstn_synced_i ),
-        .init_ni     ( 1'b1            ),
-        .mem_slave   ( s_mem_rom_bus   ),
-        .test_mode_i ( dft_test_mode_i )
+        .init_ni     ( 1'b1              ),
+        .mem_slave   ( s_mem_rom_bus     ),
+        .test_mode_i ( dft_test_mode_i   )
     );
 
     //********************************************************
@@ -620,20 +619,19 @@ module pulp_soc import dm::*; #(
     //********************************************************
 
     soc_peripherals #(
-        .MEM_ADDR_WIDTH     ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
-        .APB_ADDR_WIDTH     ( 32                                    ),
-        .APB_DATA_WIDTH     ( 32                                    ),
-        .NB_CORES           ( NB_CORES                              ),
-        .NB_CLUSTERS        ( `NB_CLUSTERS                          ),
-        .EVNT_WIDTH         ( EVNT_WIDTH                            ),
-        .SIM_STDOUT         ( SIM_STDOUT                            ),
-        .SOC_VERSION        ( SOC_VERSION                           ),
-        .CORE_TYPE          ( CORE_TYPE                             ),
-        .FPU_PRESENT        ( USE_FPU                               ),
-        .ZFINX              ( USE_ZFINX                             ),
-        .HWPE_PRESENT       ( USE_HWPE                              )
+        .MEM_ADDR_WIDTH ( L2_MEM_ADDR_WIDTH+$clog2(NB_L2_BANKS) ),
+        .APB_ADDR_WIDTH ( 32                                    ),
+        .APB_DATA_WIDTH ( 32                                    ),
+        .NB_CORES       ( NB_CORES                              ),
+        .NB_CLUSTERS    ( `NB_CLUSTERS                          ),
+        .EVNT_WIDTH     ( EVNT_WIDTH                            ),
+        .SIM_STDOUT     ( SIM_STDOUT                            ),
+        .SOC_VERSION    ( SOC_VERSION                           ),
+        .CORE_TYPE      ( CORE_TYPE                             ),
+        .FPU_PRESENT    ( USE_FPU                               ),
+        .ZFINX          ( USE_ZFINX                             ),
+        .HWPE_PRESENT   ( USE_HWPE                              )
     ) soc_peripherals_i (
-
         .clk_i                  ( soc_clk_i              ),
         .rst_ni                 ( soc_rstn_synced_i      ),
         .periph_clk_i           ( per_clk_i              ),
@@ -655,7 +653,6 @@ module pulp_soc import dm::*; #(
         .fc_fetch_en_valid_i    ( fc_fetch_en_valid_i    ),
         .fc_fetch_en_i          ( fc_fetch_en_i          ),
 
-
         .axi_lite_slave         ( s_periph_bus           ),
 
         .apb_intrpt_ctrl_master ( s_apb_intrpt_ctrl_bus  ),
@@ -671,7 +668,6 @@ module pulp_soc import dm::*; #(
         .pf_evt_i               ( s_pf_evt               ),
         .fc_hwpe_events_i       ( s_fc_hwpe_events       ),
         .fc_interrupts_o        ( s_fc_interrupts        ),
-
 
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
@@ -716,9 +712,9 @@ module pulp_soc import dm::*; #(
     );
 
     cdc_fifo_gray_src #(
-      .T(logic[EVNT_WIDTH-1:0]),
-      .LOG_DEPTH(CDC_FIFOS_LOG_DEPTH),
-      .SYNC_STAGES(2)
+      .T           ( logic[EVNT_WIDTH-1:0] ),
+      .LOG_DEPTH   ( CDC_FIFOS_LOG_DEPTH   ),
+      .SYNC_STAGES ( 2                     )
     ) i_event_cdc_src (
       .src_rst_ni               ( soc_cluster_cdc_rst_ni      ),
       .src_clk_i                ( soc_clk_i                   ),
@@ -731,27 +727,27 @@ module pulp_soc import dm::*; #(
     );
 
     edge_propagator_rx ep_dma_pe_evt_i (
-        .clk_i   ( soc_clk_i               ),
-        .rstn_i  ( soc_rstn_synced_i ),
-        .valid_o ( s_dma_pe_evt            ),
-        .ack_o   ( dma_pe_evt_ack_o        ),
-        .valid_i ( dma_pe_evt_valid_i      )
+        .clk_i   ( soc_clk_i          ),
+        .rstn_i  ( soc_rstn_synced_i  ),
+        .valid_o ( s_dma_pe_evt       ),
+        .ack_o   ( dma_pe_evt_ack_o   ),
+        .valid_i ( dma_pe_evt_valid_i )
     );
 
     edge_propagator_rx ep_dma_pe_irq_i (
-        .clk_i   ( soc_clk_i               ),
-        .rstn_i  ( soc_rstn_synced_i ),
-        .valid_o ( s_dma_pe_irq            ),
-        .ack_o   ( dma_pe_irq_ack_o        ),
-        .valid_i ( dma_pe_irq_valid_i      )
+        .clk_i   ( soc_clk_i          ),
+        .rstn_i  ( soc_rstn_synced_i  ),
+        .valid_o ( s_dma_pe_irq       ),
+        .ack_o   ( dma_pe_irq_ack_o   ),
+        .valid_i ( dma_pe_irq_valid_i )
     );
 `ifndef PULP_FPGA_EMUL
     edge_propagator_rx ep_pf_evt_i (
-        .clk_i   ( soc_clk_i               ),
+        .clk_i   ( soc_clk_i         ),
         .rstn_i  ( soc_rstn_synced_i ),
-        .valid_o ( s_pf_evt                ),
-        .ack_o   ( pf_evt_ack_o            ),
-        .valid_i ( pf_evt_valid_i          )
+        .valid_o ( s_pf_evt          ),
+        .ack_o   ( pf_evt_ack_o      ),
+        .valid_i ( pf_evt_valid_i    )
     );
 `endif
 
@@ -766,7 +762,7 @@ module pulp_soc import dm::*; #(
         .USE_HWPE      ( USE_HWPE           )
     ) fc_subsystem_i (
         .clk_i              ( soc_clk_i                     ),
-        .rst_ni             ( soc_rstn_synced_i               ),
+        .rst_ni             ( soc_rstn_synced_i             ),
 
         .test_en_i          ( dft_test_mode_i               ),
 
@@ -797,7 +793,7 @@ module pulp_soc import dm::*; #(
       .AXI_USER_WIDTH  ( AXI_USER_WIDTH  )
     ) i_soc_interconnect_wrap (
       .clk_i                   ( soc_clk_i           ),
-      .rst_ni                  ( soc_rstn_synced_i     ),
+      .rst_ni                  ( soc_rstn_synced_i   ),
       .test_en_i               ( dft_test_mode_i     ),
       .tcdm_fc_data            ( s_lint_fc_data_bus  ),
       .tcdm_fc_instr           ( s_lint_fc_instr_bus ),
@@ -819,7 +815,7 @@ module pulp_soc import dm::*; #(
         .IdcodeValue          ( `DMI_JTAG_IDCODE    )
     ) i_dmi_jtag (
         .clk_i                ( soc_clk_i           ),
-        .rst_ni               ( soc_rstn_synced_i     ),
+        .rst_ni               ( soc_rstn_synced_i   ),
         .testmode_i           ( 1'b0                ),
         .dmi_req_o            ( jtag_dmi_req        ),
         .dmi_req_valid_o      ( jtag_req_valid      ),
@@ -856,7 +852,7 @@ module pulp_soc import dm::*; #(
     ) i_dm_top (
 
        .clk_i             ( soc_clk_i                 ),
-       .rst_ni            ( soc_rstn_synced_i           ),
+       .rst_ni            ( soc_rstn_synced_i         ),
        .testmode_i        ( 1'b0                      ),
        .ndmreset_o        (                           ),
        .dmactive_o        (                           ), // active debug session
@@ -948,7 +944,7 @@ module pulp_soc import dm::*; #(
         .APB_ADDR_WIDTH ( 32  )
     ) apb2per_newdebug_i (
         .clk_i                ( soc_clk_i               ),
-        .rst_ni               ( soc_rstn_synced_i         ),
+        .rst_ni               ( soc_rstn_synced_i       ),
 
         .PADDR                ( s_apb_debug_bus.paddr   ),
         .PWDATA               ( s_apb_debug_bus.pwdata  ),
@@ -959,15 +955,15 @@ module pulp_soc import dm::*; #(
         .PREADY               ( s_apb_debug_bus.pready  ),
         .PSLVERR              ( s_apb_debug_bus.pslverr ),
 
-        .per_master_req_o     ( dm_slave_req               ),
-        .per_master_add_o     ( dm_slave_addr              ),
-        .per_master_we_o      ( dm_slave_we                ),
-        .per_master_wdata_o   ( dm_slave_wdata             ),
-        .per_master_be_o      ( dm_slave_be                ),
+        .per_master_req_o     ( dm_slave_req            ),
+        .per_master_add_o     ( dm_slave_addr           ),
+        .per_master_we_o      ( dm_slave_we             ),
+        .per_master_wdata_o   ( dm_slave_wdata          ),
+        .per_master_be_o      ( dm_slave_be             ),
         .per_master_gnt_i     ( slave_grant             ),
         .per_master_r_valid_i ( slave_valid             ),
         .per_master_r_opc_i   ( '0                      ),
-        .per_master_r_rdata_i ( dm_slave_rdata             )
+        .per_master_r_rdata_i ( dm_slave_rdata          )
      );
 
      assign slave_grant = dm_slave_req;
