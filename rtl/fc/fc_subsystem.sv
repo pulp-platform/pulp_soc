@@ -10,8 +10,10 @@
 
 `include "periph_bus_defines.sv"
 
-module fc_subsystem #(
-  parameter CORE_TYPE           = 0,
+module fc_subsystem
+  import cv32e40p_apu_core_pkg::*;
+#(
+  parameter CORE_TYPE           = 0, // 0 for CV32E40P with XPULP Extensions, 1 for IBEX RV32IMC (formerly ZERORISCY), 2 for IBEX RV32EC (formerly MICRORISCY), 3 for CV32E40X
   parameter USE_XPULP           = 1,
   parameter USE_FPU             = 1,
   parameter USE_ZFINX           = 1,
@@ -50,9 +52,11 @@ module fc_subsystem #(
   output logic                      supervisor_mode_o
 );
 
-  localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
-  localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
-  localparam IBEX_RV32E = CORE_TYPE == 2;
+  localparam USE_CV32E40P = CORE_TYPE == 0;
+  localparam USE_IBEX     = CORE_TYPE == 1 || CORE_TYPE == 2;
+  localparam IBEX_RV32M   = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
+  localparam IBEX_RV32E   = CORE_TYPE == 2;
+  localparam USE_CV32E40X = CORE_TYPE == 3;
 
   // Set register file for ibex based on bender targets.
   //     Default to FF for simulation, use FGPA for FPGA, use Latch for synthesis.
@@ -104,16 +108,16 @@ module fc_subsystem #(
   XBAR_TCDM_BUS core_instr_bus ();
 
   // APU Core to FP Wrapper
-  /* logic                               apu_req;
+  logic                               apu_req;
   logic [    APU_NARGS_CPU-1:0][31:0] apu_operands;
   logic [      APU_WOP_CPU-1:0]       apu_op;
-  logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags; */
+  logic [ APU_NDSFLAGS_CPU-1:0]       apu_flags;
 
   // APU FP Wrapper to Core
-  /* logic                               apu_gnt;
+  logic                               apu_gnt;
   logic                               apu_rvalid;
   logic [                 31:0]       apu_rdata;
-  logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags; */
+  logic [ APU_NUSFLAGS_CPU-1:0]       apu_rflags;
 
   //********************************************************
   //************ CORE DEMUX (TCDM vs L2) *******************
@@ -169,7 +173,7 @@ module fc_subsystem #(
 
   // Tying input signals
 
-  if(USE_XIFU == 0) begin: gen_no_xifu
+  if(USE_XIFU == 0 || !USE_CV32E40X) begin: gen_no_xifu
     assign core_xif.compressed_ready = 1'b1;
     assign core_xif.compressed_resp.instr = '0;
     assign core_xif.compressed_resp.accept = 1'b1;
@@ -190,9 +194,9 @@ module fc_subsystem #(
     fir_xifu_top #(
       .NB_REGS ( 4 )
     ) i_fir_xifu_top (
-      .clk_i            ( clk_i                      ),
-      .rst_ni           ( rst_ni                     ),
-      .clear_i          ( 1'b0                       ),
+      .clk_i            ( clk_i    ),
+      .rst_ni           ( rst_ni   ),
+      .clear_i          ( 1'b0     ),
       .xif_issue_i      ( core_xif ),
       .xif_compressed_i ( core_xif ),
       .xif_commit_i     ( core_xif ),
@@ -203,17 +207,98 @@ module fc_subsystem #(
   end
 
   generate
-  if ( USE_IBEX == 0) begin: FC_CORE
+  if(USE_CV32E40P) begin: FC_CORE
     assign boot_addr = boot_addr_i;
 `ifdef PULP_FPGA_EMUL
-    cv32e40x_core #(
+    cv32e40p_core #(
 `elsif SYNTHESIS
-    cv32e40x_core #(
+    cv32e40p_core #(
 `elsif VERILATOR
-    cv32e40x_core #(
+    cv32e40p_core #(
 `else
-    cv32e40x_core #(
+    cv32e40p_wrapper #(
 `endif
+      .PULP_XPULP       (USE_XPULP),
+      .PULP_CLUSTER     (0),
+      .FPU              (USE_FPU),
+      .PULP_ZFINX       (USE_ZFINX),
+      .NUM_MHPMCOUNTERS (N_EXT_PERF_COUNTERS)
+    ) FC_CORE_i (
+
+      // Clock and Reset
+      .clk_i,
+      .rst_ni,
+
+      // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
+      .pulp_clock_en_i      ('0 ),
+      .scan_cg_en_i         (test_en_i),
+      .boot_addr_i          (boot_addr),
+      .mtvec_addr_i         (32'h0),
+      .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
+      .hart_id_i            (hart_id),
+      .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
+
+      // Instruction memory interface
+      .instr_req_o           (core_instr_req),
+      .instr_gnt_i           (core_instr_gnt),
+      .instr_rvalid_i        (core_instr_rvalid),
+      .instr_addr_o          (core_instr_addr),
+      .instr_rdata_i         (core_instr_rdata),
+
+      // Data memory interface
+      .data_req_o            (core_data_req),
+      .data_gnt_i            (core_data_gnt),
+      .data_rvalid_i         (core_data_rvalid),
+      .data_we_o             (core_data_we),
+      .data_be_o             (core_data_be),
+      .data_addr_o           (core_data_addr),
+      .data_wdata_o          (core_data_wdata),
+      .data_rdata_i          (core_data_rdata),
+
+      // apu-interconnect
+      // handshake signals
+      .apu_req_o             (apu_req),
+      .apu_gnt_i             (apu_gnt),
+
+      // request channel
+      .apu_operands_o        (apu_operands),
+      .apu_op_o              (apu_op),
+      //.apu_type_o            (),
+      .apu_flags_o           (apu_flags),
+
+      // response channel
+      .apu_rvalid_i          (apu_rvalid),
+      .apu_result_i          (apu_rdata),
+      .apu_flags_i           (apu_rflags),
+
+      // Interrupt inputs
+      .irq_i                 (core_irq_x),
+      .irq_ack_o             (core_irq_ack),
+      .irq_id_o              (core_irq_ack_id),
+
+      // Debug Interface
+      .debug_req_i           (debug_req_i),
+      .debug_havereset_o     (),
+      .debug_running_o       (),
+      .debug_halted_o        (),
+
+      // Debug Interface
+      .debug_req_i           (debug_req_i),
+      .debug_havereset_o     (),
+      .debug_running_o       (),
+      .debug_halted_o        (),
+      .debug_pc_valid_o      (),
+      .debug_pc_o            (),
+
+      // CPU Control Signals
+      .fetch_enable_i        (fetch_en_int),
+      .core_sleep_o          ()
+    );
+
+    assign supervisor_mode_o = 1'b1;
+  end else if (USE_CV32E40X) begin: FC_CORE
+    assign boot_addr = boot_addr_i;
+    cv32e40x_core #(
       .RV32             ( RV32I               ),
       .M_EXT            ( M_NONE              ),
       .X_EXT            ( 1                   ),
@@ -275,22 +360,6 @@ module fc_subsystem #(
 
       .time_i                ('0),
 
-      // apu-interconnect
-      // handshake signals
-      //.apu_req_o             (apu_req),
-      //.apu_gnt_i             (apu_gnt),
-
-      // request channel
-      //.apu_operands_o        (apu_operands),
-      //.apu_op_o              (apu_op),
-      //.apu_type_o            (),
-      //.apu_flags_o           (apu_flags),
-
-      // response channel
-      //.apu_rvalid_i          (apu_rvalid),
-      //.apu_result_i          (apu_rdata),
-      //.apu_flags_i           (apu_rflags),
-
       // X interfaces
       .xif_compressed_if     ( core_xif.cpu_compressed ),
       .xif_issue_if          ( core_xif.cpu_issue      ),
@@ -331,9 +400,15 @@ module fc_subsystem #(
       .core_sleep_o          ()
     );
 
+    // tie unused APU signals
+    assign apu_req = '0;
+    assign apu_operands = '0;
+    assign apu_op = '0;
+    assign apu_flags = '0;
+
     assign supervisor_mode_o = 1'b1;
 
-  end else begin: FC_CORE
+  end else if(USE_IBEX == 0) begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
     ibex_core #(
