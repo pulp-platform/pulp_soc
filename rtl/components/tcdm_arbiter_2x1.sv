@@ -12,131 +12,131 @@
 
 module tcdm_arbiter_2x1
 (
-    input logic                   clk_i,
-    input logic                   rst_ni,
+  input logic                   clk_i,
+  input logic                   rst_ni,
 
-    XBAR_TCDM_BUS.Slave           tcdm_bus_1_i,
-    XBAR_TCDM_BUS.Slave           tcdm_bus_0_i,
-    XBAR_TCDM_BUS.Master          tcdm_bus_o
+  XBAR_TCDM_BUS.Slave           tcdm_bus_1_i,
+  XBAR_TCDM_BUS.Slave           tcdm_bus_0_i,
+  XBAR_TCDM_BUS.Master          tcdm_bus_o
 );
 
-    logic SEL_req;
-    logic SEL_resp;
-    logic RR_FLAG;
+  logic SEL_req;
+  logic SEL_resp;
+  logic RR_FLAG;
 
-    enum logic[2:0] {IDLE, WAIT_GNT_0, WAIT_GNT_1, WAIT_VALID_0, WAIT_VALID_1 } offset_fsm_cs, offset_fsm_ns;
+  enum logic[2:0] {IDLE, WAIT_GNT_0, WAIT_GNT_1, WAIT_VALID_0, WAIT_VALID_1 } offset_fsm_cs, offset_fsm_ns;
 
-    // offset FSM state transition logic
-    always_comb
-    begin
-        offset_fsm_ns        = offset_fsm_cs;
-        tcdm_bus_o.req       = 1'b0;
-        tcdm_bus_0_i.gnt     = 1'b0;
-        tcdm_bus_1_i.gnt     = 1'b0;
-        tcdm_bus_0_i.r_valid = 1'b0;
-        tcdm_bus_1_i.r_valid = 1'b0;
-        tcdm_bus_0_i.r_opc   = 1'b0;
-        tcdm_bus_1_i.r_opc   = 1'b0;
-        tcdm_bus_0_i.r_rdata = tcdm_bus_o.r_rdata;
-        tcdm_bus_1_i.r_rdata = tcdm_bus_o.r_rdata;
+  // offset FSM state transition logic
+  always_comb
+  begin
+    offset_fsm_ns        = offset_fsm_cs;
+    tcdm_bus_o.req       = 1'b0;
+    tcdm_bus_0_i.gnt     = 1'b0;
+    tcdm_bus_1_i.gnt     = 1'b0;
+    tcdm_bus_0_i.r_valid = 1'b0;
+    tcdm_bus_1_i.r_valid = 1'b0;
+    tcdm_bus_0_i.r_opc   = 1'b0;
+    tcdm_bus_1_i.r_opc   = 1'b0;
+    tcdm_bus_0_i.r_rdata = tcdm_bus_o.r_rdata;
+    tcdm_bus_1_i.r_rdata = tcdm_bus_o.r_rdata;
+    tcdm_bus_o.add       = tcdm_bus_0_i.add;
+    tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
+    tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
+    tcdm_bus_o.be        = tcdm_bus_0_i.be;
+
+    unique case (offset_fsm_cs)
+
+      IDLE: begin
+
+        if (tcdm_bus_0_i.req) begin
+          tcdm_bus_o.req     = tcdm_bus_0_i.req;
+          tcdm_bus_0_i.gnt   = tcdm_bus_o.gnt;
+          tcdm_bus_0_i.r_opc = tcdm_bus_o.r_opc;
+          tcdm_bus_o.add     = tcdm_bus_0_i.add;
+          tcdm_bus_o.wen     = tcdm_bus_0_i.wen;
+          tcdm_bus_o.wdata   = tcdm_bus_0_i.wdata;
+          tcdm_bus_o.be      = tcdm_bus_0_i.be;
+
+          offset_fsm_ns      = tcdm_bus_o.gnt ? WAIT_VALID_0 : WAIT_GNT_0;
+        end else if(tcdm_bus_1_i.req) begin
+          tcdm_bus_o.req     = tcdm_bus_1_i.req;
+          tcdm_bus_1_i.gnt   = tcdm_bus_o.gnt;
+          tcdm_bus_1_i.r_opc = tcdm_bus_o.r_opc;
+          tcdm_bus_o.add     = tcdm_bus_1_i.add;
+          tcdm_bus_o.wen     = tcdm_bus_1_i.wen;
+          tcdm_bus_o.wdata   = tcdm_bus_1_i.wdata;
+          tcdm_bus_o.be      = tcdm_bus_1_i.be;
+
+          offset_fsm_ns      = tcdm_bus_o.gnt ? WAIT_VALID_1 : WAIT_GNT_1;
+        end
+      end
+
+      WAIT_GNT_0: begin
+        tcdm_bus_o.req       = tcdm_bus_0_i.req;
+        tcdm_bus_0_i.gnt     = tcdm_bus_o.gnt;
+        tcdm_bus_0_i.r_opc   = tcdm_bus_o.r_opc;
+        tcdm_bus_0_i.r_valid = tcdm_bus_o.r_valid;
         tcdm_bus_o.add       = tcdm_bus_0_i.add;
         tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
         tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
         tcdm_bus_o.be        = tcdm_bus_0_i.be;
+        offset_fsm_ns        = tcdm_bus_o.gnt ? WAIT_VALID_0 : WAIT_GNT_0;
+      end
 
-        unique case (offset_fsm_cs)
+      WAIT_VALID_0: begin
+        tcdm_bus_o.req       = tcdm_bus_0_i.req;
+        tcdm_bus_0_i.gnt     = tcdm_bus_o.gnt;
+        tcdm_bus_0_i.r_opc   = tcdm_bus_o.r_opc;
+        tcdm_bus_0_i.r_valid = tcdm_bus_o.r_valid;
+        tcdm_bus_o.add       = tcdm_bus_0_i.add;
+        tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
+        tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
+        tcdm_bus_o.be        = tcdm_bus_0_i.be;
+        offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_0;
+      end
 
-            IDLE: begin
+      WAIT_GNT_1: begin
+        tcdm_bus_o.req       = tcdm_bus_1_i.req;
+        tcdm_bus_1_i.gnt     = tcdm_bus_o.gnt;
+        tcdm_bus_1_i.r_opc   = tcdm_bus_o.r_opc;
+        tcdm_bus_1_i.r_valid = tcdm_bus_o.r_valid;
+        tcdm_bus_o.add       = tcdm_bus_1_i.add;
+        tcdm_bus_o.wen       = tcdm_bus_1_i.wen;
+        tcdm_bus_o.wdata     = tcdm_bus_1_i.wdata;
+        tcdm_bus_o.be        = tcdm_bus_1_i.be;
+        offset_fsm_ns        = tcdm_bus_o.gnt ? WAIT_VALID_1 : WAIT_GNT_1;
+      end
 
-                if (tcdm_bus_0_i.req) begin
-                    tcdm_bus_o.req     = tcdm_bus_0_i.req;
-                    tcdm_bus_0_i.gnt   = tcdm_bus_o.gnt;
-                    tcdm_bus_0_i.r_opc = tcdm_bus_o.r_opc;
-                    tcdm_bus_o.add     = tcdm_bus_0_i.add;
-                    tcdm_bus_o.wen     = tcdm_bus_0_i.wen;
-                    tcdm_bus_o.wdata   = tcdm_bus_0_i.wdata;
-                    tcdm_bus_o.be      = tcdm_bus_0_i.be;
+      WAIT_VALID_1: begin
+        tcdm_bus_o.req       = tcdm_bus_1_i.req;
+        tcdm_bus_1_i.gnt     = tcdm_bus_o.gnt;
+        tcdm_bus_1_i.r_opc   = tcdm_bus_o.r_opc;
+        tcdm_bus_1_i.r_valid = tcdm_bus_o.r_valid;
+        tcdm_bus_o.add       = tcdm_bus_1_i.add;
+        tcdm_bus_o.wen       = tcdm_bus_1_i.wen;
+        tcdm_bus_o.wdata     = tcdm_bus_1_i.wdata;
+        tcdm_bus_o.be        = tcdm_bus_1_i.be;
+        offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_1;
+      end // case: WAIT_VALID_1
 
-                    offset_fsm_ns      = tcdm_bus_o.gnt ? WAIT_VALID_0 : WAIT_GNT_0;
-                end else if(tcdm_bus_1_i.req) begin
-                    tcdm_bus_o.req     = tcdm_bus_1_i.req;
-                    tcdm_bus_1_i.gnt   = tcdm_bus_o.gnt;
-                    tcdm_bus_1_i.r_opc = tcdm_bus_o.r_opc;
-                    tcdm_bus_o.add     = tcdm_bus_1_i.add;
-                    tcdm_bus_o.wen     = tcdm_bus_1_i.wen;
-                    tcdm_bus_o.wdata   = tcdm_bus_1_i.wdata;
-                    tcdm_bus_o.be      = tcdm_bus_1_i.be;
+      default: begin
+        offset_fsm_ns = IDLE;
+      end
 
-                    offset_fsm_ns      = tcdm_bus_o.gnt ? WAIT_VALID_1 : WAIT_GNT_1;
-                end
-            end
+    endcase
+  end
 
-            WAIT_GNT_0: begin
-                tcdm_bus_o.req       = tcdm_bus_0_i.req;
-                tcdm_bus_0_i.gnt     = tcdm_bus_o.gnt;
-                tcdm_bus_0_i.r_opc   = tcdm_bus_o.r_opc;
-                tcdm_bus_0_i.r_valid = tcdm_bus_o.r_valid;
-                tcdm_bus_o.add       = tcdm_bus_0_i.add;
-                tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
-                tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
-                tcdm_bus_o.be        = tcdm_bus_0_i.be;
-                offset_fsm_ns        = tcdm_bus_o.gnt ? WAIT_VALID_0 : WAIT_GNT_0;
-            end
 
-            WAIT_VALID_0: begin
-                tcdm_bus_o.req       = tcdm_bus_0_i.req;
-                tcdm_bus_0_i.gnt     = tcdm_bus_o.gnt;
-                tcdm_bus_0_i.r_opc   = tcdm_bus_o.r_opc;
-                tcdm_bus_0_i.r_valid = tcdm_bus_o.r_valid;
-                tcdm_bus_o.add       = tcdm_bus_0_i.add;
-                tcdm_bus_o.wen       = tcdm_bus_0_i.wen;
-                tcdm_bus_o.wdata     = tcdm_bus_0_i.wdata;
-                tcdm_bus_o.be        = tcdm_bus_0_i.be;
-                offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_0;
-            end
-
-            WAIT_GNT_1: begin
-                tcdm_bus_o.req       = tcdm_bus_1_i.req;
-                tcdm_bus_1_i.gnt     = tcdm_bus_o.gnt;
-                tcdm_bus_1_i.r_opc   = tcdm_bus_o.r_opc;
-                tcdm_bus_1_i.r_valid = tcdm_bus_o.r_valid;
-                tcdm_bus_o.add       = tcdm_bus_1_i.add;
-                tcdm_bus_o.wen       = tcdm_bus_1_i.wen;
-                tcdm_bus_o.wdata     = tcdm_bus_1_i.wdata;
-                tcdm_bus_o.be        = tcdm_bus_1_i.be;
-                offset_fsm_ns        = tcdm_bus_o.gnt ? WAIT_VALID_1 : WAIT_GNT_1;
-            end
-
-            WAIT_VALID_1: begin
-                tcdm_bus_o.req       = tcdm_bus_1_i.req;
-                tcdm_bus_1_i.gnt     = tcdm_bus_o.gnt;
-                tcdm_bus_1_i.r_opc   = tcdm_bus_o.r_opc;
-                tcdm_bus_1_i.r_valid = tcdm_bus_o.r_valid;
-                tcdm_bus_o.add       = tcdm_bus_1_i.add;
-                tcdm_bus_o.wen       = tcdm_bus_1_i.wen;
-                tcdm_bus_o.wdata     = tcdm_bus_1_i.wdata;
-                tcdm_bus_o.be        = tcdm_bus_1_i.be;
-                offset_fsm_ns        = tcdm_bus_o.r_valid ? IDLE : WAIT_VALID_1;
-            end // case: WAIT_VALID_1
-
-            default: begin
-                offset_fsm_ns = IDLE;
-            end
-
-        endcase
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin : RR_SEL_resp_GEN
+    if(~rst_ni)
+    begin
+      offset_fsm_cs <= IDLE;
     end
-
-
-    always_ff @(posedge clk_i or negedge rst_ni)
-    begin : RR_SEL_resp_GEN
-        if(~rst_ni)
-        begin
-            offset_fsm_cs <= IDLE;
-        end
-        else
-        begin
-            offset_fsm_cs <= offset_fsm_ns;
-        end
+    else
+    begin
+      offset_fsm_cs <= offset_fsm_ns;
     end
+  end
 
 endmodule // TCDM_BUS_2x1_ARB

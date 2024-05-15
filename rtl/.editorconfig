@@ -11,5 +11,5 @@ max_line_length = off
 # 2 space indentation
 [*.{sv, svh, v}]
 indent_style = space
-indent_size = 4
+indent_size = 2
 
