@@ -23,19 +23,19 @@
 
 module tcdm_demux
     import pkg_soc_interconnect::addr_map_rule_t;
-    #(
-      parameter int unsigned  NR_OUTPUTS = 2,
-      parameter int unsigned NR_ADDR_MAP_RULES,
-      localparam int unsigned SLAVE_SEL_WIDTH = $clog2(NR_OUTPUTS)
-      )
-    (
-     input logic                                  clk_i,
-     input logic                                  rst_ni,
-     input logic                                  test_en_i,
-     input addr_map_rule_t[NR_ADDR_MAP_RULES-1:0] addr_map_rules,
-     XBAR_TCDM_BUS.Slave                          master_port,
-     XBAR_TCDM_BUS.Master                         slave_ports[NR_OUTPUTS]
-     );
+#(
+    parameter int unsigned  NR_OUTPUTS = 2,
+    parameter int unsigned NR_ADDR_MAP_RULES,
+    localparam int unsigned SLAVE_SEL_WIDTH = $clog2(NR_OUTPUTS)
+)
+(
+    input logic                                  clk_i,
+    input logic                                  rst_ni,
+    input logic                                  test_en_i,
+    input addr_map_rule_t[NR_ADDR_MAP_RULES-1:0] addr_map_rules,
+    XBAR_TCDM_BUS.Slave                          master_port,
+    XBAR_TCDM_BUS.Master                         slave_ports[NR_OUTPUTS]
+);
     // Do **not** change. The TCDM interface uses hardcoded bus widths so we cannot just change them here.
     localparam int unsigned BE_WIDTH = 2;
     localparam int unsigned ADDR_WIDTH = 32;
@@ -52,20 +52,19 @@ module tcdm_demux
 
     logic[SLAVE_SEL_WIDTH-1:0] port_sel;
     addr_decode #(
-                  .NoIndices(NR_OUTPUTS),
-                  .NoRules(NR_ADDR_MAP_RULES),
-                  .addr_t(logic[31:0]),
-                  .rule_t(pkg_soc_interconnect::addr_map_rule_t)
-                  ) i_addr_decode (
-                                   .addr_i(master_port.add),
-                                   .addr_map_i(addr_map_rules),
-                                   .idx_o(port_sel),
-                                   .dec_valid_o(),
-                                   .dec_error_o(),
-                                   .en_default_idx_i(1'b1),
-                                   .default_idx_i('0) //If no rule matches we route to the first slave
-                                   //port
-                                   );
+        .NoIndices ( NR_OUTPUTS                            ),
+        .NoRules   ( NR_ADDR_MAP_RULES                     ),
+        .addr_t    ( logic[31:0]                           ),
+        .rule_t    ( pkg_soc_interconnect::addr_map_rule_t )
+    ) i_addr_decode (
+        .addr_i           ( master_port.add ),
+        .addr_map_i       ( addr_map_rules  ),
+        .idx_o            ( port_sel        ),
+        .dec_valid_o      (                 ),
+        .dec_error_o      (                 ),
+        .en_default_idx_i ( 1'b1            ),
+        .default_idx_i    ( '0              ) //If no rule matches we route to the first slave port
+    );
 
     typedef enum logic[0:0] {IDLE, PENDING} state_e;
 

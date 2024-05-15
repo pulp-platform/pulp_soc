@@ -9,7 +9,9 @@
 // specific language governing permissions and limitations under the License.
 
 
-module soc_event_arbiter #(parameter EVNT_NUM=256) (
+module soc_event_arbiter #(
+    parameter EVNT_NUM=256
+) (
     input  logic                clk_i,
     input  logic                rstn_i,
     input  logic [EVNT_NUM-1:0] req_i,
@@ -20,7 +22,6 @@ module soc_event_arbiter #(parameter EVNT_NUM=256) (
     localparam S = $clog2(EVNT_NUM);
     // internal pointers
     reg [EVNT_NUM-1:0] r_priority; // one-hot priority vector
-
 
     // Outputs of combinational logic - real wires - declared as regs for use in a alway block
     // Better to change to wires and use generate statements in the future

@@ -170,252 +170,254 @@ module fc_subsystem #(
     // Tying input signals
 
     if(USE_XIFU == 0) begin: gen_no_xifu
-      assign core_xif.compressed_ready = 1'b1;
-      assign core_xif.compressed_resp.instr = '0;
-      assign core_xif.compressed_resp.accept = 1'b1;
-      assign core_xif.issue_ready = 1'b1;
-      assign core_xif.issue_resp.accept = 1'b1;
-      assign core_xif.issue_resp.writeback = 1'b0;
-      assign core_xif.issue_resp.dualwrite = 1'b0;
-      assign core_xif.issue_resp.dualread = '0;
-      assign core_xif.issue_resp.loadstore = 1'b0;
-      assign core_xif.issue_resp.ecswrite = 1'b0;
-      assign core_xif.issue_resp.exc = 1'b0;
-      assign core_xif.mem_valid = 1'b1;
-      assign core_xif.mem_req = 1'b0;
-      assign core_xif.result_valid = 1'b1;
-      assign core_xif.result = '0;  
+        assign core_xif.compressed_ready = 1'b1;
+        assign core_xif.compressed_resp.instr = '0;
+        assign core_xif.compressed_resp.accept = 1'b1;
+        assign core_xif.issue_ready = 1'b1;
+        assign core_xif.issue_resp.accept = 1'b1;
+        assign core_xif.issue_resp.writeback = 1'b0;
+        assign core_xif.issue_resp.dualwrite = 1'b0;
+        assign core_xif.issue_resp.dualread = '0;
+        assign core_xif.issue_resp.loadstore = 1'b0;
+        assign core_xif.issue_resp.ecswrite = 1'b0;
+        assign core_xif.issue_resp.exc = 1'b0;
+        assign core_xif.mem_valid = 1'b1;
+        assign core_xif.mem_req = 1'b0;
+        assign core_xif.result_valid = 1'b1;
+        assign core_xif.result = '0;
     end
     else begin: gen_xifu
-      fir_xifu_top #(
-        .NB_REGS ( 4 )
-      ) i_fir_xifu_top (
-        .clk_i            ( clk_i                      ),
-        .rst_ni           ( rst_ni                     ),
-        .clear_i          ( 1'b0                       ),
-        .xif_issue_i      ( core_xif ),
-        .xif_compressed_i ( core_xif ),
-        .xif_commit_i     ( core_xif ),
-        .xif_mem_o        ( core_xif ),
-        .xif_mem_result_i ( core_xif ),
-        .xif_result_o     ( core_xif )
-      );
+        fir_xifu_top #(
+            .NB_REGS ( 4 )
+        ) i_fir_xifu_top (
+            .clk_i            ( clk_i                      ),
+            .rst_ni           ( rst_ni                     ),
+            .clear_i          ( 1'b0                       ),
+            .xif_issue_i      ( core_xif ),
+            .xif_compressed_i ( core_xif ),
+            .xif_commit_i     ( core_xif ),
+            .xif_mem_o        ( core_xif ),
+            .xif_mem_result_i ( core_xif ),
+            .xif_result_o     ( core_xif )
+        );
     end
 
     generate
     if ( USE_IBEX == 0) begin: FC_CORE
-    assign boot_addr = boot_addr_i;
+        assign boot_addr = boot_addr_i;
 `ifdef PULP_FPGA_EMUL
-    cv32e40x_core #(
+        cv32e40x_core #(
 `elsif SYNTHESIS
-    cv32e40x_core #(
+        cv32e40x_core #(
 `elsif VERILATOR
-    cv32e40x_core #(
+        cv32e40x_core #(
 `else
-    cv32e40x_core #(
+        cv32e40x_core #(
 `endif
-        .RV32        (RV32I),
-        .M_EXT       (M_NONE),
-        .X_EXT       (1),
-        .DM_REGION_START (`DEBUG_START_ADDR),
-        .DM_REGION_END   (`DEBUG_END_ADDR),
-        //.X_NUM_RS    (),
-        //.X_ID_WIDTH  (),
-        .X_MEM_WIDTH ( 32 ),
-        .X_RFR_WIDTH ( 32 ),
-        .X_RFW_WIDTH ( 32 ),
-        //.X_MISA      (),
-        //.X_ECS_XS    (),
-        .NUM_MHPMCOUNTERS ( N_EXT_PERF_COUNTERS )
-    ) FC_CORE_i (
+            .RV32             ( RV32I               ),
+            .M_EXT            ( M_NONE              ),
+            .X_EXT            ( 1                   ),
+            .DM_REGION_START  ( `DEBUG_START_ADDR   ),
+            .DM_REGION_END    ( `DEBUG_END_ADDR     ),
+            //.X_NUM_RS      (),
+            //.X_ID_WIDTH    (),
+            .X_MEM_WIDTH      ( 32                  ),
+            .X_RFR_WIDTH      ( 32                  ),
+            .X_RFW_WIDTH      ( 32                  ),
+            //.X_MISA      (),
+            //.X_ECS_XS    (),
+            .NUM_MHPMCOUNTERS ( N_EXT_PERF_COUNTERS )
+        ) FC_CORE_i (
 
-        // Clock and Reset
-        .clk_i,
-        .rst_ni,
+            // Clock and Reset
+            .clk_i,
+            .rst_ni,
 
-        // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
-        //.pulp_clock_en_i      ('0 ),
-        .scan_cg_en_i         (test_en_i),
-        .boot_addr_i          (boot_addr),
-        .mtvec_addr_i         (32'h0),
+            // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
+            //.pulp_clock_en_i      ('0 ),
+            .scan_cg_en_i         (test_en_i),
+            .boot_addr_i          (boot_addr),
+            .mtvec_addr_i         (32'h0),
 
-        .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
-        .mhartid_i            (hart_id),
-        .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
-        .mimpid_patch_i       ('0),
+            .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
+            .mhartid_i            (hart_id),
+            .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
+            .mimpid_patch_i       ('0),
 
-        // Instruction memory interface
-        .instr_req_o           (core_instr_req),
-        .instr_gnt_i           (core_instr_gnt),
-        .instr_rvalid_i        (core_instr_rvalid),
-        .instr_addr_o          (core_instr_addr),
-        .instr_rdata_i         (core_instr_rdata),
-        .instr_memtype_o       (),
-        .instr_prot_o          (),
-        .instr_dbg_o           (),
-        .instr_err_i           (core_instr_err),
+            // Instruction memory interface
+            .instr_req_o           (core_instr_req),
+            .instr_gnt_i           (core_instr_gnt),
+            .instr_rvalid_i        (core_instr_rvalid),
+            .instr_addr_o          (core_instr_addr),
+            .instr_rdata_i         (core_instr_rdata),
+            .instr_memtype_o       (),
+            .instr_prot_o          (),
+            .instr_dbg_o           (),
+            .instr_err_i           (core_instr_err),
 
-        // Data memory interface
-        .data_req_o            (core_data_req),
-        .data_gnt_i            (core_data_gnt),
-        .data_rvalid_i         (core_data_rvalid),
-        .data_we_o             (core_data_we),
-        .data_be_o             (core_data_be),
-        .data_addr_o           (core_data_addr),
-        .data_wdata_o          (core_data_wdata),
-        .data_rdata_i          (core_data_rdata),
-        .data_memtype_o        (),
-        .data_prot_o           (),
-        .data_dbg_o            (),
-        .data_atop_o           (),
-        .data_err_i            (core_data_err),
-        .data_exokay_i         (1'b1),
+            // Data memory interface
+            .data_req_o            (core_data_req),
+            .data_gnt_i            (core_data_gnt),
+            .data_rvalid_i         (core_data_rvalid),
+            .data_we_o             (core_data_we),
+            .data_be_o             (core_data_be),
+            .data_addr_o           (core_data_addr),
+            .data_wdata_o          (core_data_wdata),
+            .data_rdata_i          (core_data_rdata),
+            .data_memtype_o        (),
+            .data_prot_o           (),
+            .data_dbg_o            (),
+            .data_atop_o           (),
+            .data_err_i            (core_data_err),
+            .data_exokay_i         (1'b1),
 
-        .mcycle_o              (),
+            .mcycle_o              (),
 
-        .time_i                ('0),
+            .time_i                ('0),
 
-        // apu-interconnect
-        // handshake signals
-        //.apu_req_o             (apu_req),
-        //.apu_gnt_i             (apu_gnt),
+            // apu-interconnect
+            // handshake signals
+            //.apu_req_o             (apu_req),
+            //.apu_gnt_i             (apu_gnt),
 
-        // request channel
-        //.apu_operands_o        (apu_operands),
-        //.apu_op_o              (apu_op),
-        //.apu_type_o            (),
-        //.apu_flags_o           (apu_flags),
+            // request channel
+            //.apu_operands_o        (apu_operands),
+            //.apu_op_o              (apu_op),
+            //.apu_type_o            (),
+            //.apu_flags_o           (apu_flags),
 
-        // response channel
-        //.apu_rvalid_i          (apu_rvalid),
-        //.apu_result_i          (apu_rdata),
-        //.apu_flags_i           (apu_rflags),
+            // response channel
+            //.apu_rvalid_i          (apu_rvalid),
+            //.apu_result_i          (apu_rdata),
+            //.apu_flags_i           (apu_rflags),
 
-        // X interfaces
-        .xif_compressed_if     (core_xif.cpu_compressed),
-        .xif_issue_if          (core_xif.cpu_issue),
-        .xif_commit_if         (core_xif.cpu_commit),
-        .xif_mem_if            (core_xif.cpu_mem),
-        .xif_mem_result_if     (core_xif.cpu_mem_result),
-        .xif_result_if         (core_xif.cpu_result),
+            // X interfaces
+            .xif_compressed_if     ( core_xif.cpu_compressed ),
+            .xif_issue_if          ( core_xif.cpu_issue      ),
+            .xif_commit_if         ( core_xif.cpu_commit     ),
+            .xif_mem_if            ( core_xif.cpu_mem        ),
+            .xif_mem_result_if     ( core_xif.cpu_mem_result ),
+            .xif_result_if         ( core_xif.cpu_result     ),
 
-        // Interrupt inputs
-        .irq_i                 (core_irq_x),
-        //.irq_ack_o             (core_irq_ack),
-        //.irq_id_o              (core_irq_ack_id),
+            // Interrupt inputs
+            .irq_i                 ( core_irq_x ),
+            //.irq_ack_o             (core_irq_ack),
+            //.irq_id_o              (core_irq_ack_id),
 
-        // Wait-for-event wakeup
-        .wu_wfe_i              ('0),
-                 
-        // CLIC interrupts
-        .clic_irq_i            ('0),
-        .clic_irq_id_i         ('0),
-        .clic_irq_level_i      ('0),
-        .clic_irq_priv_i       ('0),
-        .clic_irq_shv_i        ('0),
+            // Wait-for-event wakeup
+            .wu_wfe_i              ('0),
 
-        // Fence.i flush handshake
-        .fencei_flush_req_o    (),
-        .fencei_flush_ack_i    (1'b0),
+            // CLIC interrupts
+            .clic_irq_i            ('0),
+            .clic_irq_id_i         ('0),
+            .clic_irq_level_i      ('0),
+            .clic_irq_priv_i       ('0),
+            .clic_irq_shv_i        ('0),
 
-        // Debug Interface
-        .debug_req_i           (debug_req_i),
-        .debug_havereset_o     (),
-        .debug_running_o       (),
-        .debug_halted_o        (),
-        .debug_pc_valid_o      (),
-        .debug_pc_o            (),
+            // Fence.i flush handshake
+            .fencei_flush_req_o    (),
+            .fencei_flush_ack_i    (1'b0),
 
-        // CPU Control Signals
-        .fetch_enable_i        (fetch_en_int),
-        .core_sleep_o          ()
-    );
+            // Debug Interface
+            .debug_req_i           (debug_req_i),
+            .debug_havereset_o     (),
+            .debug_running_o       (),
+            .debug_halted_o        (),
+            .debug_pc_valid_o      (),
+            .debug_pc_o            (),
 
-    assign supervisor_mode_o = 1'b1;
+            // CPU Control Signals
+            .fetch_enable_i        (fetch_en_int),
+            .core_sleep_o          ()
+        );
+
+        assign supervisor_mode_o = 1'b1;
 
     end else begin: FC_CORE
-    assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
+        assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
-    ibex_core #(
+        ibex_core #(
 `elsif TRACE_EXECUTION
-    ibex_core_tracing #(
+        ibex_core_tracing #(
 `else
-    ibex_core #(
+        ibex_core #(
 `endif
-        .PMPEnable        ( 1'b0                ),
-        .PMPGranularity   ( 0                   ),
-        .PMPNumRegions    ( 4                   ),
-        .MHPMCounterNum   ( 10                  ),
-        .MHPMCounterWidth ( 40                  ),
-        .RV32E            ( IBEX_RV32E          ),
-        .RV32M            ( IBEX_RV32M          ),
-        .RV32B            ( ibex_pkg::RV32BNone ),
-        .RegFile          ( IBEX_RegFile        ),
-        .BranchTargetALU  ( 1'b0                ),
-        .WritebackStage   ( 1'b0                ),
-        .ICache           ( 1'b0                ),
-        .ICacheECC        ( 1'b0                ),
-        .BranchPredictor  ( 1'b0                ),
-        .DbgTriggerEn     ( 1'b1                ),
-        .DbgHwBreakNum    ( 1                   ),
-        .SecureIbex       ( 1'b0                ),
-        .DmHaltAddr       ( `DEBUG_START_ADDR + dm::HaltAddress[31:0]      ),
-        .DmExceptionAddr  ( `DEBUG_START_ADDR + dm::ExceptionAddress[31:0] )
-    ) lFC_CORE (
-        .clk_i                 ( clk_i             ),
-        .rst_ni                ( rst_ni            ),
+            .PMPEnable        ( 1'b0                ),
+            .PMPGranularity   ( 0                   ),
+            .PMPNumRegions    ( 4                   ),
+            .MHPMCounterNum   ( 10                  ),
+            .MHPMCounterWidth ( 40                  ),
+            .RV32E            ( IBEX_RV32E          ),
+            .RV32M            ( IBEX_RV32M          ),
+            .RV32B            ( ibex_pkg::RV32BNone ),
+            .RegFile          ( IBEX_RegFile        ),
+            .BranchTargetALU  ( 1'b0                ),
+            .WritebackStage   ( 1'b0                ),
+            .ICache           ( 1'b0                ),
+            .ICacheECC        ( 1'b0                ),
+            .BranchPredictor  ( 1'b0                ),
+            .DbgTriggerEn     ( 1'b1                ),
+            .DbgHwBreakNum    ( 1                   ),
+            .SecureIbex       ( 1'b0                ),
+            .DmHaltAddr       ( `DEBUG_START_ADDR + dm::HaltAddress[31:0]      ),
+            .DmExceptionAddr  ( `DEBUG_START_ADDR + dm::ExceptionAddress[31:0] )
+        ) lFC_CORE (
+            .clk_i                 ( clk_i             ),
+            .rst_ni                ( rst_ni            ),
 
-        .test_en_i             ( test_en_i         ),
+            .test_en_i             ( test_en_i         ),
 
-        .hart_id_i             ( hart_id           ),
-        .boot_addr_i           ( boot_addr         ),
+            .hart_id_i             ( hart_id           ),
+            .boot_addr_i           ( boot_addr         ),
 
-        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
-        .instr_addr_o          ( core_instr_addr   ),
-        .instr_req_o           ( core_instr_req    ),
-        .instr_rdata_i         ( core_instr_rdata  ),
-        .instr_gnt_i           ( core_instr_gnt    ),
-        .instr_rvalid_i        ( core_instr_rvalid ),
-        .instr_err_i           ( core_instr_err    ),
+            // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
+            .instr_addr_o          ( core_instr_addr   ),
+            .instr_req_o           ( core_instr_req    ),
+            .instr_rdata_i         ( core_instr_rdata  ),
+            .instr_gnt_i           ( core_instr_gnt    ),
+            .instr_rvalid_i        ( core_instr_rvalid ),
+            .instr_err_i           ( core_instr_err    ),
 
-        // Data memory interface:
-        .data_addr_o           ( core_data_addr    ),
-        .data_req_o            ( core_data_req     ),
-        .data_be_o             ( core_data_be      ),
-        .data_rdata_i          ( core_data_rdata   ),
-        .data_we_o             ( core_data_we      ),
-        .data_gnt_i            ( core_data_gnt     ),
-        .data_wdata_o          ( core_data_wdata   ),
-        .data_rvalid_i         ( core_data_rvalid  ),
-        .data_err_i            ( core_data_err     ),
+            // Data memory interface:
+            .data_addr_o           ( core_data_addr    ),
+            .data_req_o            ( core_data_req     ),
+            .data_be_o             ( core_data_be      ),
+            .data_rdata_i          ( core_data_rdata   ),
+            .data_we_o             ( core_data_we      ),
+            .data_gnt_i            ( core_data_gnt     ),
+            .data_wdata_o          ( core_data_wdata   ),
+            .data_rvalid_i         ( core_data_rvalid  ),
+            .data_err_i            ( core_data_err     ),
 
-        .irq_software_i        ( 1'b0              ),
-        .irq_timer_i           ( 1'b0              ),
-        .irq_external_i        ( 1'b0              ),
-        .irq_fast_i            ( 15'b0             ),
-        .irq_nm_i              ( 1'b0              ),
+            .irq_software_i        ( 1'b0              ),
+            .irq_timer_i           ( 1'b0              ),
+            .irq_external_i        ( 1'b0              ),
+            .irq_fast_i            ( 15'b0             ),
+            .irq_nm_i              ( 1'b0              ),
 
-        // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
-        .irq_x_i               ( core_irq_x        ),
-        .irq_x_ack_o           ( core_irq_ack      ),
-        .irq_x_ack_id_o        ( core_irq_ack_id   ),
+            // Ibex supports 32 additional fast interrupts and reads the interrupt lines directly.
+            .irq_x_i               ( core_irq_x        ),
+            .irq_x_ack_o           ( core_irq_ack      ),
+            .irq_x_ack_id_o        ( core_irq_ack_id   ),
 
-        .external_perf_i       ( { {16 - N_EXT_PERF_COUNTERS {'0}}, perf_counters_int } ),
+            .external_perf_i       ( { {16 - N_EXT_PERF_COUNTERS {'0}}, perf_counters_int } ),
 
-        .debug_req_i           ( debug_req_i       ),
+            .debug_req_i           ( debug_req_i       ),
 
-        .fetch_enable_i        ( fetch_en_int      ),
-        .alert_minor_o         (                   ),
-        .alert_major_o         (                   ),
-        .core_sleep_o          (                   )
-    );
+            .fetch_enable_i        ( fetch_en_int      ),
+            .alert_minor_o         (                   ),
+            .alert_major_o         (                   ),
+            .core_sleep_o          (                   )
+        );
 
-    assign supervisor_mode_o = 1'b1;
- 
+        assign supervisor_mode_o = 1'b1;
+
     end
     endgenerate
 
-    apb_interrupt_cntrl #(.PER_ID_WIDTH(PER_ID_WIDTH)) fc_eu_i (
+    apb_interrupt_cntrl #(
+        .PER_ID_WIDTH(PER_ID_WIDTH)
+    ) fc_eu_i (
         .clk_i              ( clk_i              ),
         .rst_ni             ( rst_ni             ),
         .test_mode_i        ( test_en_i          ),

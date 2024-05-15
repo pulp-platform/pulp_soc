@@ -25,51 +25,50 @@
 module soc_interconnect
     import pkg_soc_interconnect::addr_map_rule_t;
     import axi_pkg::xbar_cfg_t;
-    #(
-      // TCDM Bus Master Config
-      parameter int unsigned  NR_MASTER_PORTS, //Master Ports to the SoC interconnect with access to all memory regions
-      parameter int unsigned  NR_MASTER_PORTS_INTERLEAVED_ONLY, //Master ports with access restricted to only the interleaved
-                                                                //ports (no axes to APB, AXI, or contiguous slaves) TCDM Bus
-                                                                //Slave Config
-      // L2 Demux Addr rules
-      parameter int unsigned  NR_ADDR_RULES_L2_DEMUX,
-      // Interleaved TCDM slave
-      parameter int unsigned  NR_SLAVE_PORTS_INTERLEAVED,
-      parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_INTLVD,
-      // Contiguous TCDM slave
-      parameter int unsigned  NR_SLAVE_PORTS_CONTIG,
-      parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_CONTIG,
-      // AXI Master ID Width
-      parameter int unsigned  AXI_MASTER_ID_WIDTH = 1, // Not really used since we only connect TCDM masters to the
-                                                       // axi_xbar with protocol converters. However, the value must not be zero.
-      // AXI Slaves
-      parameter int unsigned  NR_AXI_SLAVE_PORTS,
-      parameter int unsigned  NR_ADDR_RULES_AXI_SLAVE_PORTS,
-      localparam int unsigned AXI_SLAVE_ID_WIDTH = AXI_MASTER_ID_WIDTH + $clog2(NR_MASTER_PORTS), //The actual ID
-                                                                                                    //width of the AXI slaves is clog2(NR_AXI_MASTERS) larger than the master id width since the
-                                                                                                    //axi_mux in the XBAR will append an identificatoin tag to the outgoing transactions
-                                                                                                    //towards the axi slaves so it can backroute the responses
-      parameter int unsigned  AXI_USER_WIDTH
-      )
-    (
-     input logic                                                 clk_i,
-     input logic                                                 rst_ni,
-     input logic                                                 test_en_i, // 0 Normal operation, 1 put sub-IPs into testmode (bypass clock gates)
-     XBAR_TCDM_BUS.Slave                                         master_ports[NR_MASTER_PORTS],
-     XBAR_TCDM_BUS.Slave                                         master_ports_interleaved_only[NR_MASTER_PORTS_INTERLEAVED_ONLY],
-     input addr_map_rule_t[NR_ADDR_RULES_L2_DEMUX-1:0]           addr_space_l2_demux,
-     //Interleaved Slave
-     input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_INTLVD-1:0] addr_space_interleaved,
-     XBAR_TCDM_BUS.Master                                        interleaved_slaves[NR_SLAVE_PORTS_INTERLEAVED],
-     //Contiguous Slave
-     input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_CONTIG-1:0] addr_space_contiguous,
-     XBAR_TCDM_BUS.Master                                        contiguous_slaves[NR_SLAVE_PORTS_CONTIG],
-     //AXI Slave
-     input addr_map_rule_t [NR_ADDR_RULES_AXI_SLAVE_PORTS-1:0]   addr_space_axi,
-     AXI_BUS.Master                                              axi_slaves[NR_AXI_SLAVE_PORTS] //AXI_ID width must be
-                                                                                                //at least clog2(NR_AXI_SLAVES)
-     );
-
+#(
+    // TCDM Bus Master Config
+    parameter int unsigned  NR_MASTER_PORTS, // Master Ports to the SoC interconnect with access to all memory regions
+    parameter int unsigned  NR_MASTER_PORTS_INTERLEAVED_ONLY, // Master ports with access restricted to only the interleaved
+                                                              // ports (no axes to APB, AXI, or contiguous slaves) TCDM Bus
+                                                              // Slave Config
+    // L2 Demux Addr rules
+    parameter int unsigned  NR_ADDR_RULES_L2_DEMUX,
+    // Interleaved TCDM slave
+    parameter int unsigned  NR_SLAVE_PORTS_INTERLEAVED,
+    parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_INTLVD,
+    // Contiguous TCDM slave
+    parameter int unsigned  NR_SLAVE_PORTS_CONTIG,
+    parameter int unsigned  NR_ADDR_RULES_SLAVE_PORTS_CONTIG,
+    // AXI Master ID Width
+    parameter int unsigned  AXI_MASTER_ID_WIDTH = 1, // Not really used since we only connect TCDM masters to the
+                                                     // axi_xbar with protocol converters. However, the value must not be zero.
+    // AXI Slaves
+    parameter int unsigned  NR_AXI_SLAVE_PORTS,
+    parameter int unsigned  NR_ADDR_RULES_AXI_SLAVE_PORTS,
+    localparam int unsigned AXI_SLAVE_ID_WIDTH = AXI_MASTER_ID_WIDTH + $clog2(NR_MASTER_PORTS), // The actual ID
+                                                                                                // width of the AXI slaves is clog2(NR_AXI_MASTERS) larger than the master id width since the
+                                                                                                // axi_mux in the XBAR will append an identificatoin tag to the outgoing transactions
+                                                                                                // towards the axi slaves so it can backroute the responses
+    parameter int unsigned  AXI_USER_WIDTH
+)
+(
+    input logic                                                 clk_i,
+    input logic                                                 rst_ni,
+    input logic                                                 test_en_i, // 0 Normal operation, 1 put sub-IPs into testmode (bypass clock gates)
+    XBAR_TCDM_BUS.Slave                                         master_ports[NR_MASTER_PORTS],
+    XBAR_TCDM_BUS.Slave                                         master_ports_interleaved_only[NR_MASTER_PORTS_INTERLEAVED_ONLY],
+    input addr_map_rule_t[NR_ADDR_RULES_L2_DEMUX-1:0]           addr_space_l2_demux,
+    //Interleaved Slave
+    input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_INTLVD-1:0] addr_space_interleaved,
+    XBAR_TCDM_BUS.Master                                        interleaved_slaves[NR_SLAVE_PORTS_INTERLEAVED],
+    //Contiguous Slave
+    input addr_map_rule_t[NR_ADDR_RULES_SLAVE_PORTS_CONTIG-1:0] addr_space_contiguous,
+    XBAR_TCDM_BUS.Master                                        contiguous_slaves[NR_SLAVE_PORTS_CONTIG],
+    //AXI Slave
+    input addr_map_rule_t [NR_ADDR_RULES_AXI_SLAVE_PORTS-1:0]   addr_space_axi,
+    AXI_BUS.Master                                              axi_slaves[NR_AXI_SLAVE_PORTS] // AXI_ID width must be
+                                                                                               // at least clog2(NR_AXI_SLAVES)
+);
 
     // Internal Parameters
     // Do **NOT** change
@@ -92,22 +91,21 @@ module soc_interconnect
 
     XBAR_TCDM_BUS l2_demux_slaves[NR_MASTER_PORTS*3]();
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin : gen_l2_demux
-        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i], l2_demux_slaves[3*i + 0]);
-        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i], l2_demux_slaves[3*i + 1]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_axi_bridge[i],       l2_demux_slaves[3*i + 0]);
+        `TCDM_ASSIGN_INTF(l2_demux_2_contiguous_xbar[i],  l2_demux_slaves[3*i + 1]);
         `TCDM_ASSIGN_INTF(l2_demux_2_interleaved_xbar[i], l2_demux_slaves[3*i + 2]);
 
-
         tcdm_demux #(
-                     .NR_OUTPUTS(3),
-                     .NR_ADDR_MAP_RULES(NR_ADDR_RULES_L2_DEMUX)
-                     ) i_l2_demux(
-                                  .clk_i,
-                                  .rst_ni,
-                                  .test_en_i,
-                                  .addr_map_rules(addr_space_l2_demux),
-                                  .master_port(master_ports[i]),
-                                  .slave_ports(l2_demux_slaves[3*i:3*(i+1)-1])
-                                  );
+            .NR_OUTPUTS        ( 3                      ),
+            .NR_ADDR_MAP_RULES ( NR_ADDR_RULES_L2_DEMUX )
+        ) i_l2_demux(
+            .clk_i,
+            .rst_ni,
+            .test_en_i,
+            .addr_map_rules ( addr_space_l2_demux            ),
+            .master_port    ( master_ports[i]                ),
+            .slave_ports    ( l2_demux_slaves[3*i:3*(i+1)-1] )
+        );
     end
 
     ///////////////////////////////////////
@@ -128,23 +126,23 @@ module soc_interconnect
         //The tcdm demux will route all transaction that do not match any addr rule to port 0 (which we connect to an
         //error slave)
         tcdm_demux #(
-          .NR_OUTPUTS        ( 2                                ),
-          .NR_ADDR_MAP_RULES ( NR_ADDR_RULES_SLAVE_PORTS_INTLVD )
+            .NR_OUTPUTS        ( 2                                ),
+            .NR_ADDR_MAP_RULES ( NR_ADDR_RULES_SLAVE_PORTS_INTLVD )
         ) i_err_demux(
-          .clk_i,
-          .rst_ni,
-          .test_en_i,
-          .addr_map_rules ( addr_space_interleaved           ),
-          .master_port    ( master_ports_interleaved_only[i] ),
-          .slave_ports    ( err_demux_slaves[2*i:2*(i+1)-1]  )
+            .clk_i,
+            .rst_ni,
+            .test_en_i,
+            .addr_map_rules ( addr_space_interleaved           ),
+            .master_port    ( master_ports_interleaved_only[i] ),
+            .slave_ports    ( err_demux_slaves[2*i:2*(i+1)-1]  )
         );
         tcdm_error_slave #(
-          .ERROR_RESPONSE(32'hBADACCE5)
+            .ERROR_RESPONSE ( 32'hBADACCE5 )
         ) i_error_slave_interleaved (
-          .clk_i,
-          .rst_ni,
-          .slave(err_slave)
-          );
+            .clk_i,
+            .rst_ni,
+            .slave ( err_slave )
+        );
     end
 
 
@@ -184,16 +182,16 @@ module soc_interconnect
     end
 
     interleaved_crossbar #(
-      .NR_MASTER_PORTS ( NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY ),
-      .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_INTERLEAVED                       )
+        .NR_MASTER_PORTS ( NR_MASTER_PORTS+NR_MASTER_PORTS_INTERLEAVED_ONLY ),
+        .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_INTERLEAVED                       )
     ) i_interleaved_xbar(
-      // Interfaces
-      .master_ports ( interleaved_masters ),
-      .slave_ports  ( interleaved_slaves  ),
-      // Inputs
-      .clk_i,
-      .rst_ni,
-      .test_en_i
+        // Interfaces
+        .master_ports ( interleaved_masters ),
+        .slave_ports  ( interleaved_slaves  ),
+        // Inputs
+        .clk_i,
+        .rst_ni,
+        .test_en_i
     );
 
     /////////////////////////
@@ -209,28 +207,28 @@ module soc_interconnect
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     XBAR_TCDM_BUS error_slave();
     contiguous_crossbar #(
-      .NR_MASTER_PORTS ( NR_MASTER_PORTS                  ),
-      .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_CONTIG            ),
-      .NR_ADDR_RULES   ( NR_ADDR_RULES_SLAVE_PORTS_CONTIG )
+        .NR_MASTER_PORTS ( NR_MASTER_PORTS                  ),
+        .NR_SLAVE_PORTS  ( NR_SLAVE_PORTS_CONTIG            ),
+        .NR_ADDR_RULES   ( NR_ADDR_RULES_SLAVE_PORTS_CONTIG )
     ) i_contiguous_xbar(
-      // Interfaces
-      .master_ports ( l2_demux_2_contiguous_xbar ),
-      .slave_ports  ( contiguous_slaves          ),
-      .error_port   ( error_slave                ),
-      .addr_rules   ( addr_space_contiguous      ),
-      // Inputs
-      .clk_i,
-      .rst_ni,
-      .test_en_i
+        // Interfaces
+        .master_ports ( l2_demux_2_contiguous_xbar ),
+        .slave_ports  ( contiguous_slaves          ),
+        .error_port   ( error_slave                ),
+        .addr_rules   ( addr_space_contiguous      ),
+        // Inputs
+        .clk_i,
+        .rst_ni,
+        .test_en_i
     );
     //Error Slave
     // This dummy slave is responsible to generate the buserror described above
     tcdm_error_slave #(
-      .ERROR_RESPONSE(32'hBADACCE5)
+        .ERROR_RESPONSE(32'hBADACCE5)
     ) i_error_slave_contig_xbar (
-      .clk_i,
-      .rst_ni,
-      .slave(error_slave)
+        .clk_i,
+        .rst_ni,
+        .slave(error_slave)
     );
 
 
@@ -241,10 +239,10 @@ module soc_interconnect
     // converts one 32-bit TCDM port to one 32-bit AXI port.                                                      //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     AXI_BUS #(
-      .AXI_ADDR_WIDTH ( 32                  ),
-      .AXI_DATA_WIDTH ( 32                  ),
-      .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
+        .AXI_ADDR_WIDTH ( 32                  ),
+        .AXI_DATA_WIDTH ( 32                  ),
+        .AXI_ID_WIDTH   ( AXI_MASTER_ID_WIDTH ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
     ) axi_bridge_2_axi_xbar[NR_MASTER_PORTS]();
     `AXI_TYPEDEF_ALL(axi_mgr, logic[31:0], logic[AXI_MASTER_ID_WIDTH-1:0], logic[31:0], logic[3:0], logic[AXI_USER_WIDTH-1:0])
     axi_mgr_req_t  [NR_MASTER_PORTS-1:0] axi_bridge_2_axi_xbar_reqs;
@@ -271,10 +269,10 @@ module soc_interconnect
             .mem_rsp_valid_o ( l2_demux_2_axi_bridge[i].r_valid ),
             .mem_rsp_rdata_o ( l2_demux_2_axi_bridge[i].r_rdata ),
             .mem_rsp_error_o ( l2_demux_2_axi_bridge[i].r_opc   ),
-            .slv_aw_cache_i  ( '0 ),
-            .slv_ar_cache_i  ( '0 ),
-            .axi_req_o       ( axi_bridge_2_axi_xbar_reqs[i] ),
-            .axi_rsp_i       ( axi_bridge_2_axi_xbar_resps[i] )
+            .slv_aw_cache_i  ( '0                               ),
+            .slv_ar_cache_i  ( '0                               ),
+            .axi_req_o       ( axi_bridge_2_axi_xbar_reqs[i]    ),
+            .axi_rsp_i       ( axi_bridge_2_axi_xbar_resps[i]   )
         );
 
         `AXI_ASSIGN_FROM_REQ(axi_bridge_2_axi_xbar[i], axi_bridge_2_axi_xbar_reqs[i])
@@ -291,35 +289,35 @@ module soc_interconnect
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     localparam xbar_cfg_t AXI_XBAR_CFG = '{
-      NoSlvPorts: NR_MASTER_PORTS,
-      NoMstPorts: NR_AXI_SLAVE_PORTS,
-      MaxMstTrans: 1,       //The TCDM ports do not support
-      //outstanding transactiions anyways
-      MaxSlvTrans: 4,       //Allow up to 4 in-flight transactions
-      //per slave port
-      FallThrough: 1,       //Use the reccomended default config
-      LatencyMode: axi_pkg::CUT_MST_AX | axi_pkg::MuxW,
-      PipelineStages: 0,
-      AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
-      AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
-      UniqueIds: 0,
-      AxiAddrWidth: BUS_ADDR_WIDTH,
-      AxiDataWidth: BUS_DATA_WIDTH,
-      NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS
+        NoSlvPorts: NR_MASTER_PORTS,
+        NoMstPorts: NR_AXI_SLAVE_PORTS,
+        MaxMstTrans: 1,       //The TCDM ports do not support
+        //outstanding transactiions anyways
+        MaxSlvTrans: 4,       //Allow up to 4 in-flight transactions
+        //per slave port
+        FallThrough: 1,       //Use the reccomended default config
+        LatencyMode: axi_pkg::CUT_MST_AX | axi_pkg::MuxW,
+        PipelineStages: 0,
+        AxiIdWidthSlvPorts: AXI_MASTER_ID_WIDTH,
+        AxiIdUsedSlvPorts: AXI_MASTER_ID_WIDTH,
+        UniqueIds: 0,
+        AxiAddrWidth: BUS_ADDR_WIDTH,
+        AxiDataWidth: BUS_DATA_WIDTH,
+        NoAddrRules: NR_ADDR_RULES_AXI_SLAVE_PORTS
     };
 
     //Reverse interface array ordering since axi_xbar uses big-endian ordering of the arrays
     AXI_BUS #(
-      .AXI_ADDR_WIDTH (32                  ),
-      .AXI_DATA_WIDTH (32                  ),
-      .AXI_ID_WIDTH   (AXI_MASTER_ID_WIDTH ),
-      .AXI_USER_WIDTH (AXI_USER_WIDTH      )
+        .AXI_ADDR_WIDTH (32                  ),
+        .AXI_DATA_WIDTH (32                  ),
+        .AXI_ID_WIDTH   (AXI_MASTER_ID_WIDTH ),
+        .AXI_USER_WIDTH (AXI_USER_WIDTH      )
     ) axi_bridge_2_axi_xbar_reversed[NR_MASTER_PORTS-1:0]();
     AXI_BUS #(
-      .AXI_ADDR_WIDTH ( 32                 ),
-      .AXI_DATA_WIDTH ( 32                 ),
-      .AXI_ID_WIDTH   ( AXI_SLAVE_ID_WIDTH ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
+        .AXI_ADDR_WIDTH ( 32                 ),
+        .AXI_DATA_WIDTH ( 32                 ),
+        .AXI_ID_WIDTH   ( AXI_SLAVE_ID_WIDTH ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH     )
     ) axi_slaves_reversed[NR_AXI_SLAVE_PORTS-1:0]();
 
     for (genvar i = 0; i < NR_MASTER_PORTS; i++) begin
@@ -331,18 +329,18 @@ module soc_interconnect
     end
 
     axi_xbar_intf # (
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH  ),
-      .Cfg            ( AXI_XBAR_CFG    ),
-      .rule_t         ( addr_map_rule_t )
-    ) i_axi_xbar    (
-      .clk_i,
-      .rst_ni,
-      .test_i                ( test_en_i                      ),
-      .slv_ports             ( axi_bridge_2_axi_xbar_reversed ),
-      .mst_ports             ( axi_slaves_reversed            ),
-      .addr_map_i            ( addr_space_axi                 ),
-      .en_default_mst_port_i ( '0                             ),
-      .default_mst_port_i    ( '0                             )
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH  ),
+        .Cfg            ( AXI_XBAR_CFG    ),
+        .rule_t         ( addr_map_rule_t )
+    ) i_axi_xbar (
+        .clk_i,
+        .rst_ni,
+        .test_i                ( test_en_i                      ),
+        .slv_ports             ( axi_bridge_2_axi_xbar_reversed ),
+        .mst_ports             ( axi_slaves_reversed            ),
+        .addr_map_i            ( addr_space_axi                 ),
+        .en_default_mst_port_i ( '0                             ),
+        .default_mst_port_i    ( '0                             )
     );
 
 
