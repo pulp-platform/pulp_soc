@@ -290,7 +290,15 @@ module fc_subsystem
     assign supervisor_mode_o = 1'b1;
   end else if (USE_CV32E40X) begin: FC_CORE
     assign boot_addr = boot_addr_i;
+`ifdef PULP_FPGA_EMUL
     cv32e40x_core #(
+`elsif SYNTHESIS
+    cv32e40x_core #(
+`elsif VERILATOR
+    cv32e40x_core #(
+`else
+    cv32e40x_wrapper #(
+`endif
       .RV32             ( RV32I               ),
       .M_EXT            ( M_NONE              ),
       .X_EXT            ( 1                   ),
