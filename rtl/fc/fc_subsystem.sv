@@ -300,7 +300,7 @@ module fc_subsystem
     cv32e40x_wrapper #(
 `endif
       .RV32             ( RV32I               ),
-      .M_EXT            ( M_NONE              ),
+      .M_EXT            ( M                   ),
       .X_EXT            ( 1                   ),
       .DM_REGION_START  ( `DEBUG_START_ADDR   ),
       .DM_REGION_END    ( `DEBUG_END_ADDR     ),
