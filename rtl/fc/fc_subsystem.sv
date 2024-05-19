@@ -192,7 +192,7 @@ module fc_subsystem
   end
   else begin: gen_xifu
     fir_xifu_top #(
-      .NB_REGS ( 4 )
+      .NB_REGS ( 32 )
     ) i_fir_xifu_top (
       .clk_i            ( clk_i    ),
       .rst_ni           ( rst_ni   ),
