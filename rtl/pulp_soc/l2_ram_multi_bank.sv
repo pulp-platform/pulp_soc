@@ -12,7 +12,7 @@
 
 module l2_ram_multi_bank #(
    parameter NB_BANKS                   = 4,
-   parameter int unsigned BANK_SIZE_INTL_SRAM = 32768 //Number of 32-bit words
+   parameter int unsigned BANK_SIZE_INTL_SRAM = 16384 //Number of 32-bit words
 ) (
    input logic             clk_i,
    input logic             rst_ni,
