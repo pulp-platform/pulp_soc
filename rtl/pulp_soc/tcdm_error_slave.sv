@@ -29,25 +29,25 @@ module tcdm_error_slave #(
   XBAR_TCDM_BUS.Slave  slave
 );
 
-    logic         error_valid_d, error_valid_q;
-    assign slave.gnt = slave.req;
-    assign error_valid_d = slave.req;
-    assign slave.r_opc = error_valid_q;
-    assign slave.r_rdata = ERROR_RESPONSE;
-    assign slave.r_valid = error_valid_q;
+  logic         error_valid_d, error_valid_q;
+  assign slave.gnt = slave.req;
+  assign error_valid_d = slave.req;
+  assign slave.r_opc = error_valid_q;
+  assign slave.r_rdata = ERROR_RESPONSE;
+  assign slave.r_valid = error_valid_q;
 
-    always_ff @(posedge clk_i, negedge rst_ni) begin
-        if (!rst_ni) begin
-            error_valid_q <= 1'b0;
-        end else begin
-            error_valid_q <= error_valid_d;
-        end
+  always_ff @(posedge clk_i, negedge rst_ni) begin
+    if (!rst_ni) begin
+      error_valid_q <= 1'b0;
+    end else begin
+      error_valid_q <= error_valid_d;
     end
+  end
 
 `ifndef SYNTHESIS
-    no_req : assert property (
-      @(posedge clk_i) disable iff (~rst_ni) not slave.req)
-        else $error("Illegal bus request to address %x.", slave.add);
+  no_req : assert property (
+    @(posedge clk_i) disable iff (~rst_ni) not slave.req)
+    else $error("Illegal bus request to address %x.", slave.add);
 `endif
 
 endmodule : tcdm_error_slave

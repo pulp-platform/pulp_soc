@@ -10,49 +10,49 @@
 
 
 module soc_event_queue #(
-    parameter QUEUE_SIZE = 2
+  parameter QUEUE_SIZE = 2
 ) (
-    input  logic clk_i,
-    input  logic rstn_i,
-    input  logic event_i,
-    output logic err_o,
-    output logic event_o,
-    input  logic event_ack_i
+  input  logic clk_i,
+  input  logic rstn_i,
+  input  logic event_i,
+  output logic err_o,
+  output logic event_o,
+  input  logic event_ack_i
 );
 
-    logic [1:0] r_event_count;
-    logic [1:0] s_event_count;
+  logic [1:0] r_event_count;
+  logic [1:0] s_event_count;
 
-    logic s_sample_event;
+  logic s_sample_event;
 
 
-    assign err_o   = event_i & (r_event_count == 2'b11);
-    assign event_o = (r_event_count != 0);
+  assign err_o   = event_i & (r_event_count == 2'b11);
+  assign event_o = (r_event_count != 0);
 
-    assign s_sample_event = event_i | event_ack_i;
+  assign s_sample_event = event_i | event_ack_i;
 
-    always_comb
-    begin : proc_s_event_count
-        s_event_count = r_event_count;
-        if (event_ack_i) begin
-            if (!event_i && (r_event_count != 0))
-                s_event_count = r_event_count - 1;
-        end
-        else begin
-            if (r_event_count != 2'b11)
-                s_event_count = r_event_count + 1;
-        end
+  always_comb
+  begin : proc_s_event_count
+    s_event_count = r_event_count;
+    if (event_ack_i) begin
+      if (!event_i && (r_event_count != 0))
+        s_event_count = r_event_count - 1;
     end
-
-    always_ff @(posedge clk_i or negedge rstn_i)
-    begin : proc_r_event_count
-        if(~rstn_i) begin
-            r_event_count <= 0;
-        end
-        else begin
-            if (s_sample_event)
-                r_event_count <= s_event_count;
-        end
+    else begin
+      if (r_event_count != 2'b11)
+        s_event_count = r_event_count + 1;
     end
+  end
+
+  always_ff @(posedge clk_i or negedge rstn_i)
+  begin : proc_r_event_count
+    if(~rstn_i) begin
+      r_event_count <= 0;
+    end
+    else begin
+      if (s_sample_event)
+        r_event_count <= s_event_count;
+    end
+  end
 
 endmodule // soc_event_queue

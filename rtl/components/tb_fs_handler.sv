@@ -64,8 +64,6 @@ module tb_fs_handler #(
   event READ_EVENT;
   event WRITE_EVENT;
 
-
-
   assign req_stdout = ( (CSN == 1'b0) && (WEN == 1'b0) && ({ADDR[31:12],12'h00} == `ADDR_STDOUT_PRINT) );
   assign req_fopen = ((CSN == 1'b0) && (WEN == 1'b0) && (ADDR == `ADDR_STDOUT_FS));
 
@@ -147,7 +145,6 @@ module tb_fs_handler #(
     .dat_i (WDATA[31:0])
   );
 
-
   always @(FOPEN_EVENT) begin
     FOPEN();
   end
@@ -156,7 +153,6 @@ module tb_fs_handler #(
     FCLOSE();
   end
 
-
   always @(READ_EVENT) begin
     F_READ();
   end
@@ -164,7 +160,6 @@ module tb_fs_handler #(
   always @(WRITE_EVENT) begin
     F_WRITE();
   end
-
 
   always_ff @(posedge clk, negedge rst_n) begin
     if (rst_n == 1'b0) begin
@@ -178,13 +173,11 @@ module tb_fs_handler #(
       if ((ADDR == `ADDR_FOPEN) && (CSN == 1'b0) && (WEN == 1'b0) && (WDATA == `CMD_FCLOSE))
         ->FCLOSE_EVENT;
 
-
       if ((ADDR == `ADDR_RW) && (CSN == 1'b0) && (WEN == 1'b1))->READ_EVENT;
 
       if ((ADDR == `ADDR_RW) && (CSN == 1'b0) && (WEN == 1'b0))->WRITE_EVENT;
     end
   end
-
 
   task FOPEN;
     FILE_00 = $fopen("fs/file_00.txt", "r");
@@ -266,59 +259,59 @@ module tb_fs_handler_debug #(
         else core_index = 0;
 
         if (OPEN_FILES)
-          $fwrite(IOFILE[core_index], "%s", dat_i[7:0]);
+        $fwrite(IOFILE[core_index], "%s", dat_i[7:0]);
 
         if (SILENT_MODE == "OFF") begin
           if (COLORED_MODE == "ON") begin
             case (core_index)
-              0: begin
-                $write("%c[1;30m", 27);
-              end
-              1: begin
-                $write("%c[1;31m", 27);
-              end
-              2: begin
-                $write("%c[1;32m", 27);
-              end
-              3: begin
-                $write("%c[1;33m", 27);
-              end
-              4: begin
-                $write("%c[1;34m", 27);
-              end
-              5: begin
-                $write("%c[1;35m", 27);
-              end
-              6: begin
-                $write("%c[1;36m", 27);
-              end
-              7: begin
-                $write("%c[4;30m", 27);
-              end
-              8: begin
-                $write("%c[4;31m", 27);
-              end
-              9: begin
-                $write("%c[4;32m", 27);
-              end
-              10: begin
-                $write("%c[4;33m", 27);
-              end
-              11: begin
-                $write("%c[4;34m", 27);
-              end
-              12: begin
-                $write("%c[4;35m", 27);
-              end
-              13: begin
-                $write("%c[4;36m", 27);
-              end
-              14: begin
-                $write("%c[5;30m", 27);
-              end
-              15: begin
-                $write("%c[5;31m", 27);
-              end
+            0: begin
+              $write("%c[1;30m", 27);
+            end
+            1: begin
+              $write("%c[1;31m", 27);
+            end
+            2: begin
+              $write("%c[1;32m", 27);
+            end
+            3: begin
+              $write("%c[1;33m", 27);
+            end
+            4: begin
+              $write("%c[1;34m", 27);
+            end
+            5: begin
+              $write("%c[1;35m", 27);
+            end
+            6: begin
+              $write("%c[1;36m", 27);
+            end
+            7: begin
+              $write("%c[4;30m", 27);
+            end
+            8: begin
+              $write("%c[4;31m", 27);
+            end
+            9: begin
+              $write("%c[4;32m", 27);
+            end
+            10: begin
+              $write("%c[4;33m", 27);
+            end
+            11: begin
+              $write("%c[4;34m", 27);
+            end
+            12: begin
+              $write("%c[4;35m", 27);
+            end
+            13: begin
+              $write("%c[4;36m", 27);
+            end
+            14: begin
+              $write("%c[5;30m", 27);
+            end
+            15: begin
+              $write("%c[5;31m", 27);
+            end
             endcase
           end
 
@@ -338,8 +331,8 @@ module tb_fs_handler_debug #(
 
           if (SILENT_MODE == "OFF") begin
             if (FULL_LINE == "ON") begin
-              $display("[STDOUT-CL%0d_PE%0d] %s", CLUSTER_ID, core_index,
-                       LINE_BUFFER[core_index].substr(0, LINE_BUFFER[core_index].len() - 2));
+              $display("[STDOUT-CL%0d_PE%0d, %t] %s", CLUSTER_ID, core_index, $realtime,
+                  LINE_BUFFER[core_index].substr(0, LINE_BUFFER[core_index].len() - 2));
               LINE_BUFFER[core_index] = "";
             end else begin
               $display("CL%0d_PE%0d Writing line", CLUSTER_ID, core_index);
