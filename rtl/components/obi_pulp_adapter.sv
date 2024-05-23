@@ -39,22 +39,22 @@ module obi_pulp_adapter (
   // Block multiple requests, as the memory does not support them
   // core_req_i is kept stable by cv32e40p (OBI compliant)
   always_comb begin
-    case (ps)
-      WAIT_GNT: begin
-        // Idle state, the memory has not received any request yet
-        mem_req_o = core_req_i;
-        ns        = (core_req_i && mem_gnt_i) ? WAIT_VALID : WAIT_GNT;
-      end
-      WAIT_VALID: begin
-        // The memory has received and granted a request. Filter the next request until the memory is ready to accept it.
-        mem_req_o = (core_req_i && mem_rvalid_i) ? 1'b1 : 1'b0;
-        ns        = (mem_rvalid_i && !mem_gnt_i) ? WAIT_GNT : WAIT_VALID;
-      end
-      default: begin
-        mem_req_o = core_req_i;
-        ns        = WAIT_GNT;
-      end
-    endcase
+  case (ps)
+    WAIT_GNT: begin
+      // Idle state, the memory has not received any request yet
+      mem_req_o = core_req_i;
+      ns        = (core_req_i && mem_gnt_i) ? WAIT_VALID : WAIT_GNT;
+    end
+    WAIT_VALID: begin
+      // The memory has received and granted a request. Filter the next request until the memory is ready to accept it.
+      mem_req_o = (core_req_i && mem_rvalid_i) ? 1'b1 : 1'b0;
+      ns        = (mem_rvalid_i && !mem_gnt_i) ? WAIT_GNT : WAIT_VALID;
+    end
+    default: begin
+      mem_req_o = core_req_i;
+      ns        = WAIT_GNT;
+    end
+  endcase
   end
 
 endmodule

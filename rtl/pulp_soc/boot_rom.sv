@@ -12,56 +12,56 @@
 `include "soc_mem_map.svh"
 
 module boot_rom #(
-    parameter ROM_ADDR_WIDTH = 13
-    )
-    (
-     input logic             clk_i,
-     input logic             rst_ni,
-     input logic             init_ni,
-     XBAR_TCDM_BUS.Slave     mem_slave,
-     input logic             test_mode_i
-    );
+  parameter ROM_ADDR_WIDTH = 13
+)
+(
+  input logic             clk_i,
+  input logic             rst_ni,
+  input logic             init_ni,
+  XBAR_TCDM_BUS.Slave     mem_slave,
+  input logic             test_mode_i
+);
 
-    assign mem_slave.r_opc = 1'b0;
+  assign mem_slave.r_opc = 1'b0;
 
-    //Perform TCDM handshaking for constant 1 cycle latency
-    assign mem_slave.gnt     = mem_slave.req;
-    always_ff @(posedge clk_i, negedge rst_ni) begin
-        if (!rst_ni) begin
-            mem_slave.r_valid <= 1'b0;
-        end else begin
-            mem_slave.r_valid <= mem_slave.req;
-        end
+  //Perform TCDM handshaking for constant 1 cycle latency
+  assign mem_slave.gnt     = mem_slave.req;
+  always_ff @(posedge clk_i, negedge rst_ni) begin
+    if (!rst_ni) begin
+      mem_slave.r_valid <= 1'b0;
+    end else begin
+      mem_slave.r_valid <= mem_slave.req;
     end
+  end
 
-    //Remove address offset
-    logic [31:0] address;
-    assign address = mem_slave.add - `SOC_MEM_MAP_BOOT_ROM_START_ADDR;
+  //Remove address offset
+  logic [31:0] address;
+  assign address = mem_slave.add - `SOC_MEM_MAP_BOOT_ROM_START_ADDR;
 
-    `ifndef PULP_FPGA_EMUL
+`ifndef PULP_FPGA_EMUL
 
-        asic_autogen_rom #(
-            .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
-            .DATA_WIDTH(32)
-        ) rom_mem_i (
-            .CLK ( clk_i                       ),
-            .CEN ( ~mem_slave.req              ),
-            .A   ( address[ROM_ADDR_WIDTH-1:2] ),
-            .Q   ( mem_slave.r_rdata           )
-        );
+  asic_autogen_rom #(
+    .ADDR_WIDTH ( ROM_ADDR_WIDTH-2 ),
+    .DATA_WIDTH ( 32               )
+  ) rom_mem_i (
+    .CLK ( clk_i                       ),
+    .CEN ( ~mem_slave.req              ),
+    .A   ( address[ROM_ADDR_WIDTH-1:2] ),
+    .Q   ( mem_slave.r_rdata           )
+  );
 
-    `else // !`ifndef PULP_FPGA_EMUL
+`else // !`ifndef PULP_FPGA_EMUL
 
-        fpga_autogen_rom #(
-            .ADDR_WIDTH(ROM_ADDR_WIDTH-2),
-            .DATA_WIDTH(32)
-        ) rom_mem_i (
-            .CLK ( clk_i                       ),
-            .CEN ( ~mem_slave.req              ),
-            .A   ( address[ROM_ADDR_WIDTH-1:2] ),
-            .Q   ( mem_slave.r_rdata           )
-        );
+  fpga_autogen_rom #(
+    .ADDR_WIDTH ( ROM_ADDR_WIDTH-2 ),
+    .DATA_WIDTH ( 32               )
+  ) rom_mem_i (
+    .CLK ( clk_i                       ),
+    .CEN ( ~mem_slave.req              ),
+    .A   ( address[ROM_ADDR_WIDTH-1:2] ),
+    .Q   ( mem_slave.r_rdata           )
+  );
 
-    `endif
+`endif
 
 endmodule
