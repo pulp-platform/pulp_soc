@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [5.0.0] - 2024-05-23
 - Use pulp-io for peripherals -> updated udma subsystem and corresponding peripherals
 - Use new gpio peripheral
 - Externalize clock generator modules
