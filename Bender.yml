@@ -33,7 +33,7 @@ dependencies:
   generic_FLL:            { git: "https://github.com/pulp-platform/generic_FLL.git", version: 0.2.0 }
   tech_cells_generic:     { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
   pulp_io:                { git: "https://github.com/pulp-platform/pulp-io.git", version: 0.1.0 }
-  fir-hwpe:               { git: "https://github.com/pulp-platform/fir-hwpe.git", rev: v2.0 } # branch fc/soc-addertree
+  fir-hwpe:               { git: "https://github.com/pulp-platform/fir-hwpe.git", version: 2.0.0 } # branch fc/soc-addertree
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.5.0 }
   register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.4.1 }
 
