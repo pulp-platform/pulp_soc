@@ -553,7 +553,7 @@ module fc_subsystem
   //****** APU INTERFACE WITH FPU *******
   //*************************************
 
-   /* if (USE_FPU && CORE_TYPE == 0) begin
+  if (USE_FPU && CORE_TYPE == 0) begin
     cv32e40p_fp_wrapper #(
       .FP_DIVSQRT (1)
     ) fp_wrapper_i (
@@ -577,6 +577,6 @@ module fc_subsystem
     assign apu_rvalid   = 1'b0;
     assign apu_rdata    = 1'b0;
     assign apu_rflags   = 1'b0;
-  end */
+  end
 
 endmodule

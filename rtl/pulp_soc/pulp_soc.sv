@@ -250,6 +250,8 @@ module pulp_soc import dm::*; #(
 );
 
   localparam NB_L2_BANKS = `NB_L2_CHANNELS;
+  //The L2 parameter do not influence the size of the memories. Change them in the l2_ram_multibank. This parameters
+  //are only here to save area in the uDMA by only storing relevant bits.
   localparam L2_BANK_SIZE          = 16384;            // in 32-bit words
   localparam L2_MEM_ADDR_WIDTH     = $clog2(L2_BANK_SIZE * NB_L2_BANKS) - $clog2(NB_L2_BANKS);    // 2**L2_MEM_ADDR_WIDTH rows (64bit each) in L2 --> TOTAL L2 SIZE = 8byte * 2^L2_MEM_ADDR_WIDTH
   localparam NB_L2_BANKS_PRI       = 2;
@@ -750,13 +752,14 @@ module pulp_soc import dm::*; #(
 `endif
 
   fc_subsystem #(
-    .CORE_TYPE  ( CORE_TYPE          ),
-    .USE_XPULP  ( USE_XPULP          ),
-    .USE_FPU    ( USE_FPU            ),
-    .USE_ZFINX  ( USE_ZFINX          ),
-    .CORE_ID    ( FC_CORE_CORE_ID    ),
-    .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
-    .USE_HWPE   ( USE_HWPE           )
+    .NB_HWPE_PORTS ( NB_HWPE_PORTS      ),
+    .CORE_TYPE     ( CORE_TYPE          ),
+    .USE_XPULP     ( USE_XPULP          ),
+    .USE_FPU       ( USE_FPU            ),
+    .USE_ZFINX     ( USE_ZFINX          ),
+    .CORE_ID       ( FC_CORE_CORE_ID    ),
+    .CLUSTER_ID    ( FC_CORE_CLUSTER_ID ),
+    .USE_HWPE      ( USE_HWPE           )
   ) fc_subsystem_i (
     .clk_i              ( soc_clk_i                     ),
     .rst_ni             ( soc_rstn_synced_i             ),
