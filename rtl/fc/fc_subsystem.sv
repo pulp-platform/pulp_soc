@@ -400,12 +400,6 @@ module fc_subsystem
       .core_sleep_o          ()
     );
 
-    // tie unused APU signals
-    assign apu_req = '0;
-    assign apu_operands = '0;
-    assign apu_op = '0;
-    assign apu_flags = '0;
-
     assign supervisor_mode_o = 1'b1;
 
   end else if(USE_IBEX == 0) begin: FC_CORE
