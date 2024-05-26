@@ -176,18 +176,18 @@ module fc_subsystem
   if(USE_XIFU == 0 || !USE_CV32E40X) begin: gen_no_xifu
     assign core_xif.compressed_ready = 1'b1;
     assign core_xif.compressed_resp.instr = '0;
-    assign core_xif.compressed_resp.accept = 1'b1;
+    assign core_xif.compressed_resp.accept = 1'b0;
     assign core_xif.issue_ready = 1'b1;
-    assign core_xif.issue_resp.accept = 1'b1;
+    assign core_xif.issue_resp.accept = 1'b0;
     assign core_xif.issue_resp.writeback = 1'b0;
     assign core_xif.issue_resp.dualwrite = 1'b0;
     assign core_xif.issue_resp.dualread = '0;
     assign core_xif.issue_resp.loadstore = 1'b0;
     assign core_xif.issue_resp.ecswrite = 1'b0;
     assign core_xif.issue_resp.exc = 1'b0;
-    assign core_xif.mem_valid = 1'b1;
+    assign core_xif.mem_valid = 1'b0;
     assign core_xif.mem_req = 1'b0;
-    assign core_xif.result_valid = 1'b1;
+    assign core_xif.result_valid = 1'b0;
     assign core_xif.result = '0;
   end
   else begin: gen_xifu
