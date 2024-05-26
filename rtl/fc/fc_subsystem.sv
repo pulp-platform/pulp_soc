@@ -10,12 +10,15 @@
 
 `include "periph_bus_defines.sv"
 
-module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
-  parameter CORE_TYPE           = 0,
+module fc_subsystem
+  import cv32e40p_apu_core_pkg::*;
+#(
+  parameter CORE_TYPE           = 0, // 0 for CV32E40P with XPULP Extensions, 1 for IBEX RV32IMC (formerly ZERORISCY), 2 for IBEX RV32EC (formerly MICRORISCY), 3 for CV32E40X
   parameter USE_XPULP           = 1,
   parameter USE_FPU             = 1,
   parameter USE_ZFINX           = 1,
   parameter USE_HWPE            = 1,
+  parameter USE_XIFU            = 0,
   parameter N_EXT_PERF_COUNTERS = 1,
   parameter EVENT_ID_WIDTH      = 8,
   parameter PER_ID_WIDTH        = 32,
@@ -49,9 +52,11 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
   output logic                      supervisor_mode_o
 );
 
-  localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
-  localparam IBEX_RV32M = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
-  localparam IBEX_RV32E = CORE_TYPE == 2;
+  localparam USE_CV32E40P = CORE_TYPE == 0;
+  localparam USE_IBEX     = CORE_TYPE == 1 || CORE_TYPE == 2;
+  localparam IBEX_RV32M   = CORE_TYPE == 1 ? ibex_pkg::RV32MFast : ibex_pkg::RV32MNone;
+  localparam IBEX_RV32E   = CORE_TYPE == 2;
+  localparam USE_CV32E40X = CORE_TYPE == 3;
 
   // Set register file for ibex based on bender targets.
   //     Default to FF for simulation, use FGPA for FPGA, use Latch for synthesis.
@@ -161,8 +166,36 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
   //************ RISCV CORE ********************************
   //********************************************************
 
+  import cv32e40x_pkg::*;
+
+  // X-if declaration
+  cv32e40x_if_xif core_xif ();
+
+  // Tying input signals
+
+  if(USE_XIFU == 0 || !USE_CV32E40X) begin: gen_no_xifu
+    assign core_xif.compressed_ready = 1'b1;
+    assign core_xif.compressed_resp.instr = '0;
+    assign core_xif.compressed_resp.accept = 1'b1;
+    assign core_xif.issue_ready = 1'b1;
+    assign core_xif.issue_resp.accept = 1'b1;
+    assign core_xif.issue_resp.writeback = 1'b0;
+    assign core_xif.issue_resp.dualwrite = 1'b0;
+    assign core_xif.issue_resp.dualread = '0;
+    assign core_xif.issue_resp.loadstore = 1'b0;
+    assign core_xif.issue_resp.ecswrite = 1'b0;
+    assign core_xif.issue_resp.exc = 1'b0;
+    assign core_xif.mem_valid = 1'b1;
+    assign core_xif.mem_req = 1'b0;
+    assign core_xif.result_valid = 1'b1;
+    assign core_xif.result = '0;
+  end
+  else begin: gen_xifu
+    // placeholder for XIFU instantiation!
+  end
+
   generate
-  if ( USE_IBEX == 0) begin: FC_CORE
+  if(USE_CV32E40P) begin: FC_CORE
     assign boot_addr = boot_addr_i;
 `ifdef PULP_FPGA_EMUL
     cv32e40p_core #(
@@ -244,7 +277,121 @@ module fc_subsystem import cv32e40p_apu_core_pkg::*; #(
 
     assign supervisor_mode_o = 1'b1;
 
-  end else begin: FC_CORE
+  end else if (USE_CV32E40X) begin: FC_CORE
+    assign boot_addr = boot_addr_i;
+`ifdef PULP_FPGA_EMUL
+    cv32e40x_core #(
+`elsif SYNTHESIS
+    cv32e40x_core #(
+`elsif VERILATOR
+    cv32e40x_core #(
+`else
+    cv32e40x_wrapper #(
+`endif
+      .RV32             ( RV32I               ),
+      .M_EXT            ( M                   ),
+      .X_EXT            ( 1                   ),
+      .DM_REGION_START  ( `DEBUG_START_ADDR   ),
+      .DM_REGION_END    ( `DEBUG_END_ADDR     ),
+      //.X_NUM_RS      (),
+      //.X_ID_WIDTH    (),
+      .X_MEM_WIDTH      ( 32                  ),
+      .X_RFR_WIDTH      ( 32                  ),
+      .X_RFW_WIDTH      ( 32                  ),
+      //.X_MISA      (),
+      //.X_ECS_XS    (),
+      .NUM_MHPMCOUNTERS ( N_EXT_PERF_COUNTERS )
+    ) FC_CORE_i (
+
+      // Clock and Reset
+      .clk_i,
+      .rst_ni,
+
+      // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
+      //.pulp_clock_en_i      ('0 ),
+      .scan_cg_en_i         (test_en_i),
+      .boot_addr_i          (boot_addr),
+      .mtvec_addr_i         (32'h0),
+
+      .dm_halt_addr_i       (`DEBUG_START_ADDR + dm::HaltAddress[31:0]),
+      .mhartid_i            (hart_id),
+      .dm_exception_addr_i  (`DEBUG_START_ADDR + dm::ExceptionAddress[31:0]),
+      .mimpid_patch_i       ('0),
+
+      // Instruction memory interface
+      .instr_req_o           (core_instr_req),
+      .instr_gnt_i           (core_instr_gnt),
+      .instr_rvalid_i        (core_instr_rvalid),
+      .instr_addr_o          (core_instr_addr),
+      .instr_rdata_i         (core_instr_rdata),
+      .instr_memtype_o       (),
+      .instr_prot_o          (),
+      .instr_dbg_o           (),
+      .instr_err_i           (core_instr_err),
+
+      // Data memory interface
+      .data_req_o            (core_data_req),
+      .data_gnt_i            (core_data_gnt),
+      .data_rvalid_i         (core_data_rvalid),
+      .data_we_o             (core_data_we),
+      .data_be_o             (core_data_be),
+      .data_addr_o           (core_data_addr),
+      .data_wdata_o          (core_data_wdata),
+      .data_rdata_i          (core_data_rdata),
+      .data_memtype_o        (),
+      .data_prot_o           (),
+      .data_dbg_o            (),
+      .data_atop_o           (),
+      .data_err_i            (core_data_err),
+      .data_exokay_i         (1'b1),
+
+      .mcycle_o              (),
+
+      .time_i                ('0),
+
+      // X interfaces
+      .xif_compressed_if     ( core_xif.cpu_compressed ),
+      .xif_issue_if          ( core_xif.cpu_issue      ),
+      .xif_commit_if         ( core_xif.cpu_commit     ),
+      .xif_mem_if            ( core_xif.cpu_mem        ),
+      .xif_mem_result_if     ( core_xif.cpu_mem_result ),
+      .xif_result_if         ( core_xif.cpu_result     ),
+
+      // Interrupt inputs
+      .irq_i                 ( core_irq_x ),
+      //.irq_ack_o             (core_irq_ack),
+      //.irq_id_o              (core_irq_ack_id),
+
+      // Wait-for-event wakeup
+      .wu_wfe_i              ('0),
+
+      // CLIC interrupts
+      .clic_irq_i            ('0),
+      .clic_irq_id_i         ('0),
+      .clic_irq_level_i      ('0),
+      .clic_irq_priv_i       ('0),
+      .clic_irq_shv_i        ('0),
+
+      // Fence.i flush handshake
+      .fencei_flush_req_o    (),
+      .fencei_flush_ack_i    (1'b0),
+
+      // Debug Interface
+      .debug_req_i           (debug_req_i),
+      .debug_havereset_o     (),
+      .debug_running_o       (),
+      .debug_halted_o        (),
+      .debug_pc_valid_o      (),
+      .debug_pc_o            (),
+
+      // CPU Control Signals
+      .fetch_enable_i        (fetch_en_int),
+      .core_sleep_o          ()
+    );
+
+    assign supervisor_mode_o = 1'b1;
+
+  end else if(USE_IBEX) begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
     ibex_core #(
