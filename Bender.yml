@@ -32,6 +32,7 @@ dependencies:
   pulp_io:                { git: "https://github.com/pulp-platform/pulp-io.git", version: 0.1.0 }
   riscv-dbg:              { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.5.0 }
   register_interface:     { git: "https://github.com/pulp-platform/register_interface.git", version: 0.4.1 }
+  fir-hwpe:               { git: "https://github.com/pulp-platform/fir-hwpe.git", rev: "a6ebec79ee6743f33f6916a6699a52e244ba92b8" }
 
 sources:
   # pulp_soc

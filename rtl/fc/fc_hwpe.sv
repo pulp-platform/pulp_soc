@@ -75,13 +75,32 @@ module fc_hwpe
   );
 
   // placeholder! instantiate HWPE here and replace these tie-off!
-  for(genvar i=0; i<4; i++) begin : tie_off
-    assign tcdm_req   [i] = '0;
-    assign tcdm_add   [i] = '0;
-    assign tcdm_wen   [i] = '0;
-    assign tcdm_wdata [i] = '0;
-    assign tcdm_be    [i] = '0;
-  end
+ fir_top_wrap #(
+      .ID  ( ID_WIDTH )
+  ) i_fir_top_wrap (
+      .clk_i            ( clk_i          ),
+      .rst_ni           ( rst_ni         ),
+      .test_mode_i      ( test_mode_i    ),
+      .tcdm_req         ( tcdm_req       ),
+      .tcdm_gnt         ( tcdm_gnt       ),
+      .tcdm_add         ( tcdm_add       ),
+      .tcdm_wen         ( tcdm_wen       ),
+      .tcdm_be          ( tcdm_be        ),
+      .tcdm_data        ( tcdm_wdata     ),
+      .tcdm_r_data      ( tcdm_r_rdata   ),
+      .tcdm_r_valid     ( tcdm_r_valid   ),
+      .periph_req       ( periph_req     ),
+      .periph_gnt       ( periph_gnt     ),
+      .periph_add       ( periph_add     ),
+      .periph_wen       ( ~periph_we     ),
+      .periph_be        ( periph_be      ),
+      .periph_data      ( periph_wdata   ),
+      .periph_id        ( '0             ),
+      .periph_r_data    ( periph_r_rdata ),
+      .periph_r_valid   ( periph_r_valid ),
+      .periph_r_id      ( periph_r_id    ),
+      .evt_o            ( s_evt          )
+  );
   assign busy_o = 1'b1;
   assign evt_o = s_evt[0];
 
