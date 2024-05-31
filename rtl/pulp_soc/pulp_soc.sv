@@ -759,6 +759,7 @@ module pulp_soc import dm::*; #(
     .USE_ZFINX     ( USE_ZFINX          ),
     .CORE_ID       ( FC_CORE_CORE_ID    ),
     .CLUSTER_ID    ( FC_CORE_CLUSTER_ID ),
+    // .USE_XIFU     ( placeholder ),
     .USE_HWPE      ( USE_HWPE           )
   ) fc_subsystem_i (
     .clk_i              ( soc_clk_i                     ),
