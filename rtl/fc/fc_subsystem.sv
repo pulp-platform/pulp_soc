@@ -169,7 +169,9 @@ module fc_subsystem
   import cv32e40x_pkg::*;
 
   // X-if declaration
-  cv32e40x_if_xif core_xif ();
+  cv32e40x_if_xif #(
+    .X_NUM_RS ( 3 )
+  ) core_xif ();
 
   // Tying input signals
 
@@ -191,9 +193,7 @@ module fc_subsystem
     assign core_xif.result = '0;
   end
   else begin: gen_xifu
-    fir_xifu_top #(
-      .NB_REGS ( 32 )
-    ) i_fir_xifu_top (
+    decimate_xifu_top i_decimate_xifu_top (
       .clk_i            ( clk_i    ),
       .rst_ni           ( rst_ni   ),
       .clear_i          ( 1'b0     ),
@@ -304,7 +304,7 @@ module fc_subsystem
       .X_EXT            ( 1                   ),
       .DM_REGION_START  ( `DEBUG_START_ADDR   ),
       .DM_REGION_END    ( `DEBUG_END_ADDR     ),
-      //.X_NUM_RS      (),
+      .X_NUM_RS         ( 3                   ),
       //.X_ID_WIDTH    (),
       .X_MEM_WIDTH      ( 32                  ),
       .X_RFR_WIDTH      ( 32                  ),
