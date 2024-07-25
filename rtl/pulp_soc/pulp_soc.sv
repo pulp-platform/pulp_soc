@@ -15,7 +15,7 @@
 `include "axi/assign.svh"
 
 module pulp_soc import dm::*; #(
-  parameter  CORE_TYPE          = 0, // 0 for CV32E40P with XPULP Extensions, 1 for IBEX RV32IMC (formerly ZERORISCY), 2 for IBEX RV32EC (formerly MICRORISCY)
+  parameter  CORE_TYPE          = 3, // 0 for CV32E40P with XPULP Extensions, 1 for IBEX RV32IMC (formerly ZERORISCY), 2 for IBEX RV32EC (formerly MICRORISCY)
   parameter  USE_XPULP          = 1, // Enable XPULP extensions on CV32E40P.
                      // Has no effect if an IBEX core variant
                      // is use.
@@ -27,7 +27,7 @@ module pulp_soc import dm::*; #(
                      // dedicated FPU regfile. Requires correct
                      // compiler settings for software to work!
   parameter  USE_HWPE           = 1,
-  parameter  SIM_STDOUT         = 1, // Enable the virtual stdout interface
+  parameter  SIM_STDOUT         = 0, // Enable the virtual stdout interface
                      // for communication with simulated
                      // testbenches. This parameter must be
                      // disabled during any form of physical
