@@ -45,7 +45,11 @@ module l2_ram_multi_bank #(
      //Remove Address offset
      assign interleaved_addresses[i] = mem_slave[i].add - `SOC_MEM_MAP_TCDM_START_ADDR;
 
-     tc_sram #(
+`ifndef TARGET_ASIC
+      tc_sram #(
+`else
+      tc_sram_gf22#(
+`endif
       .NumWords  ( BANK_SIZE_INTL_SRAM ),
       .DataWidth ( 32                  ),
       .NumPorts  ( 1                   )
@@ -78,7 +82,11 @@ module l2_ram_multi_bank #(
   logic [31:0] pri0_address;
   assign pri0_address = mem_pri_slave[0].add - `SOC_MEM_MAP_PRIVATE_BANK0_START_ADDR;
 
-  tc_sram #(
+`ifndef TARGET_ASIC
+    tc_sram #(
+`else
+    tc_sram_gf22#(
+`endif
     .NumWords  ( BANK_SIZE_PRI0 ),
     .DataWidth ( 32             ),
     .NumPorts  ( 1              ),
@@ -109,7 +117,11 @@ module l2_ram_multi_bank #(
   logic [31:0] pri1_address;
   assign pri1_address = mem_pri_slave[1].add - `SOC_MEM_MAP_PRIVATE_BANK1_START_ADDR;
 
-  tc_sram #(
+`ifndef TARGET_ASIC
+    tc_sram #(
+`else
+    tc_sram_gf22#(
+`endif
     .NumWords  ( BANK_SIZE_PRI1 ),
     .DataWidth ( 32             ),
     .NumPorts  ( 1              ),
