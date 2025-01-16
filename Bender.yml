@@ -81,7 +81,7 @@ sources:
   # components_behav
   - files:
       - rtl/components/tb_fs_handler.sv
-    target: all(rtl, not(synthesis))
+    target: all(rtl, any(verilator, not(synthesis)))
 external_import:
   - name: reggen
     target_dir: "util"
