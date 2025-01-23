@@ -14,7 +14,7 @@ package:
 
 dependencies:
   apb:                    { git: "https://github.com/pulp-platform/apb.git", version:  0.2.2 }
-  adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", rev: fb6149d } # branch fc/verilator
+  adv_dbg_if:             { git: "https://github.com/pulp-platform/adv_dbg_if.git", rev: 040cdc9 } # branch fc/verilator
   apb2per:                { git: "https://github.com/pulp-platform/apb2per.git", version: 0.1.0 }
   apb_adv_timer:          { git: "https://github.com/pulp-platform/apb_adv_timer.git", version: 1.0.4 }
   apb_interrupt_cntrl:    { git: "https://github.com/pulp-platform/apb_interrupt_cntrl.git", version: 0.2.0 }
