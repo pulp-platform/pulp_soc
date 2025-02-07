@@ -64,7 +64,8 @@ module pulp_soc import dm::*; #(
     parameter int unsigned L2_SIZE = 0,
     parameter int unsigned NUM_INTERRUPTS = 0,
     parameter int unsigned MACRO_ROM = 0,
-    parameter int unsigned USE_CLUSTER = 1
+    parameter int unsigned USE_CLUSTER = 1,
+    parameter int unsigned SDMA_RT_MIDEND = 0
 ) (
     input  logic                          soc_clk_i,
     input  logic                          periph_clk_i,
@@ -400,7 +401,7 @@ module pulp_soc import dm::*; #(
         .AXI_ID_WIDTH   ( AXI_ID_OUT_S2C_WIDTH  ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH    )
     ) s_axi_ext_core_mst (); // to ext from FC core
- 
+
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH    ),
         .AXI_DATA_WIDTH ( AXI_DATA_OUT_S2E_WIDTH), //64
@@ -424,7 +425,7 @@ module pulp_soc import dm::*; #(
     // Wrap FC core and sdma interfaces to an array of interfaces
     `AXI_ASSIGN(axi_mux_ext_slv[0], s_axi_ext_core_dw_mst) // FC core
     `AXI_ASSIGN(axi_mux_ext_slv[1], s_axi_ext_sdma_mst) // sdma
-    
+
     ////////////////////
     // AXI Mux inputs //
     ////////////////////
@@ -980,7 +981,8 @@ module pulp_soc import dm::*; #(
       .ADDR_WIDTH       ( SDMA_REG_ADDR_WIDTH ),
       .NUM_STREAMS      ( 1                   ),
       .L2_SIZE          ( L2_SIZE             ), // size of src/dst memory
-      .NB_OUTSND_BURSTS ( SDMA_NB_OUTSND_BURSTS )
+      .NB_OUTSND_BURSTS ( SDMA_NB_OUTSND_BURSTS ),
+      .RtMidend         ( SDMA_RT_MIDEND        )
     ) i_sensor_dma (
       .clk_i           (s_soc_clk                       ),
       .rst_ni          (s_soc_rstn                      ),
@@ -1011,7 +1013,7 @@ module pulp_soc import dm::*; #(
       .slv    ( s_axi_ext_core_mst ),
       .mst    ( s_axi_ext_core_dw_mst )
     );
-    
+
     // Arbitrate between core and sdma to communicate with the single external port
     axi_mux_intf #(
       .SLV_AXI_ID_WIDTH( AXI_ID_OUT_S2C_WIDTH ),
