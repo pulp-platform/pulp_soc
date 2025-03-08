@@ -240,7 +240,7 @@ module soc_peripherals #(
     assign fc_events_o[22]  = bus_data_err_i;
     assign fc_events_o[23]  = 1'b0;
     assign fc_events_o[24]  = 1'b0;
-    assign fc_events_o[25]  = 1'b0; // RESERVED for plic interrupts
+    assign fc_events_o[25]  = 1'b0;
     assign fc_events_o[26]  = 1'b0; // RESERVED for soc event FIFO
                                     // (many events get implicitely muxed into
                                     // this interrupt. A user that gets such an

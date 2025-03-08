@@ -29,7 +29,8 @@ module fc_subsystem #(
     parameter TB_RISCV            = 0,
     parameter CORE_ID             = 4'h0,
     parameter CLUSTER_ID          = 6'h1F,
-    parameter NUM_INTERRUPTS      = 0
+    parameter NUM_INTERRUPTS      = 0,
+    parameter NUM_EXT_INTERRUPTS  = 0
 ) (
     input  logic                      clk_i,
     input  logic                      rst_ni,
@@ -60,11 +61,7 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o,
 
     // external interrupts
-    input logic                       scg_irq_i,
-    input logic                       scp_irq_i,
-    input logic                       scp_secure_irq_i,
-    input logic [71:0]                mbox_irq_i,
-    input logic [71:0]                mbox_secure_irq_i
+    input logic [NUM_EXT_INTERRUPTS:0] irq_ext_i
 );
 
     import cv32e40p_apu_core_pkg::*;
@@ -360,21 +357,13 @@ module fc_subsystem #(
     assign reg_bus.error = clic_rsp.error;
     assign reg_bus.ready = clic_rsp.ready;
 
-    // TODO: make this useful
-    // localparam int unsigned N_SOURCE = 256;
-
     logic [255:0] clic_irqs;
     assign clic_irqs = {
-      {75{1'b0}},         // 75 (systemverilog has default:0 but that doesn't work reliably)
       sdma_busy_i,        // 1
       sdma_term_event_i,  // 1
-      mbox_secure_irq_i,  // 72
-      mbox_irq_i,         // 72
-      scp_secure_irq_i,   // 1
-      scp_irq_i,          // 1
-      scg_irq_i,          // 1
+      irq_ext_i,          // NUM_EXT_INTERRUPTS (32:pms_top_pkg::NUM_EXT_INTERRUPTS)
       events_i[31:27],    // 32 (regular clint interrupts)
-      soc_event_int,      // 26 (soc event int) TODO: ugly
+      soc_event_int,      // 26 (soc event int)
       events_i[25:0]      // 32 (regular clint interrupts)
     };
 

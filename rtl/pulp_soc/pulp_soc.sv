@@ -63,6 +63,7 @@ module pulp_soc import dm::*; #(
     parameter int unsigned L2_BANK_SIZE_PRI = 0,
     parameter int unsigned L2_SIZE = 0,
     parameter int unsigned NUM_INTERRUPTS = 0,
+    parameter int unsigned NUM_EXT_INTERRUPTS = 222,
     parameter int unsigned MACRO_ROM = 0,
     parameter int unsigned USE_CLUSTER = 1
 ) (
@@ -223,11 +224,7 @@ module pulp_soc import dm::*; #(
     input  logic                          wdt_alert_clear_i,
 
     // external interrupts
-    input logic                           scg_irq_i,
-    input logic                           scp_irq_i,
-    input logic                           scp_secure_irq_i,
-    input logic [71:0]                    mbox_irq_i,
-    input logic [71:0]                    mbox_secure_irq_i
+    input logic [NUM_EXT_INTERRUPTS-1:0]  irq_ext_i
 );
 
     localparam int unsigned AXI_DATA_EXT_WIDTH = 64;
@@ -922,7 +919,8 @@ module pulp_soc import dm::*; #(
         .CORE_ID    ( FC_CORE_CORE_ID    ),
         .CLUSTER_ID ( FC_CORE_CLUSTER_ID ),
         .USE_HWPE   ( USE_HWPE           ),
-        .NUM_INTERRUPTS ( NUM_INTERRUPTS )
+        .NUM_INTERRUPTS ( NUM_INTERRUPTS ),
+        .NUM_EXT_INTERRUPTS ( NUM_EXT_INTERRUPTS )
     ) fc_subsystem_i (
         .clk_i               ( s_soc_clk                     ),
         .rst_ni              ( s_soc_rstn                    ),
@@ -956,11 +954,7 @@ module pulp_soc import dm::*; #(
         .supervisor_mode_o   ( s_supervisor_mode             ),
 
         // External interrupts
-        .scg_irq_i,
-        .scp_irq_i,
-        .scp_secure_irq_i,
-        .mbox_irq_i,
-        .mbox_secure_irq_i
+        .irq_ext_i
     );
 
     // Sensor DMA
