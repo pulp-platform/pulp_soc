@@ -61,7 +61,7 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o,
 
     // external interrupts
-    input logic [NUM_EXT_INTERRUPTS:0] irq_ext_i
+    input logic [NUM_EXT_INTERRUPTS-1:0] irq_ext_i
 );
 
     import cv32e40p_apu_core_pkg::*;
