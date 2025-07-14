@@ -38,7 +38,7 @@ dependencies:
   udma_core:              { git: "https://github.com/pulp-platform/udma_core.git", version: 1.1.0 }
   udma_uart:              { git: "https://github.com/pulp-platform/udma_uart.git", version: 1.0.1 }
   udma_i2c:               { git: "https://github.com/pulp-platform/udma_i2c.git", version: 1.0.0 }
-  udma_i2s:               { git: "https://github.com/pulp-platform/udma_i2s.git", version: 1.1.2 }
+  # udma_i2s:               { git: "https://github.com/pulp-platform/udma_i2s.git", version: 1.1.2 }
   udma_qspi:              { git: "https://github.com/pulp-platform/udma_qspi.git", version: 1.0.4 }
   udma_sdio:              { git: "https://github.com/pulp-platform/udma_sdio.git", version: 1.1.2 }
   udma_camera:            { git: "https://github.com/pulp-platform/udma_camera.git", version: 1.1.2 }
