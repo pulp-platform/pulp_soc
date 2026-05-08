@@ -206,9 +206,6 @@ module soc_event_generator #(
       r_err             =  'h0;
     end
     else begin
-      for (int i=0;i<EVNT_NUM;i++)
-        if(s_err[i])
-          r_err[i] = 1'b1;
       r_apb_events     =  'h0;
       if (PSEL && PENABLE && PWRITE) begin
         case (s_apb_addr)
@@ -341,6 +338,12 @@ module soc_event_generator #(
               r_err[255:224] = 'h0;
         endcase // s_apb_addr
       end
+      // Sticky-set per-source error bits AFTER any APB read-clear so
+      // that an event firing on the same cycle as the read survives.
+      // Set wins over clear in the same-cycle race.
+      for (int i=0;i<EVNT_NUM;i++)
+        if(s_err[i])
+          r_err[i] = 1'b1;
     end
   end //always
 
