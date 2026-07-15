@@ -632,9 +632,12 @@ module udma_subsystem
     assign s_events[4*PER_ID_FILTER+3]  = 1'b0;
 
     // Tie off the event slots of the peripheral IDs that are not instantiated
-    for (genvar i = N_PERIPHS; i < N_PERIPH_MAX; i++) begin : gen_unused_periph_events
-      assign s_events[4*i +: 4] = '0;
-    end
+    generate
+        for (genvar g_per = N_PERIPHS; g_per < N_PERIPH_MAX; g_per++)
+        begin
+          assign s_events[4*g_per +: 4] = '0;
+        end
+    endgenerate
 
     assign s_rx_ext_destination[CH_ID_EXT_RX_FILTER] = 'h0;
     assign s_rx_ext_stream[CH_ID_EXT_RX_FILTER]      = 'h0;
