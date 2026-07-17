@@ -903,4 +903,8 @@ module soc_peripherals #(
       .spi_sdi3   ( spi_sdi_slv_i[3] )
     );
 
+  // I2C slave bridges issue no AXI atomics: tie off the atomic op field
+  assign axi_i2c_slv_bmc.aw_atop = '0;
+  assign axi_i2c_slv_1.aw_atop   = '0;
+
 endmodule
